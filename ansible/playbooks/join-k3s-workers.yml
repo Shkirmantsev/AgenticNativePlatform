@@ -1,0 +1,39 @@
+---
+- name: Read server token from control plane
+  hosts: k3s_server
+  become: true
+  tasks:
+    - name: Slurp token
+      slurp:
+        src: /var/lib/rancher/k3s/server/token
+      register: server_token
+
+    - name: Set shared fact
+      set_fact:
+        cluster_join_token: "{{ server_token.content | b64decode | trim }}"
+
+- name: Join workers to the cluster
+  hosts: k3s_workers
+  become: true
+  vars:
+    k3s_server_ip: "{{ hostvars[groups['k3s_server'][0]].ansible_host }}"
+    cluster_join_token: "{{ hostvars[groups['k3s_server'][0]].cluster_join_token }}"
+    k3s_version: "{{ lookup('env', 'K3S_VERSION') | default('v1.31.6+k3s1', true) }}"
+  tasks:
+    - name: Create k3s agent config directory
+      file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: '0755'
+
+    - name: Render k3s agent config
+      template:
+        src: ../templates/k3s-agent-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        mode: '0644'
+
+    - name: Install k3s agent
+      shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION={{ k3s_version }} K3S_URL=https://{{ k3s_server_ip }}:6443 K3S_TOKEN={{ cluster_join_token }} sh -
+      args:
+        executable: /bin/bash

@@ -1,0 +1,7 @@
+[k3s_server]
+${control_plane.name} ansible_host=${control_plane.ansible_host} ansible_user=${control_plane.ansible_user}%{ if lookup(control_plane, "connection", "") != "" } ansible_connection=${control_plane.connection}%{ endif }%{ if lookup(control_plane, "private_key", "") != "" } ansible_ssh_private_key_file=${control_plane.private_key}%{ endif } ansible_python_interpreter=/usr/bin/python3
+
+[k3s_workers]
+%{ for w in workers ~}
+${w.name} ansible_host=${w.ansible_host} ansible_user=${w.ansible_user}%{ if lookup(w, "connection", "") != "" } ansible_connection=${w.connection}%{ endif }%{ if lookup(w, "private_key", "") != "" } ansible_ssh_private_key_file=${w.private_key}%{ endif } ansible_python_interpreter=/usr/bin/python3
+%{ endfor ~}

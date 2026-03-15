@@ -35,3 +35,25 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+/.env
+/.idea/.gitignore
+/.idea/AgenticNativePlatform.iml
+/.idea/checkstyle-idea.xml
+/.idea/dbnavigator.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/vcs.xml
+
+.env
+*.auto.tfvars
+terraform.tfvars
+terraform.tfstate
+terraform.tfstate.*
+.terraform/
+.terraform.lock.hcl
+ansible/generated/
+flux/generated/secrets/
+.kube/generated/
+.sops/
+age.agekey
+/ansible/inventory.ini

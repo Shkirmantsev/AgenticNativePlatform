@@ -1,0 +1,6 @@
+metallb_start    = "192.168.1.240"
+metallb_end      = "192.168.1.250"
+lmstudio_host_ip = "192.168.1.108"
+lmstudio_port    = 1234
+local_ansible_host = "127.0.0.1"
+local_ansible_user = "dmytro"

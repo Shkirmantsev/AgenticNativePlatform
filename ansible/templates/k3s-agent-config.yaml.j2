@@ -1,0 +1,5 @@
+# k3s agent configuration.
+cluster-domain: "{{ lookup('env', 'CLUSTER_DOMAIN') | default('cluster.local', true) }}"
+node-label:
+  - topology-role=worker
+  - llm-runtime=true

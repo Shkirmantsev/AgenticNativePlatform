@@ -1,0 +1,53 @@
+---
+# Prepare existing Ubuntu machines for k3s.
+- name: Bootstrap Ubuntu hosts for k3s
+  hosts: all
+  become: true
+  tasks:
+    - name: Install base packages
+      apt:
+        name:
+          - curl
+          - jq
+          - vim
+          - git
+          - unzip
+          - ca-certificates
+          - apt-transport-https
+          - python3-pip
+          - nfs-common
+          - open-iscsi
+        update_cache: true
+        state: present
+
+    - name: Disable swap for Kubernetes
+      shell: |
+        swapoff -a
+        sed -ri '/\sswap\s/s/^#?/#/' /etc/fstab
+      args:
+        executable: /bin/bash
+
+    - name: Load required kernel modules
+      copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: |
+          br_netfilter
+          overlay
+
+    - name: Enable kernel modules immediately
+      shell: |
+        modprobe br_netfilter
+        modprobe overlay
+      args:
+        executable: /bin/bash
+
+    - name: Configure Kubernetes sysctl parameters
+      copy:
+        dest: /etc/sysctl.d/99-kubernetes-cri.conf
+        content: |
+          net.bridge.bridge-nf-call-iptables = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.ipv4.ip_forward = 1
+
+    - name: Apply sysctl settings
+      command: sysctl --system

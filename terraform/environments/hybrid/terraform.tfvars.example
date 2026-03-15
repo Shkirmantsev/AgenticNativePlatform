@@ -1,0 +1,9 @@
+metallb_start    = "192.168.1.240"
+metallb_end      = "192.168.1.250"
+control_plane_ip = "192.168.1.50"
+control_plane_user = "ubuntu"
+worker_ip        = "192.168.1.108"
+worker_user      = "dmytro"
+ssh_private_key  = "~/.ssh/id_ed25519"
+lmstudio_host_ip = "192.168.1.108"
+lmstudio_port    = 1234

@@ -1,0 +1,8 @@
+# Generated inventories are normally written to ansible/generated/<topology>.ini by Terraform.
+# This static example exists only as a fallback.
+
+[k3s_server]
+localhost ansible_host=127.0.0.1 ansible_user=dmytro ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+
+[k3s_workers]
+# workstation ansible_host=192.168.1.108 ansible_user=dmytro ansible_ssh_private_key_file=~/.ssh/id_ed25519 ansible_python_interpreter=/usr/bin/python3
