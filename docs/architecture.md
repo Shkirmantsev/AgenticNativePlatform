@@ -1,0 +1,3 @@
+# Architecture
+
+North-south traffic enters through **kgateway** running on **Envoy** and a `LoadBalancer` Service backed by **MetalLB** on bare metal. Service-to-service security and telemetry are handled by **Istio Ambient**. **agentgateway** is used for agent-, MCP-, and LLM-aware routing. **LiteLLM** provides provider abstraction for remote and local OpenAI-compatible backends. **KServe** is installed as the Kubernetes-native model serving control plane, with **Ollama** and **vLLM** available as optional runtime overlays. The context layer consists of **Qdrant**, **Redis**, and **PostgreSQL**. Embeddings are served by **TEI** by default, while **LM Studio** is exposed into the cluster through a Kubernetes `Service + Endpoints` mapping.
