@@ -1,10 +1,24 @@
 ---
-- name: Install local operator tools on Ubuntu workstation
+- name: Install local operator tools on the workstation
   hosts: localhost
   connection: local
   become: true
+  vars:
+    install_k9s: "{{ install_k9s | default(true) | bool }}"
+    iac_tool: "{{ iac_tool | default('tofu') }}"
+    k9s_arch_map:
+      x86_64: amd64
+      aarch64: arm64
   tasks:
-    - name: Ensure apt prerequisites are present
+    - name: Show operator tool installation mode
+      ansible.builtin.debug:
+        msg:
+          - "OS family: {{ ansible_os_family }}"
+          - "System: {{ ansible_system }}"
+          - "Requested IaC tool mode: {{ iac_tool }}"
+          - "Install k9s: {{ install_k9s }}"
+
+    - name: Ensure base packages are present on Debian-family systems
       ansible.builtin.apt:
         update_cache: true
         name:
@@ -13,18 +27,23 @@
           - jq
           - curl
           - git
+          - unzip
+          - tar
           - ca-certificates
           - gnupg
           - apt-transport-https
+          - software-properties-common
         state: present
+      when: ansible_os_family == 'Debian'
 
-    - name: Ensure APT keyrings directory exists
+    - name: Ensure keyrings directory exists on Debian-family systems
       ansible.builtin.file:
         path: /etc/apt/keyrings
         state: directory
         mode: "0755"
+      when: ansible_os_family == 'Debian'
 
-    - name: Install kubectl from the Kubernetes APT repository
+    - name: Install kubectl from the official Kubernetes APT repository
       ansible.builtin.shell: |
         set -euo pipefail
         if ! command -v kubectl >/dev/null 2>&1; then
@@ -35,8 +54,9 @@
         fi
       args:
         executable: /bin/bash
+      when: ansible_os_family == 'Debian'
 
-    - name: Install Helm CLI
+    - name: Install Helm CLI on Linux
       ansible.builtin.shell: |
         set -euo pipefail
         if ! command -v helm >/dev/null 2>&1; then
@@ -44,8 +64,9 @@
         fi
       args:
         executable: /bin/bash
+      when: ansible_system == 'Linux'
 
-    - name: Install Flux CLI
+    - name: Install Flux CLI on Linux
       ansible.builtin.shell: |
         set -euo pipefail
         if ! command -v flux >/dev/null 2>&1; then
@@ -53,23 +74,117 @@
         fi
       args:
         executable: /bin/bash
+      when: ansible_system == 'Linux'
+
+    - name: Install OpenTofu from the official Debian repository
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v tofu >/dev/null 2>&1; then
+          curl -fsSL https://get.opentofu.org/opentofu.gpg | tee /etc/apt/keyrings/opentofu.gpg >/dev/null
+          curl -fsSL https://packages.opentofu.org/opentofu/tofu/gpgkey | gpg --no-tty --batch --dearmor -o /etc/apt/keyrings/opentofu-repo.gpg >/dev/null
+          chmod a+r /etc/apt/keyrings/opentofu.gpg /etc/apt/keyrings/opentofu-repo.gpg
+          cat >/etc/apt/sources.list.d/opentofu.list <<'EOF'
+        deb [signed-by=/etc/apt/keyrings/opentofu.gpg,/etc/apt/keyrings/opentofu-repo.gpg] https://packages.opentofu.org/opentofu/tofu/any/ any main
+        deb-src [signed-by=/etc/apt/keyrings/opentofu.gpg,/etc/apt/keyrings/opentofu-repo.gpg] https://packages.opentofu.org/opentofu/tofu/any/ any main
+        EOF
+          chmod a+r /etc/apt/sources.list.d/opentofu.list
+          apt-get update
+          apt-get install -y tofu
+        fi
+      args:
+        executable: /bin/bash
+      when:
+        - ansible_os_family == 'Debian'
+        - iac_tool in ['tofu', 'both']
+
+    - name: Install Terraform from the official HashiCorp Debian repository
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v terraform >/dev/null 2>&1; then
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp-archive-keyring.gpg
+          chmod a+r /etc/apt/keyrings/hashicorp-archive-keyring.gpg
+          codename="$(. /etc/os-release && echo ${VERSION_CODENAME:-})"
+          echo "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com ${codename} main" > /etc/apt/sources.list.d/hashicorp.list
+          apt-get update
+          apt-get install -y terraform
+        fi
+      args:
+        executable: /bin/bash
+      when:
+        - ansible_os_family == 'Debian'
+        - iac_tool in ['terraform', 'both']
+
+    - name: Derive k9s target architecture on Linux
+      ansible.builtin.set_fact:
+        k9s_arch: "{{ k9s_arch_map.get(ansible_architecture, 'amd64') }}"
+      when:
+        - ansible_system == 'Linux'
+        - install_k9s
+
+    - name: Install k9s from the official GitHub release tarball on Linux
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v k9s >/dev/null 2>&1; then
+          version="$(curl -fsSL https://api.github.com/repos/derailed/k9s/releases/latest | jq -r .tag_name)"
+          tmp_dir="$(mktemp -d)"
+          curl -fsSL "https://github.com/derailed/k9s/releases/download/${version}/k9s_Linux_{{ k9s_arch }}.tar.gz" -o "${tmp_dir}/k9s.tar.gz"
+          tar -xzf "${tmp_dir}/k9s.tar.gz" -C "${tmp_dir}"
+          install -m 0755 "${tmp_dir}/k9s" /usr/local/bin/k9s
+          rm -rf "${tmp_dir}"
+        fi
+      args:
+        executable: /bin/bash
+      when:
+        - ansible_system == 'Linux'
+        - install_k9s
+
+    - name: Explain why k9s was skipped on unsupported systems
+      ansible.builtin.debug:
+        msg: "Skipping k9s installation because install_k9s={{ install_k9s }} or ansible_system={{ ansible_system }} is not Linux."
+      when: not install_k9s or ansible_system != 'Linux'
 
     - name: Verify age is installed
       ansible.builtin.command: age-keygen -version
       changed_when: false
+      when: ansible_os_family == 'Debian'
 
     - name: Verify sops is installed
       ansible.builtin.command: sops --version
       changed_when: false
+      when: ansible_os_family == 'Debian'
 
     - name: Verify kubectl is installed
       ansible.builtin.command: kubectl version --client
       changed_when: false
+      when: ansible_os_family == 'Debian'
 
     - name: Verify helm is installed
       ansible.builtin.command: helm version --short
       changed_when: false
+      when: ansible_system == 'Linux'
 
     - name: Verify flux is installed
       ansible.builtin.command: flux --version
       changed_when: false
+      when: ansible_system == 'Linux'
+
+    - name: Verify OpenTofu is installed when requested
+      ansible.builtin.command: tofu version
+      changed_when: false
+      when:
+        - ansible_os_family == 'Debian'
+        - iac_tool in ['tofu', 'both']
+
+    - name: Verify Terraform is installed when requested
+      ansible.builtin.command: terraform version
+      changed_when: false
+      when:
+        - ansible_os_family == 'Debian'
+        - iac_tool in ['terraform', 'both']
+
+    - name: Verify k9s is installed when requested on Linux
+      ansible.builtin.command: k9s version
+      changed_when: false
+      when:
+        - ansible_system == 'Linux'
+        - install_k9s

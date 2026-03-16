@@ -1,210 +1,65 @@
-# Production-ready helper targets for the repository.
-# Defaults are optimized for a first local, remote-only startup.
+SHELL := /usr/bin/env bash
+.DEFAULT_GOAL := help
 
 ifneq (,$(wildcard .env))
 include .env
-export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*//p' .env)
+export
 endif
 
 TOPOLOGY ?= local
 ENV ?= dev
 RUNTIME ?= none
-TF_BIN ?= terraform
 SECRETS_MODE ?= external
-ANSIBLE_INVENTORY ?= ansible/generated/$(TOPOLOGY).ini
-TF_DIR ?= terraform/environments/$(TOPOLOGY)
-TF_VARS_FILE ?= terraform.tfvars
-CLUSTER_PATH ?= ./flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)
 LMSTUDIO_ENABLED ?= false
-VLLM_IMAGE ?= public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
-VLLM_IMAGE_TARBALL ?=
 
-.PHONY: help tools-install-local terraform-vars terraform-init terraform-plan terraform-apply terraform-destroy \
-	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
-	flux-values render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
-	sops-age-key sops-bootstrap-cluster render-sops-secrets encrypt-secrets decrypt-secrets install-flux-local bootstrap-flux-git \
-	apply-cluster reconcile cluster-stop cluster-start port-forward-kagent port-forward-agentgateway test-agentgateway-gemini test-agentgateway-openai test-a2a-agent \
-	test-ollama test-vllm test-litellm test-lmstudio preimport-vllm-image-online preimport-vllm-image-tarball verify \
-	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote
+INSTALL_K9S ?= true
+IAC_TOOL ?= tofu
+TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
+TF_DIR ?= terraform/environments/$(TOPOLOGY)
 
 STOP_NAMESPACES ?= metallb-system istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve
 
+.PHONY: help tools-install-local terraform-init terraform-apply terraform-destroy install-flux-local reconcile verify cluster-stop cluster-start
+
 help: ## Show available targets
-	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "%-34s %s
-", $$1, $$2}'
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-28s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-tools-install-local: ## Install local operator tools (age, sops, kubectl, helm, flux, k9s, jq) using Ansible on localhost
-	ansible-playbook -i localhost, -c local ansible/playbooks/install-local-tools.yml
+tools-install-local: ## Install operator tools locally with Ansible (age, sops, kubectl, helm, flux, optional k9s, Terraform/OpenTofu)
+	ansible-playbook -i localhost, -c local ansible/playbooks/install-local-tools.yml --extra-vars "iac_tool=$(IAC_TOOL) install_k9s=$(INSTALL_K9S)"
 
-terraform-vars: ## Render topology-specific terraform.tfvars from .env
-	./scripts/render-terraform-tfvars.sh $(TOPOLOGY)
-
-terraform-init: terraform-vars ## Init Terraform for selected topology
+terraform-init: ## Initialize Terraform/OpenTofu in the selected topology directory
 	$(TF_BIN) -chdir=$(TF_DIR) init
 
-terraform-plan: terraform-vars ## Plan topology artifacts and optional external infra
-	$(TF_BIN) -chdir=$(TF_DIR) plan -var-file=$(TF_VARS_FILE)
+terraform-apply: ## Apply Terraform/OpenTofu in the selected topology directory
+	$(TF_BIN) -chdir=$(TF_DIR) apply -auto-approve
 
-terraform-apply: terraform-vars ## Apply topology artifacts and optional external infra
-	$(TF_BIN) -chdir=$(TF_DIR) apply -auto-approve -var-file=$(TF_VARS_FILE)
+terraform-destroy: ## Destroy Terraform/OpenTofu artifacts in the selected topology directory
+	$(TF_BIN) -chdir=$(TF_DIR) destroy -auto-approve
 
-terraform-destroy: terraform-vars ## Destroy optional external infra and generated artifacts
-	$(TF_BIN) -chdir=$(TF_DIR) destroy -auto-approve -var-file=$(TF_VARS_FILE)
+install-flux-local: ## Install Flux controllers into the current cluster
+	flux install
 
-bootstrap-hosts: ## Bootstrap OS packages, kernel modules, sysctl and hardening prerequisites
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/bootstrap-hosts.yml
+reconcile: ## Reconcile Flux source and kustomization named 'platform' if present
+	@flux reconcile source git platform -n flux-system || true
+	@flux reconcile kustomization platform -n flux-system --with-source || true
 
-install-k3s-server: ## Install k3s server on the control-plane host
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/install-k3s-server.yml
-
-join-workers: ## Join all workers to the cluster
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/join-k3s-workers.yml
-
-label-llm-nodes: ## Label nodes that are allowed to run self-hosted model runtimes
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/label-llm-nodes.yml
-
-kubeconfig: ## Export remote kubeconfig into local .kube/generated/<topology>.yaml
-	mkdir -p .kube/generated
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/export-kubeconfig.yml
-
-uninstall-k3s: ## Remove k3s from all hosts in the inventory
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/uninstall-k3s.yml
-
-flux-values: ## Render non-secret Flux values ConfigMaps from .env and Terraform outputs
-	./scripts/render-flux-values.sh $(TOPOLOGY)
-
-render-plaintext-secrets: ## Render plain Kubernetes Secret manifests from .env into flux/generated/secrets/<env>
-	ENV=$(ENV) ./scripts/render-plaintext-secrets.sh
-
-apply-plaintext-secrets: render-plaintext-secrets ## Apply plain Kubernetes Secrets from .env directly to the cluster (first-stage startup)
-	kubectl apply -k flux/generated/secrets/$(ENV)
-
-delete-plaintext-secrets: ## Delete plain Kubernetes Secrets from the cluster
-	kubectl delete -k flux/generated/secrets/$(ENV) --ignore-not-found
-
-sops-age-key: ## Create local age key pair for SOPS secret encryption
-	./scripts/create-age-key.sh
-
-sops-bootstrap-cluster: ## Store the SOPS age private key in flux-system so Flux can decrypt encrypted manifests
-	./scripts/bootstrap-sops-secret.sh
-
-render-sops-secrets: ## Render plaintext secret files under flux/secrets/<env> from .env before encrypting them
-	ENV=$(ENV) ./scripts/render-sops-secrets-from-env.sh
-
-encrypt-secrets: render-sops-secrets ## Encrypt all secret templates for the selected environment with sops
-	ENV=$(ENV) ./scripts/encrypt-secrets.sh
-
-decrypt-secrets: ## Decrypt selected environment secrets locally
-	ENV=$(ENV) ./scripts/decrypt-secrets.sh
-
-install-flux-local: ## Install Flux controllers into the target cluster from the local workstation
-	./scripts/install-flux-local.sh
-
-bootstrap-flux-git: flux-values ## Register this Git repository as the Flux source and root Kustomization
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/bootstrap-flux-git.sh
-
-apply-cluster: flux-values ## Apply the chosen topology+environment+runtime root kustomization directly
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/render-cluster-kustomization.sh
-	kubectl apply -k $(CLUSTER_PATH)
-
-reconcile: ## Trigger Flux reconciliation of the root Git source and Kustomization
-	flux reconcile source git platform -n flux-system || true
-	flux reconcile kustomization platform -n flux-system || true
-
-preimport-vllm-image-online: ## Pre-pull the vLLM image into k3s containerd using the K3s images directory
-	ansible all -i $(ANSIBLE_INVENTORY) -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
-	ansible all -i $(ANSIBLE_INVENTORY) -b -m copy -a "dest=/var/lib/rancher/k3s/agent/images/vllm-images.txt content='$(VLLM_IMAGE)
-' mode=0644"
-
-preimport-vllm-image-tarball: ## Copy a pre-saved vLLM image tarball into k3s containerd image store on each node
-	@test -n "$(VLLM_IMAGE_TARBALL)" || (echo "Set VLLM_IMAGE_TARBALL=/path/to/vllm-image.tar"; exit 1)
-	ansible all -i $(ANSIBLE_INVENTORY) -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
-	ansible all -i $(ANSIBLE_INVENTORY) -b -m copy -a "src=$(VLLM_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/$(notdir $(VLLM_IMAGE_TARBALL)) mode=0644"
-
-cluster-stop: ## Pause GitOps and scale platform Deployments/StatefulSets to zero without deleting the cluster
-	flux suspend source git platform -n flux-system || true
-	flux suspend kustomization platform -n flux-system || true
-	@bash -ec 'for ns in $(STOP_NAMESPACES); do 	  kubectl -n $$ns patch helmrelease --all --type merge -p '"'"'{"spec":{"suspend":true}}'"'"' >/dev/null 2>&1 || true; 	  kubectl -n $$ns scale deployment --all --replicas=0 >/dev/null 2>&1 || true; 	  kubectl -n $$ns scale statefulset --all --replicas=0 >/dev/null 2>&1 || true; 	done'
-	@echo "Platform workloads paused. Control plane and core cluster services remain running."
-
-cluster-start: ## Resume GitOps and restore workloads from Git desired state
-	flux resume source git platform -n flux-system || true
-	flux resume kustomization platform -n flux-system || true
-	@bash -ec 'for ns in $(STOP_NAMESPACES); do 	  kubectl -n $$ns patch helmrelease --all --type merge -p '"'"'{"spec":{"suspend":false}}'"'"' >/dev/null 2>&1 || true; 	done'
-	flux reconcile source git platform -n flux-system || true
-	flux reconcile kustomization platform -n flux-system || true
-	@echo "Platform workloads resumed from Git desired state."
-
-port-forward-kagent: ## Expose kagent A2A endpoint and UI locally
-	kubectl port-forward svc/kagent-controller -n kagent 8083:8083 &
-	kubectl port-forward svc/kagent-ui -n kagent 8080:8080
-
-port-forward-agentgateway: ## Expose the Kubernetes agentgateway service locally
-	kubectl port-forward svc/agentgateway -n agentgateway-system 8080:8080
-
-test-agentgateway-gemini: ## Verify canonical agentgateway -> LiteLLM -> provider routing
-	curl -s http://localhost:8080/v1/models | jq .
-
-test-agentgateway-openai: ## Verify a chat completion through the canonical route
-	curl -s http://localhost:8080/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"default-gemini","messages":[{"role":"user","content":"ping"}]}' | jq .
-
-test-a2a-agent: ## Verify the sample embedded A2A agent card
-	curl -s http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json | jq .
-
-test-ollama: ## Verify the self-hosted Ollama endpoint
-	kubectl port-forward svc/ollama -n ai-models 11434:11434 &
-	sleep 2
-	curl -s http://localhost:11434/api/tags | jq .
-
-test-vllm: ## Verify the self-hosted vLLM endpoint when RUNTIME=vllm is deployed
-	kubectl port-forward svc/vllm-openai -n ai-models 8000:8000 &
-	sleep 4
-	curl -s http://localhost:8000/health
-
-test-litellm: ## Verify the LiteLLM readiness endpoint
-	kubectl port-forward svc/litellm -n ai-gateway 4000:4000 &
-	sleep 2
-	curl -s http://localhost:4000/health/readiness | jq .
-
-test-lmstudio: ## Verify that the external LM Studio endpoint is reachable from inside the cluster
-	kubectl run -n ai-gateway lmstudio-probe --rm --restart=Never --image=curlimages/curl:8.10.1 -- http://lmstudio-external.ai-gateway.svc.cluster.local:1234/v1/models
-
-verify: ## Quick cluster health check
-	kubectl get nodes -o wide
-	kubectl get pods -A
+verify: ## Basic local verification of cluster and Flux state
+	kubectl get nodes -o wide || true
+	kubectl get ns || true
 	kubectl get gitrepositories -A || true
+	kubectl get kustomizations -A || true
 	kubectl get helmreleases -A || true
-	kubectl get gatewayclass || true
-	kubectl get gateways -A || true
 
-cluster-up-local: ## Bootstrap local topology end-to-end up to kubeconfig export
-	$(MAKE) terraform-init TOPOLOGY=local
-	$(MAKE) terraform-apply TOPOLOGY=local
-	$(MAKE) bootstrap-hosts TOPOLOGY=local
-	$(MAKE) install-k3s-server TOPOLOGY=local
-	$(MAKE) kubeconfig TOPOLOGY=local
+cluster-stop: ## Pause platform workloads without uninstalling the cluster
+	@flux suspend source git platform -n flux-system || true
+	@flux suspend kustomization platform -n flux-system || true
+	@for ns in $(STOP_NAMESPACES); do \
+	  kubectl get ns $$ns >/dev/null 2>&1 || continue; \
+	  kubectl -n $$ns get deploy -o name 2>/dev/null | xargs -r -n1 kubectl -n $$ns scale --replicas=0; \
+	  kubectl -n $$ns get statefulset -o name 2>/dev/null | xargs -r -n1 kubectl -n $$ns scale --replicas=0; \
+	done
 
-cluster-up-minipc: ## Bootstrap miniPC topology end-to-end up to kubeconfig export
-	$(MAKE) terraform-init TOPOLOGY=minipc
-	$(MAKE) terraform-apply TOPOLOGY=minipc
-	$(MAKE) bootstrap-hosts TOPOLOGY=minipc
-	$(MAKE) install-k3s-server TOPOLOGY=minipc
-	$(MAKE) kubeconfig TOPOLOGY=minipc
-
-cluster-up-hybrid: ## Bootstrap hybrid topology end-to-end up to kubeconfig export
-	$(MAKE) terraform-init TOPOLOGY=hybrid
-	$(MAKE) terraform-apply TOPOLOGY=hybrid
-	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid
-	$(MAKE) install-k3s-server TOPOLOGY=hybrid
-	$(MAKE) join-workers TOPOLOGY=hybrid
-	$(MAKE) label-llm-nodes TOPOLOGY=hybrid
-	$(MAKE) kubeconfig TOPOLOGY=hybrid
-
-cluster-up-hybrid-remote: ## Bootstrap hybrid-remote topology end-to-end up to kubeconfig export
-	$(MAKE) terraform-init TOPOLOGY=hybrid-remote
-	$(MAKE) terraform-apply TOPOLOGY=hybrid-remote
-	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid-remote
-	$(MAKE) install-k3s-server TOPOLOGY=hybrid-remote
-	$(MAKE) join-workers TOPOLOGY=hybrid-remote
-	$(MAKE) label-llm-nodes TOPOLOGY=hybrid-remote
-	$(MAKE) kubeconfig TOPOLOGY=hybrid-remote
+cluster-start: ## Resume platform workloads from Git desired state
+	@flux resume source git platform -n flux-system || true
+	@flux resume kustomization platform -n flux-system || true
+	@flux reconcile kustomization platform -n flux-system --with-source || true
