@@ -20,6 +20,7 @@ crash.*.log
 # Generated local artifacts
 ansible/generated/
 .kube/generated/
+ansible/playbooks/.kube/
 .generated/
 .sops/
 age.agekey

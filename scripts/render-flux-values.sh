@@ -124,4 +124,27 @@ data:
       VLLM_LD_PRELOAD: "${VLLM_LD_PRELOAD}"
 EOF
 
+resource_entries=()
+for generated_file in \
+  litellm-values-configmap.yaml \
+  tei-values-configmap.yaml \
+  ollama-values-configmap.yaml \
+  vllm-values-configmap.yaml \
+  lmstudio-values-configmap.yaml \
+  metallb-values.yaml \
+  lmstudio-endpoint.yaml; do
+  if [[ -f "${GEN_DIR}/${generated_file}" ]]; then
+    resource_entries+=("  - ${generated_file}")
+  fi
+done
+
+{
+  cat <<EOF
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+EOF
+  printf '%s\n' "${resource_entries[@]}"
+} > "${GEN_DIR}/kustomization.yaml"
+
 echo "Rendered Flux values ConfigMaps into ${GEN_DIR}"

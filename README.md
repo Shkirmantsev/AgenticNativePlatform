@@ -74,6 +74,13 @@ Flux does **not** read your local working directory. It pulls from the **remote 
 - local SOPS private keys
 - local plaintext rendered secrets under `.generated/`
 
+### Generated local artifacts
+
+- `make kubeconfig` writes the usable kubeconfig to `.kube/generated/current.yaml`
+- `KUBECONFIG` is exported by the `Makefile` to that path for `kubectl`, `flux`, and related targets
+- raw fetched kubeconfig copies are kept under `.kube/generated/raw/`
+- `flux/generated/<topology>/topology-values.yaml` is operator metadata only and is not part of any Kustomize `resources` list
+
 ## Operator tools
 
 Use:
@@ -182,6 +189,8 @@ make kubeconfig TOPOLOGY=local
 make install-flux-local
 ```
 
+This target expects `.kube/generated/current.yaml` to exist, so run `make kubeconfig TOPOLOGY=local` first if you have not already exported kubeconfig.
+
 ### 7. Create external secrets directly in the cluster
 
 ```bash
@@ -198,6 +207,25 @@ Flux will only reconcile from the pushed remote repository.
 make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 make verify
+```
+
+The generated Flux root is written to:
+
+```text
+flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml
+```
+
+The generated topology input directory also has its own Kustomization:
+
+```text
+flux/generated/<topology>/kustomization.yaml
+```
+
+Useful local checks:
+
+```bash
+kubectl kustomize flux/generated/<topology>
+kubectl kustomize flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>
 ```
 
 ## Runtime modes
@@ -247,6 +275,8 @@ The intended lifecycle is:
 4. let Flux reconcile
 
 Do not use manual `helm install` or `helm upgrade` as the main operating model. Flux `GitRepository` and `HelmRelease` are the intended declarative control plane.
+
+When adding new Kustomize resources in this repository, prefer directory references with a local `kustomization.yaml` over cross-directory single-file references. This keeps local `kubectl kustomize` validation aligned with the repository structure.
 
 ## Stop and start the platform without uninstalling the cluster
 
@@ -341,5 +371,4 @@ make verify
 ![Install_k3s_server_screenshot](./assets/install-k3s-server.png)
 
 ![Kubeconfig_screenshot](./assets/export-kubeconfig.png)
-
 

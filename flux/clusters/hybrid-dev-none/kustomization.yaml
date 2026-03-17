@@ -5,4 +5,4 @@ resources:
   - ../../components/platform-runtime-none
   - ../../secrets/dev
   - ../../overlays/dev
-  - ../../generated/hybrid/lmstudio-endpoint.yaml
+  - ../../generated/hybrid

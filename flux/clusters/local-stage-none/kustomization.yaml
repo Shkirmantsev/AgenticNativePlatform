@@ -5,4 +5,4 @@ resources:
   - ../../components/platform-runtime-none
   - ../../secrets/stage
   - ../../overlays/stage
-  - ../../generated/local/lmstudio-endpoint.yaml
+  - ../../generated/local

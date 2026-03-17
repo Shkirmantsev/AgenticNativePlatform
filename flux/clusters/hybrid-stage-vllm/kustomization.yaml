@@ -5,4 +5,4 @@ resources:
   - ../../components/platform-runtime-vllm
   - ../../secrets/stage
   - ../../overlays/stage
-  - ../../generated/hybrid/lmstudio-endpoint.yaml
+  - ../../generated/hybrid

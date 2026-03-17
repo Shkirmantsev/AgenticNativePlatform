@@ -38,6 +38,26 @@ Do not commit:
 - `ansible/generated/`
 - `.sops/`
 
+## Local kubeconfig behavior
+
+- `make kubeconfig` writes the usable kubeconfig to `.kube/generated/current.yaml`
+- the `Makefile` exports `KUBECONFIG` to that path by default
+- `flux` and `kubectl` targets that talk to the cluster expect that file to exist
+- stale files under `ansible/playbooks/.kube/` are old artifacts and can be deleted
+
+## Generated Flux artifacts
+
+- `flux/generated/<topology>/kustomization.yaml` is the generated topology input root
+- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml` is the generated cluster root used by bootstrap scripts
+- `flux/generated/<topology>/topology-values.yaml` is informational metadata for operators and is not applied to Kubernetes
+
+Validate generated manifests with:
+
+```bash
+kubectl kustomize flux/generated/local
+kubectl kustomize flux/generated/clusters/local-dev-none-external
+```
+
 ## External secrets mode
 
 Use `SECRETS_MODE=external` for the first bootstrap stage.
@@ -69,6 +89,8 @@ make render-sops-secrets ENV=dev
 make encrypt-secrets ENV=dev
 make sops-bootstrap-cluster
 ```
+
+`make sops-bootstrap-cluster` requires kubeconfig to be exported first, so run `make kubeconfig TOPOLOGY=<topology>` before it if needed.
 
 ## Start, stop, and teardown
 

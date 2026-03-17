@@ -5,4 +5,4 @@ resources:
   - ../../components/platform-runtime-ollama
   - ../../secrets/dev
   - ../../overlays/dev
-  - ../../generated/minipc/lmstudio-endpoint.yaml
+  - ../../generated/minipc

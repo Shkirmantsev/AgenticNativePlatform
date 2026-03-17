@@ -24,6 +24,15 @@ make reconcile
 make verify
 ```
 
+`make install-flux-local`, `make reconcile`, `make verify`, and `make sops-bootstrap-cluster` use `KUBECONFIG=.kube/generated/current.yaml` through the `Makefile`.
+
+## Validate generated manifests locally
+
+```bash
+kubectl kustomize flux/generated/local
+kubectl kustomize flux/generated/clusters/local-dev-none-external
+```
+
 ## Register Git source for Flux
 
 ```bash
@@ -96,6 +105,15 @@ make cluster-up-hybrid-remote TOPOLOGY=hybrid-remote
 ```bash
 make cluster-stop
 make cluster-start
+```
+
+## Bootstrap SOPS decryption in-cluster
+
+```bash
+make sops-age-key
+make render-sops-secrets ENV=dev
+make encrypt-secrets ENV=dev
+make sops-bootstrap-cluster
 ```
 
 ## Teardown

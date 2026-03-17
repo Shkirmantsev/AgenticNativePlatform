@@ -4,6 +4,7 @@
   become: true
   vars:
     k3s_version: "{{ lookup('env', 'K3S_VERSION') | default('v1.34.5+k3s1', true) }}"
+    repo_kubeconfig_raw_dir: "{{ playbook_dir }}/../../.kube/generated/raw"
   tasks:
     - name: Create k3s config directory
       file:
@@ -40,5 +41,5 @@
     - name: Fetch kubeconfig
       fetch:
         src: /etc/rancher/k3s/k3s.yaml
-        dest: .kube/generated/
+        dest: "{{ repo_kubeconfig_raw_dir }}/"
         flat: false

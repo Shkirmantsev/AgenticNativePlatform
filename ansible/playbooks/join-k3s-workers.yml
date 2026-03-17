@@ -18,7 +18,7 @@
   vars:
     k3s_server_ip: "{{ hostvars[groups['k3s_server'][0]].ansible_host }}"
     cluster_join_token: "{{ hostvars[groups['k3s_server'][0]].cluster_join_token }}"
-    k3s_version: "{{ lookup('env', 'K3S_VERSION') | default('v1.31.6+k3s1', true) }}"
+    k3s_version: "{{ lookup('env', 'K3S_VERSION') | default('v1.34.5+k3s1', true) }}"
   tasks:
     - name: Create k3s agent config directory
       file:

@@ -5,4 +5,4 @@ resources:
   - ../../components/platform-runtime-vllm
   - ../../secrets/dev
   - ../../overlays/dev
-  - ../../generated/hybrid-remote/lmstudio-endpoint.yaml
+  - ../../generated/hybrid-remote

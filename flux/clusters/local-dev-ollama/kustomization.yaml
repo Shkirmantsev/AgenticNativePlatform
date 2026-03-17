@@ -5,4 +5,4 @@ resources:
   - ../../components/platform-runtime-ollama
   - ../../secrets/dev
   - ../../overlays/dev
-  - ../../generated/local/lmstudio-endpoint.yaml
+  - ../../generated/local

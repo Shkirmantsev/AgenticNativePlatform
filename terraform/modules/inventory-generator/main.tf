@@ -81,3 +81,15 @@ resource "local_file" "lmstudio_values_configmap" {
   filename = "${path.root}/../../../flux/generated/${var.topology}/lmstudio-values-configmap.yaml"
   content  = local.lmstudio_values_configmap
 }
+
+resource "local_file" "generated_kustomization" {
+  filename = "${path.root}/../../../flux/generated/${var.topology}/kustomization.yaml"
+  content  = <<-EOT
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - metallb-values.yaml
+  - lmstudio-endpoint.yaml
+  - lmstudio-values-configmap.yaml
+EOT
+}

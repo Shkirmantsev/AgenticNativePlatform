@@ -17,6 +17,8 @@ TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
 TF_DIR ?= terraform/environments/$(TOPOLOGY)
 ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/inventory.ini.example)
 KUBECONFIG_DIR ?= .kube/generated
+KUBECONFIG ?= $(abspath $(KUBECONFIG_DIR)/current.yaml)
+export KUBECONFIG
 
 STOP_NAMESPACES ?= metallb-system istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
 
@@ -27,7 +29,7 @@ STOP_NAMESPACES ?= metallb-system istio-system kgateway-system agentgateway-syst
 	flux-values render-cluster-root install-flux-local bootstrap-flux-git reconcile verify \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
-	cluster-stop cluster-start preimport-vllm-image-tarball preimport-vllm-image-online \
+	cluster-stop cluster-start preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
 	port-forward-agentgateway port-forward-kagent test-a2a-agent test-agentgateway-gemini test-agentgateway-openai test-litellm test-lmstudio test-ollama test-vllm
 
 help: ## Show available targets
@@ -63,6 +65,9 @@ label-llm-nodes: ## Label worker nodes as runtime-capable for self-hosted LLM wo
 kubeconfig: ## Export kubeconfig from the control-plane host to .kube/generated
 	mkdir -p $(KUBECONFIG_DIR)
 	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/export-kubeconfig.yml
+
+require-kubeconfig:
+	@test -f "$(KUBECONFIG)" || (echo "Missing kubeconfig: $(KUBECONFIG). Run 'make kubeconfig TOPOLOGY=$(TOPOLOGY)' first." >&2; exit 1)
 
 uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventory
 	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/uninstall-k3s.yml
@@ -105,17 +110,17 @@ flux-values: ## Render non-secret Flux ConfigMaps for the selected topology
 render-cluster-root: ## Render the Flux root kustomization for the selected topology/env/runtime/secrets mode
 	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/render-cluster-kustomization.sh
 
-install-flux-local: ## Install Flux controllers into the current cluster
+install-flux-local: require-kubeconfig ## Install Flux controllers into the current cluster
 	flux install
 
-bootstrap-flux-git: flux-values render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
+bootstrap-flux-git: require-kubeconfig flux-values render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
 	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/bootstrap-flux-git.sh
 
-reconcile: ## Reconcile Flux source and kustomization named 'platform' if present
+reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
 	@flux reconcile source git platform -n flux-system || true
 	@flux reconcile kustomization platform -n flux-system --with-source || true
 
-verify: ## Basic local verification of cluster and Flux state
+verify: require-kubeconfig ## Basic local verification of cluster and Flux state
 	kubectl get nodes -o wide || true
 	kubectl get ns || true
 	kubectl get gitrepositories -A || true
@@ -125,10 +130,10 @@ verify: ## Basic local verification of cluster and Flux state
 render-plaintext-secrets: ## Render local plaintext Kubernetes Secrets from .env into .generated/secrets/<env>
 	ENV=$(ENV) ./scripts/render-plaintext-secrets.sh
 
-apply-plaintext-secrets: render-plaintext-secrets ## Apply local plaintext secrets directly to the cluster (not committed to Git)
+apply-plaintext-secrets: require-kubeconfig render-plaintext-secrets ## Apply local plaintext secrets directly to the cluster (not committed to Git)
 	kubectl apply -k .generated/secrets/$(ENV)
 
-delete-plaintext-secrets: ## Delete local plaintext secret resources from the cluster
+delete-plaintext-secrets: require-kubeconfig ## Delete local plaintext secret resources from the cluster
 	-kubectl delete -k .generated/secrets/$(ENV)
 
 sops-age-key: ## Generate a local age key and update .sops.yaml using the generated public recipient
@@ -143,10 +148,10 @@ encrypt-secrets: render-sops-secrets ## Encrypt plaintext inputs into flux/secre
 decrypt-secrets: ## Decrypt committed SOPS secrets into .generated/decrypted/<env> for troubleshooting only
 	ENV=$(ENV) ./scripts/decrypt-secrets.sh
 
-sops-bootstrap-cluster: ## Upload the local age private key into flux-system for SOPS decryption
+sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key into flux-system for SOPS decryption
 	./scripts/bootstrap-sops-secret.sh
 
-cluster-stop: ## Pause platform workloads without uninstalling the cluster
+cluster-stop: require-kubeconfig ## Pause platform workloads without uninstalling the cluster
 	@flux suspend source git platform -n flux-system || true
 	@flux suspend kustomization platform -n flux-system || true
 	@for ns in $(STOP_NAMESPACES); do \
@@ -155,7 +160,7 @@ cluster-stop: ## Pause platform workloads without uninstalling the cluster
 	  kubectl -n $$ns get statefulset -o name 2>/dev/null | xargs -r -n1 kubectl -n $$ns scale --replicas=0; \
 	done
 
-cluster-start: ## Resume platform workloads from Git desired state
+cluster-start: require-kubeconfig ## Resume platform workloads from Git desired state
 	@flux resume source git platform -n flux-system || true
 	@flux resume kustomization platform -n flux-system || true
 	@flux reconcile kustomization platform -n flux-system --with-source || true
@@ -168,10 +173,10 @@ preimport-vllm-image-online: ## Pre-pull the vLLM image on all nodes using ctr i
 	@test -n "$(VLLM_IMAGE)" || (echo "Set VLLM_IMAGE=repo:tag" >&2; exit 1)
 	ansible -i $(ANSIBLE_INVENTORY) all -b -m shell -a "k3s ctr images pull $(VLLM_IMAGE)"
 
-port-forward-agentgateway: ## Port-forward the Kubernetes agentgateway service to localhost:15000
+port-forward-agentgateway: require-kubeconfig ## Port-forward the Kubernetes agentgateway service to localhost:15000
 	kubectl -n agentgateway-system port-forward svc/agentgateway 15000:15000
 
-port-forward-kagent: ## Port-forward kagent controller to localhost:8083
+port-forward-kagent: require-kubeconfig ## Port-forward kagent controller to localhost:8083
 	kubectl -n kagent port-forward svc/kagent-controller 8083:8083
 
 test-a2a-agent: ## Fetch the sample agent card from kagent
@@ -183,20 +188,20 @@ test-agentgateway-gemini: ## Test the canonical OpenAI-compatible route through 
 test-agentgateway-openai: ## Test the agentgateway OpenAI-compatible route without requiring provider-specific CLI tools
 	curl -fsSL http://localhost:15000/v1/models | jq .
 
-test-litellm: ## List available models directly from the LiteLLM service
+test-litellm: require-kubeconfig ## List available models directly from the LiteLLM service
 	kubectl -n ai-gateway port-forward svc/litellm 4000:4000 >/tmp/litellm-pf.log 2>&1 & echo $$! > /tmp/litellm-pf.pid; \
 	sleep 3; \
 	curl -fsSL http://localhost:4000/v1/models | jq .; \
 	kill $$(cat /tmp/litellm-pf.pid)
 
-test-lmstudio: ## Check connectivity from the cluster to the external LM Studio endpoint
+test-lmstudio: require-kubeconfig ## Check connectivity from the cluster to the external LM Studio endpoint
 	kubectl -n ai-gateway run lmstudio-curl --rm -i --restart=Never --image=curlimages/curl:8.10.1 -- \
 	  curl -fsSL http://lmstudio-external.ai-gateway.svc.cluster.local:1234/v1/models
 
-test-ollama: ## Check the in-cluster Ollama endpoint
+test-ollama: require-kubeconfig ## Check the in-cluster Ollama endpoint
 	kubectl -n ai-models run ollama-curl --rm -i --restart=Never --image=curlimages/curl:8.10.1 -- \
 	  curl -fsSL http://ollama.ai-models.svc.cluster.local:11434/api/tags
 
-test-vllm: ## Check the in-cluster vLLM endpoint
+test-vllm: require-kubeconfig ## Check the in-cluster vLLM endpoint
 	kubectl -n ai-models run vllm-curl --rm -i --restart=Never --image=curlimages/curl:8.10.1 -- \
 	  curl -fsSL http://vllm-openai.ai-models.svc.cluster.local:8000/v1/models
