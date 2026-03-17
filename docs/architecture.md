@@ -1,41 +1,45 @@
 # Architecture
 
-## Canonical LLM path
+## Topologies
 
-`kagent -> agentgateway -> LiteLLM -> provider/runtime`
-
-- `agentgateway` is installed **only in Kubernetes mode** by Helm.
-- `LiteLLM` is the provider abstraction layer and the default place where remote providers and optional backends are normalized.
-- `LM Studio` is optional and remains external to the cluster; Kubernetes adds only Service+Endpoints glue.
-- `Ollama` and `vLLM` are optional in-cluster runtimes.
-- `TEI` is the in-cluster embedding runtime by default.
-- `Qdrant + Redis + PostgreSQL` form the context layer.
-
-## Packaging model
-
-The default installation uses modular Flux components and local Helm charts:
-
-- `charts/litellm-proxy`
-- `charts/lmstudio-external`
-- `charts/ollama-runtime`
-- `charts/vllm-cpu`
-- `charts/tei-embeddings`
-- `charts/kagent-agents`
-
-For demos and alternative packaging there is also:
-
-- `charts/ai-runtimes`
-
-## Namespaces
-
-Platform components are separated into namespaces such as `kgateway-system`, `agentgateway-system`, `ai-gateway`, `ai-models`, `context`, `kagent`, and `kserve`. Cross-namespace communication uses namespace-qualified service DNS names.
-
-
-## Topology modes
-
+The repository supports four topology modes:
 - `local`
 - `minipc`
 - `hybrid`
 - `hybrid-remote`
 
-The topology-specific inventory and generated values are rendered from Terraform/OpenTofu artifacts and consumed by Ansible and Flux.
+These modes determine how Terraform/OpenTofu renders:
+- the Ansible inventory
+- the LM Studio endpoint values
+- the MetalLB address pool manifest
+- topology metadata under `flux/generated/<topology>/`
+
+## Layered design
+
+- **Bootstrap and infra artifacts**: OpenTofu/Terraform + Ansible
+- **Cluster**: k3s
+- **GitOps**: Flux
+- **Ingress and mesh**: kgateway + agentgateway + Istio Ambient
+- **Provider and backend abstraction**: LiteLLM
+- **Declarative agent runtime**: kagent + kmcp
+- **Model serving and runtimes**: KServe + TEI + Ollama + vLLM
+- **Context**: Qdrant + PostgreSQL + Redis
+
+## Canonical request flow
+
+```text
+kagent -> agentgateway -> LiteLLM -> providers/backends
+```
+
+This keeps agentgateway as the Kubernetes-native AI-aware gateway while LiteLLM remains the OpenAI-compatible normalization layer for both remote providers and optional local runtimes.
+
+## Runtime semantics
+
+- `LM Studio` stays **outside** Kubernetes and is exposed to the cluster through `Service + Endpoints`
+- `Ollama` is an **in-cluster** optional runtime
+- `vLLM` is an **in-cluster** optional runtime
+- `TEI` is the default in-cluster embedding runtime
+
+## Why KServe remains installed
+
+KServe is part of the platform architecture because it is the Kubernetes-native model serving control plane and future evolution path, even if the first practical self-hosted chat runtime may be Ollama.

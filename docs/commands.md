@@ -3,7 +3,7 @@
 ## Tool installation
 
 ```bash
-make tools-install-local                               # installs age, sops, kubectl, helm, flux, optional k9s and your chosen IaC CLI
+make tools-install-local                               # installs age, sops, kubectl, helm, flux, optional k9s, and your chosen IaC CLI
 make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
 make tools-install-local IAC_TOOL=terraform INSTALL_K9S=false
 ```
@@ -13,11 +13,7 @@ make tools-install-local IAC_TOOL=terraform INSTALL_K9S=false
 ```bash
 cp .env.example .env
 make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
-make terraform-init TOPOLOGY=local TF_BIN=tofu
-make terraform-apply TOPOLOGY=local TF_BIN=tofu
-make bootstrap-hosts TOPOLOGY=local
-make install-k3s-server TOPOLOGY=local
-make kubeconfig TOPOLOGY=local
+make cluster-up-local
 make install-flux-local
 make apply-plaintext-secrets ENV=dev
 make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
@@ -51,6 +47,14 @@ make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none   SECRETS_MODE=exter
 make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=ollama SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=vllm   SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
+```
+
+## Terraform / OpenTofu local variables
+
+```bash
+make render-terraform-tfvars TOPOLOGY=local
+make terraform-init TOPOLOGY=local TF_BIN=tofu
+make terraform-apply TOPOLOGY=local TF_BIN=tofu
 ```
 
 ## Secrets without encryption

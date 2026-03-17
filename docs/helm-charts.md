@@ -1,9 +1,8 @@
-# Helm charts in this repository
+# Helm charts
 
-These local charts are reconciled by Flux from the **same Git repository** that also contains the Flux manifests.
+## Production path charts
 
-## Production-style modular charts
-
+These charts are part of the intended production-style path and are installed through Flux `HelmRelease` resources:
 - `charts/litellm-proxy`
 - `charts/lmstudio-external`
 - `charts/ollama-runtime`
@@ -11,26 +10,14 @@ These local charts are reconciled by Flux from the **same Git repository** that 
 - `charts/tei-embeddings`
 - `charts/kagent-agents`
 
-## Demo / alternative packaging chart
+## Demo / packaging chart
 
-- `charts/ai-runtimes`
+`charts/ai-runtimes` is kept as a compact demo/manual packaging chart. It is useful for learning and templating, but it is not the default production path in this repository.
 
-This chart is intentionally kept for demos, experiments, and alternative manual Helm workflows. It is not the default production-style path.
+## Chart quality notes
 
-## How values are injected
-
-Flux `HelmRelease` objects under `flux/components/*/release.yaml` load values from generated `ConfigMap` objects in `flux/generated/<topology>/`.
-
-Examples:
-
-- `flux/generated/<topology>/litellm-values-configmap.yaml`
-- `flux/generated/<topology>/lmstudio-values-configmap.yaml`
-- `flux/generated/<topology>/ollama-values-configmap.yaml`
-- `flux/generated/<topology>/vllm-values-configmap.yaml`
-- `flux/generated/<topology>/tei-values-configmap.yaml`
-
-## Secret handling modes
-
-- `SECRETS_MODE=external`: create Kubernetes Secrets directly from `.env` with `make apply-plaintext-secrets`; Flux does not manage secrets yet.
-- `SECRETS_MODE=sops`: encrypt manifests in `flux/secrets/<env>/` and let Flux decrypt them.
-- `SECRETS_MODE=plaintext`: commit plain generated secrets under `flux/generated/secrets/<env>/` for disposable lab use only.
+The local charts include:
+- explicit image tags
+- ServiceAccounts for pod-based charts
+- `automountServiceAccountToken: false` where Kubernetes API access is not needed
+- default `resources.requests` and `resources.limits`, including `ephemeral-storage`

@@ -1,17 +1,18 @@
-# ADR-0008 Packaging model and demo assets
+# ADR-0008: Keep demo assets but separate them from the default production path
 
 ## Status
 Accepted
 
-## Decision
-Keep the default installation modular and Flux-driven, but preserve demo/alternative packaging assets in the repository.
+## Context
+The repository is both a learning project and a production-style starter platform. Some compact charts and demo assets are useful for learning, but they should not blur the default production path.
 
-## Details
-- The production-style default uses modular Flux components and local Helm charts per capability.
-- `charts/kagent-agents` packages sample kagent resources and is used by Flux.
-- `charts/ai-runtimes` is kept as an alternative umbrella chart for demos, experiments, and manual Helm workflows.
-- `mcp/echo-server` remains in the repository as a reference MCP implementation for local experiments and future kmcp packaging.
+## Decision
+- Keep `charts/ai-runtimes` as a compact demo/manual packaging chart.
+- Keep `mcp/` demo assets and sample MCP server content.
+- Keep production-style modular charts under `charts/` and install them through Flux `HelmRelease` resources.
+- Document clearly which path is default production and which path is for learning/demo use.
 
 ## Consequences
-- The repository remains usable both as a production-style starter and as a teaching/demo artifact.
-- Demo assets are explicit and documented instead of being accidentally removed during refactors.
+- The repository stays useful for learning.
+- The production path remains explicit and consistent.
+- Demo assets do not need to be removed just because Kubernetes-native equivalents exist.

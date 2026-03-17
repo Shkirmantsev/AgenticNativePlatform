@@ -1,55 +1,97 @@
-# Operations Guide
+# Operations
 
-## Recommended first start
+## What Ansible does
 
-Use the local topology, remote Gemini, no in-cluster chat runtime, and external (non-Git) secrets first.
+Ansible is used for:
+- installing local operator tools on the workstation
+- preparing hosts for k3s
+- installing the k3s server
+- joining worker nodes
+- labeling runtime-capable worker nodes
+- exporting kubeconfig
+- uninstalling k3s
+
+## What scripts do
+
+Scripts are kept for local repository operations that are not natural Ansible tasks:
+- rendering `terraform.auto.tfvars` from `.env`
+- rendering Flux ConfigMaps and cluster roots
+- rendering external plaintext secrets
+- converting plaintext secrets into encrypted SOPS files
+- bootstrapping Flux Git sources and the Flux SOPS secret
+
+## What is committed to Git
+
+Commit:
+- `charts/`
+- `flux/components/`
+- `flux/overlays/`
+- `flux/generated/<topology>/`
+- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`
+- encrypted `flux/secrets/<env>/*.sops.yaml` only when using SOPS mode
+
+Do not commit:
+- `.env`
+- `terraform/environments/*/terraform.auto.tfvars`
+- `.generated/`
+- `.kube/generated/`
+- `ansible/generated/`
+- `.sops/`
+
+## External secrets mode
+
+Use `SECRETS_MODE=external` for the first bootstrap stage.
+
+Secrets are rendered from `.env` into `.generated/secrets/<env>/` and applied directly to the cluster with:
 
 ```bash
-cp .env.example .env
-make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
-make cluster-up-local
-make install-flux-local
 make apply-plaintext-secrets ENV=dev
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-make reconcile
-make verify
 ```
 
-## Supported topologies
+This keeps secrets out of Git while the platform is still being brought up.
 
-- `local`
-- `minipc`
-- `hybrid`
-- `hybrid-remote`
+## SOPS mode
 
-Use the corresponding shortcuts:
+Use `SECRETS_MODE=sops` once the basic platform works.
+
+Flow:
+1. create a local age key
+2. render plaintext secret inputs under `.generated/secrets/<env>/`
+3. encrypt them into committed `flux/secrets/<env>/`
+4. create the Flux decryption secret in `flux-system`
+5. switch the cluster root to `SECRETS_MODE=sops`
+
+Commands:
 
 ```bash
-make cluster-up-local
-make cluster-up-minipc
-make cluster-up-hybrid
-make cluster-up-hybrid-remote
+make sops-age-key
+make render-sops-secrets ENV=dev
+make encrypt-secrets ENV=dev
+make sops-bootstrap-cluster
 ```
 
-## Runtime switch model
+## Start, stop, and teardown
 
-- `RUNTIME=none` keeps self-hosted chat runtimes disabled.
-- `RUNTIME=ollama` enables the in-cluster Ollama HelmRelease.
-- `RUNTIME=vllm` enables the in-cluster vLLM CPU HelmRelease.
-- `LMSTUDIO_ENABLED=true` enables Kubernetes Service+Endpoints glue for an external LM Studio endpoint.
+Pause the platform without removing the cluster:
 
-The canonical request path remains:
+```bash
+make cluster-stop
+```
 
-`kagent -> agentgateway -> LiteLLM -> provider/backend`
+Resume the platform and let Flux restore desired state:
 
-## Pause and resume
+```bash
+make cluster-start
+```
 
-`make cluster-stop` suspends GitOps reconciliation and scales selected workloads to zero without uninstalling k3s.
+Remove k3s from the current topology:
 
-`make cluster-start` resumes GitOps reconciliation and lets Flux restore the desired state from Git.
+```bash
+make uninstall-k3s TOPOLOGY=local
+```
 
-## Encryption modes
+Destroy local Terraform/OpenTofu artifacts:
 
-- `SECRETS_MODE=external`: easiest first stage. Secrets are created directly from `.env` into the cluster.
-- `SECRETS_MODE=sops`: recommended GitOps mode. Encrypted secrets are stored in Git and decrypted by Flux.
-- `SECRETS_MODE=plaintext`: disposable lab mode only.
+```bash
+make terraform-destroy TOPOLOGY=local TF_BIN=tofu
+```

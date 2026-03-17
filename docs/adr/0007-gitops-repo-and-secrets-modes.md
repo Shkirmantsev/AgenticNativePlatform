@@ -1,20 +1,21 @@
-# ADR-0007 Single GitOps repo and staged secret handling
+# ADR-0007: One GitOps repository with external and SOPS secrets modes
 
 ## Status
 Accepted
 
 ## Context
-The platform needs a clean first-start path without forcing secret encryption immediately, while preserving a final production path with GitOps-managed encrypted secrets.
+The platform must be easy to start in a home-lab environment, but it must also support proper encrypted GitOps later.
 
 ## Decision
-Use one Git repository for charts, Flux manifests, Terraform, Ansible, docs, and generated Flux values.
-
-Use three secret handling modes:
-- `external`: secrets created directly in the cluster from `.env` and not stored in Git
-- `sops`: encrypted secrets committed to `flux/secrets/<env>/`
-- `plaintext`: disposable lab mode only
+- Use one repository for charts, Flux manifests, Terraform/OpenTofu, Ansible, docs, and helper scripts.
+- Flux reads the remote URL of this same repository after the operator pushes it.
+- Support two practical secret modes:
+  - `external`: secrets rendered from `.env` into `.generated/secrets/<env>/` and applied directly to the cluster
+  - `sops`: plaintext rendered locally, then encrypted into committed `flux/secrets/<env>/*.sops.yaml`
+- Do not commit plaintext secrets.
+- Do not commit local `terraform.auto.tfvars` files.
 
 ## Consequences
-- First startup is easier: no encryption is required.
-- Final GitOps remains clean: SOPS + age + Flux decryption in the same repository.
-- Flux always points to the remote URL of this same repository and reads the generated cluster root path from that remote.
+- The first bootstrap stays simple.
+- Production-like encrypted GitOps remains available without redesigning the repo.
+- Operators have one source of truth for manifests, charts, and docs.
