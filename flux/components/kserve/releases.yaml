@@ -1,0 +1,36 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kserve-crd
+  namespace: flux-system
+spec:
+  interval: 30m
+  targetNamespace: kserve
+  chartRef:
+    kind: OCIRepository
+    name: kserve-crd-chart
+    namespace: flux-system
+  install:
+    createNamespace: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kserve
+  namespace: flux-system
+spec:
+  interval: 30m
+  dependsOn:
+    - name: kserve-crd
+  targetNamespace: kserve
+  chartRef:
+    kind: OCIRepository
+    name: kserve-chart
+    namespace: flux-system
+  values:
+    kserve:
+      controller:
+        deploymentMode: Standard
+      gateway:
+        ingressGateway:
+          createGateway: false

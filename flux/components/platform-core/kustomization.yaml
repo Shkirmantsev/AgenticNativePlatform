@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+  - ../sources/helmrepositories.yaml
+  - ../metallb
+  - ../istio
+  - ../kgateway
+  - ../agentgateway
+  - ../litellm
+  - ../kserve
+  - ../tei
+  - ../qdrant
+  - ../postgres
+  - ../redis
+  - ../observability
+  - ../kagent
+  - ../kagent-agents
+  - ../kmcp
+  - ../policies
