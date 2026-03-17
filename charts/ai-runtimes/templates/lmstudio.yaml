@@ -1,0 +1,23 @@
+{{- if .Values.lmstudio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.lmstudio.serviceName }}
+  namespace: {{ .Values.lmstudio.serviceNamespace }}
+spec:
+  ports:
+    - name: http
+      port: {{ .Values.lmstudio.port }}
+      targetPort: {{ .Values.lmstudio.port }}
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ .Values.lmstudio.serviceName }}
+  namespace: {{ .Values.lmstudio.serviceNamespace }}
+subsets:
+  - addresses:
+      - ip: {{ .Values.lmstudio.hostIP }}
+    ports:
+      - port: {{ .Values.lmstudio.port }}
+{{- end }}

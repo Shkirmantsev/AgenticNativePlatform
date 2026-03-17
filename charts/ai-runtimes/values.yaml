@@ -1,0 +1,23 @@
+namespace: ai-models
+runtime:
+  type: none  # none | ollama | vllm
+lmstudio:
+  enabled: false
+  serviceNamespace: ai-gateway
+  serviceName: lmstudio-external
+  hostIP: 192.168.1.108
+  port: 1234
+tei:
+  enabled: true
+  modelId: Qwen/Qwen3-Embedding-0.6B
+ollama:
+  image: ollama/ollama:v0.18.0
+  defaultModel: qwen2.5:7b-instruct
+  storage: 30Gi
+vllm:
+  image: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
+  model: Qwen/Qwen2.5-0.5B-Instruct
+  storage: 30Gi
+  cpuKvCacheSpace: "2"
+  cpuReservedCpu: "1"
+  ldPreload: ""

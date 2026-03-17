@@ -1,0 +1,14 @@
+namespace: ai-models
+image:
+  repository: ollama/ollama
+  tag: 0.18.0
+  pullPolicy: IfNotPresent
+service:
+  port: 11434
+modelPull:
+  enabled: true
+  model: qwen2.5:7b-instruct
+resources: {}
+persistence:
+  enabled: true
+  size: 20Gi

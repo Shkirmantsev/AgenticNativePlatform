@@ -1,0 +1,89 @@
+{{- if .Values.hfToken }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vllm-hf-token
+  namespace: {{ .Values.namespace }}
+type: Opaque
+stringData:
+  HF_TOKEN: {{ .Values.hfToken | quote }}
+---
+{{- end }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-model-cache
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-openai
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: vllm-openai}
+  template:
+    metadata:
+      labels: {app: vllm-openai}
+    spec:
+      containers:
+        - name: vllm-openai
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --model
+            - {{ .Values.model | quote }}
+          env:
+            - name: VLLM_CPU_KVCACHE_SPACE
+              value: {{ .Values.env.VLLM_CPU_KVCACHE_SPACE | quote }}
+            - name: VLLM_CPU_NUM_OF_RESERVED_CPU
+              value: {{ .Values.env.VLLM_CPU_NUM_OF_RESERVED_CPU | quote }}
+{{- if .Values.env.VLLM_LD_PRELOAD }}
+            - name: LD_PRELOAD
+              value: {{ .Values.env.VLLM_LD_PRELOAD | quote }}
+{{- end }}
+{{- if .Values.hfToken }}
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-hf-token
+                  key: HF_TOKEN
+{{- end }}
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: model-cache
+              mountPath: /root/.cache/huggingface
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: vllm-model-cache
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-openai
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: {app: vllm-openai}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: 8000

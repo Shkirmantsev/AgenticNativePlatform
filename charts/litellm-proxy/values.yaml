@@ -1,0 +1,21 @@
+namespace: ai-gateway
+image:
+  repository: ghcr.io/berriai/litellm
+  tag: main-stable
+  pullPolicy: IfNotPresent
+service:
+  port: 4000
+resources: {}
+existingSecretName: litellm-provider-secrets
+config: |
+  general_settings:
+    master_key: os.environ/LITELLM_MASTER_KEY
+    store_model_in_db: false
+    infer_model_from_keys: true
+  litellm_settings:
+    set_verbose: false
+  model_list:
+    - model_name: default-gemini
+      litellm_params:
+        model: gemini/gemini-3.1-flash-lite-preview
+        api_key: os.environ/GOOGLE_API_KEY

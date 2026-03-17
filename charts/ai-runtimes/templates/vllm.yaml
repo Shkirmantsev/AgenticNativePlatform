@@ -1,0 +1,71 @@
+{{- if eq .Values.runtime.type "vllm" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-models
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: {{ .Values.vllm.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-openai
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vllm-openai }
+  template:
+    metadata:
+      labels: { app: vllm-openai }
+    spec:
+      nodeSelector:
+        llm-runtime: "true"
+      containers:
+        - name: vllm-openai
+          image: {{ .Values.vllm.image }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              vllm serve {{ .Values.vllm.model }}
+              --host 0.0.0.0
+              --port 8000
+              --max-model-len 2048
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: VLLM_USE_V1
+              value: "1"
+            - name: VLLM_CPU_KVCACHE_SPACE
+              value: {{ .Values.vllm.cpuKvCacheSpace | quote }}
+            - name: VLLM_CPU_NUM_OF_RESERVED_CPU
+              value: {{ .Values.vllm.cpuReservedCpu | quote }}
+            {{- if .Values.vllm.ldPreload }}
+            - name: LD_PRELOAD
+              value: {{ .Values.vllm.ldPreload | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
+      volumes:
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: vllm-models
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-openai
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: vllm-openai }
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+{{- end }}
