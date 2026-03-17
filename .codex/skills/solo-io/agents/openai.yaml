@@ -1,0 +1,7 @@
+interface:
+  display_name: "Solo.io"
+  short_description: "Work with Gloo Gateway and Gloo Mesh"
+  default_prompt: "Use $solo-io to configure, operate, or troubleshoot Solo.io platform components on Kubernetes."
+
+policy:
+  allow_implicit_invocation: true

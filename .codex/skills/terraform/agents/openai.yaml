@@ -1,0 +1,7 @@
+interface:
+  display_name: "Terraform"
+  short_description: "Plan and troubleshoot Terraform infrastructure"
+  default_prompt: "Use $terraform to plan, inspect, and troubleshoot Terraform infrastructure as code."
+
+policy:
+  allow_implicit_invocation: true

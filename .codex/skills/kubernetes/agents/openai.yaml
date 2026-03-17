@@ -1,0 +1,7 @@
+interface:
+  display_name: "Kubernetes"
+  short_description: "Operate and troubleshoot Kubernetes clusters"
+  default_prompt: "Use $kubernetes to manage, inspect, or troubleshoot Kubernetes resources and clusters."
+
+policy:
+  allow_implicit_invocation: true
