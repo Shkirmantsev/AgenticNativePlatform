@@ -32,6 +32,7 @@ By default, the repository starts in a simple remote-only mode:
 - `RUNTIME=none`
 - `LMSTUDIO_ENABLED=false`
 - `SECRETS_MODE=external`
+- `IAC_TOOL=tofu`
 
 That means the first start uses only a remote Gemini model and keeps local runtimes disabled.
 
@@ -46,9 +47,13 @@ repo/
   terraform/
   ansible/
   docs/
+  scripts/
+  mcp/
 ```
 
-Flux does **not** read your local working directory. It pulls from the **remote Git URL** configured in a `GitRepository` object and then applies a path inside that same remote repository. citeturn525536view3turn525536view4
+Flux does **not** read your local working directory. It pulls from the **remote Git URL** configured in a `GitRepository` object and then applies a path inside that same remote repository.
+
+The monorepo layout used here is a normal Flux repository pattern.
 
 ### Commit these paths to the remote Git repository
 
@@ -84,11 +89,11 @@ The playbook installs:
 - `helm`
 - `flux`
 - optional `k9s`
-- optional `OpenTofu` and/or `Terraform`
+- optional `OpenTofu` or `Terraform`
 
 ### k9s behavior on non-Ubuntu systems
 
-`k9s` is installed through the official GitHub release tarball on Linux instead of a hard Ubuntu-only `.deb` path, and it is skipped with an explicit message on unsupported systems instead of failing the whole playbook. The K9s project publishes binaries for Linux, macOS, and Windows, and documents release binaries as the portable installation path. citeturn507611view0
+`k9s` is installed through the official GitHub release tarball on Linux instead of a hard Ubuntu-only `.deb` path, and it is skipped with an explicit message on unsupported systems instead of failing the whole playbook. The K9s project publishes portable release binaries.
 
 ### OpenTofu and Terraform
 
@@ -98,17 +103,18 @@ The default in the Makefile is:
 
 ```make
 IAC_TOOL ?= tofu
+INSTALL_K9S ?= true
 TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
 ```
 
-So by default the repository uses **OpenTofu** as the infrastructure CLI, which is a good fit for a fully open-source workflow. OpenTofu documents package-manager installation for Debian/Ubuntu and also supports standalone installation. Terraform also documents official package installation for Linux distributions including Ubuntu and Debian. citeturn837638view0turn525536view2
+So by default the repository uses **OpenTofu** as the infrastructure CLI, which is a good fit for a fully open-source workflow. OpenTofu documents installation methods for Linux, and Terraform documents official package installation for Debian/Ubuntu.
 
 You can switch modes at runtime:
 
 ```bash
-make tools-install-local IAC_TOOL=tofu
-make tools-install-local IAC_TOOL=terraform
-make tools-install-local IAC_TOOL=both
+make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
+make tools-install-local IAC_TOOL=terraform INSTALL_K9S=false
+make tools-install-local IAC_TOOL=both INSTALL_K9S=true
 
 make terraform-init TOPOLOGY=local TF_BIN=tofu
 make terraform-apply TOPOLOGY=local TF_BIN=tofu
@@ -134,6 +140,8 @@ ENV=dev
 RUNTIME=none
 SECRETS_MODE=external
 LMSTUDIO_ENABLED=false
+IAC_TOOL=tofu
+INSTALL_K9S=true
 
 LOCAL_HOST_IP=192.168.1.108
 LMSTUDIO_HOST_IP=192.168.1.108
@@ -160,15 +168,43 @@ make terraform-init TOPOLOGY=local TF_BIN=tofu
 make terraform-apply TOPOLOGY=local TF_BIN=tofu
 ```
 
-### 5. Install Flux controllers into the cluster
+### 5. Bootstrap the local k3s topology
+
+```bash
+make bootstrap-hosts TOPOLOGY=local
+make install-k3s-server TOPOLOGY=local
+make kubeconfig TOPOLOGY=local
+```
+
+Or use the shortcut:
+
+```bash
+make cluster-up-local
+```
+
+### 6. Install Flux controllers into the cluster
 
 ```bash
 make install-flux-local
 ```
 
-### 6. Commit and push the repository to your remote Git URL
+### 7. Create first-stage external secrets directly in the cluster
 
-Flux will only reconcile from the pushed remote repository. citeturn525536view3
+```bash
+make apply-plaintext-secrets ENV=dev
+```
+
+### 8. Commit and push the repository to your remote Git URL
+
+Flux will only reconcile from the pushed remote repository.
+
+### 9. Register the Git source and root Kustomization
+
+```bash
+make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make reconcile
+make verify
+```
 
 ## Runtime modes
 
@@ -216,7 +252,7 @@ The intended lifecycle is:
 3. push
 4. let Flux reconcile
 
-Do not use manual `helm install` or `helm upgrade` as the main operating model. Flux `GitRepository` and `HelmRelease` are the intended declarative control plane. citeturn525536view3
+Do not use manual `helm install` or `helm upgrade` as the main operating model. Flux `GitRepository`, `Kustomization`, and `HelmRelease` are the intended declarative control plane.
 
 ## Stop and start the platform without uninstalling the cluster
 
@@ -232,8 +268,6 @@ make cluster-start
 What they do:
 - `cluster-stop` suspends Flux reconciliation for the main Git source and Kustomization and scales platform Deployments and StatefulSets to zero in the configured namespaces.
 - `cluster-start` resumes Flux and lets Git desired state restore the platform.
-
-Flux supports suspending and resuming `GitRepository` reconciliation directly. citeturn525536view3
 
 ## Git encryption with SOPS
 
@@ -261,7 +295,18 @@ Keep encrypted manifests in the same repository that Flux reconciles.
 
 The canonical path uses LiteLLM because it gives a single OpenAI-compatible abstraction layer for remote providers and optional local backends.
 
-If you need it later, `agentgateway` can also be configured to route directly to supported providers such as Gemini or Anthropic without LiteLLM in the middle. Use LiteLLM by default, and only bypass it when you deliberately want provider-specific behavior.
+If you need it later, `agentgateway` can also be configured to route directly to supported providers such as Gemini or Anthropic without LiteLLM in the middle. Use LiteLLM by default, and only bypass it when you deliberately want provider-specific behavior. The project keeps `agentgateway` in Kubernetes mode only, and `kagent` remains installed in Kubernetes through its documented installation path.
+
+
+## Demo assets and Kubernetes-native examples
+
+The repository keeps Kubernetes-native demo assets instead of a standalone gateway demo:
+
+- `charts/kagent-agents` packages sample `ModelConfig`, `Agent`, and `RemoteMCPServer` resources for `kagent`.
+- `charts/ai-runtimes` is an optional umbrella chart for demos and manual experiments.
+- `mcp/echo-server` is a small MCP example you can package later with kmcp or use as a learning reference.
+
+The default production-style path stays modular and Flux-managed. The demo assets remain in the repo so you can learn from them without changing the main architecture.
 
 ## Useful commands
 
