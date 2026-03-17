@@ -19,7 +19,7 @@
           - "Requested IaC tool mode: {{ iac_tool }}"
           - "Install k9s: {{ install_k9s }}"
 
-    - name: Install common OS packages on Debian family
+    - name: Ensure base packages are present on Debian-family systems
       ansible.builtin.apt:
         update_cache: true
         name:
@@ -37,11 +37,28 @@
         state: present
       when: ansible_os_family == 'Debian'
 
-    - name: Ensure local bin directory exists
+    - name: Ensure local bin directory exists on Linux
       ansible.builtin.file:
         path: /usr/local/bin
         state: directory
-        mode: "0755"
+        mode: '0755'
+      when: ansible_system == 'Linux'
+
+    - name: Install age on Linux from the official release when not already present
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v age >/dev/null 2>&1; then
+          arch="amd64"
+          if [ "$(uname -m)" = "aarch64" ]; then arch="arm64"; fi
+          version="$(curl -fsSL https://api.github.com/repos/FiloSottile/age/releases/latest | jq -r .tag_name | sed 's/^v//')"
+          tmpdir="$(mktemp -d)"
+          curl -fsSL -o "$tmpdir/age.tar.gz" "https://github.com/FiloSottile/age/releases/download/v${version}/age-v${version}-linux-${arch}.tar.gz"
+          tar -xzf "$tmpdir/age.tar.gz" -C "$tmpdir"
+          install -m 0755 "$tmpdir"/age/age "$tmpdir"/age/age-keygen /usr/local/bin/
+          rm -rf "$tmpdir"
+        fi
+      args:
+        executable: /bin/bash
       when: ansible_system == 'Linux'
 
     - name: Install kubectl on Linux
@@ -73,7 +90,7 @@
       ansible.builtin.shell: |
         set -euo pipefail
         if ! command -v flux >/dev/null 2>&1; then
-          curl -s https://fluxcd.io/install.sh | bash
+          curl -fsSL https://fluxcd.io/install.sh | bash
         fi
       args:
         executable: /bin/bash
@@ -86,7 +103,7 @@
         - ansible_system == 'Linux'
         - install_k9s
 
-    - name: Install k9s on Linux from official release tarball
+    - name: Install k9s on Linux from the official release tarball
       ansible.builtin.shell: |
         set -euo pipefail
         if ! command -v k9s >/dev/null 2>&1; then
@@ -109,7 +126,7 @@
         msg: "Skipping k9s installation because install_k9s={{ install_k9s }} or ansible_system={{ ansible_system }} is not Linux."
       when: not install_k9s or ansible_system != 'Linux'
 
-    - name: Install sops on Linux from official release when not already present
+    - name: Install sops on Linux from the official release when not already present
       ansible.builtin.shell: |
         set -euo pipefail
         if ! command -v sops >/dev/null 2>&1; then
@@ -165,12 +182,10 @@
         msg: "This playbook currently installs workstation binaries automatically only on Linux. Install tools manually on this OS."
       when: ansible_system != 'Linux'
 
-    - name: Verify age is installed when Linux or Debian base packages were used
+    - name: Verify age is installed when Linux
       ansible.builtin.command: age-keygen -version
       changed_when: false
-      when:
-        - ansible_system == 'Linux'
-        - ansible_os_family == 'Debian'
+      when: ansible_system == 'Linux'
 
     - name: Verify sops is installed when Linux
       ansible.builtin.command: sops --version
