@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - litellm-values-configmap.yaml
+  - tei-values-configmap.yaml
+  - ollama-values-configmap.yaml
+  - vllm-values-configmap.yaml
+  - lmstudio-values-configmap.yaml
+  - metallb-values.yaml
+  - lmstudio-endpoint.yaml

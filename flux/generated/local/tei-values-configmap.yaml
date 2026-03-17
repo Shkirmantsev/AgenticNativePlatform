@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tei-values
+  namespace: flux-system
+data:
+  values.yaml: |
+    model: Qwen/Qwen3-Embedding-0.6B
