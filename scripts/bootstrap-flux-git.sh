@@ -15,6 +15,16 @@ fi
 TOPOLOGY="$TOPOLOGY" ENV="$ENVIRONMENT" RUNTIME="$RUNTIME" SECRETS_MODE="$SECRETS_MODE" LMSTUDIO_ENABLED="$LMSTUDIO_ENABLED" ./scripts/render-cluster-kustomization.sh
 ./scripts/render-flux-values.sh "$TOPOLOGY"
 CLUSTER_PATH="./flux/generated/clusters/${TOPOLOGY}-${ENVIRONMENT}-${RUNTIME}-${SECRETS_MODE}"
+DECRYPTION_BLOCK=""
+if [[ "${SECRETS_MODE}" == "sops" ]]; then
+  DECRYPTION_BLOCK=$(cat <<'EOF'
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+EOF
+)
+fi
 cat <<EOF | kubectl apply -f -
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
@@ -41,5 +51,6 @@ spec:
     kind: GitRepository
     name: platform
   path: ${CLUSTER_PATH}
+${DECRYPTION_BLOCK}
 EOF
 echo "Flux Git source bootstrapped for ${CLUSTER_PATH} (LMSTUDIO_ENABLED=${LMSTUDIO_ENABLED}, SECRETS_MODE=${SECRETS_MODE})"

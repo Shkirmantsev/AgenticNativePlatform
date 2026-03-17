@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENT="${ENV:-dev}"
-OUT_DIR="${ROOT_DIR}/flux/generated/secrets/${ENVIRONMENT}"
+OUT_DIR="${ROOT_DIR}/.generated/secrets/${ENVIRONMENT}"
 mkdir -p "${OUT_DIR}"
 if [[ -f "${ROOT_DIR}/.env" ]]; then
   # shellcheck disable=SC1091
@@ -13,9 +13,11 @@ fi
 : "${ANTHROPIC_API_KEY:=}"
 : "${AWS_ACCESS_KEY_ID:=}"
 : "${AWS_SECRET_ACCESS_KEY:=}"
+: "${AWS_SESSION_TOKEN:=}"
 : "${AWS_REGION:=eu-central-1}"
 : "${VERTEX_PROJECT_ID:=}"
 : "${VERTEX_LOCATION:=europe-west3}"
+: "${VERTEX_AI_API_KEY:=}"
 : "${VERTEX_SERVICE_ACCOUNT_JSON_B64:=}"
 : "${LITELLM_MASTER_KEY:=change-me}"
 cat > "${OUT_DIR}/namespaces.yaml" <<EOF
@@ -44,8 +46,10 @@ stringData:
   AWS_REGION: ${AWS_REGION}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
   AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+  AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
   VERTEX_PROJECT_ID: ${VERTEX_PROJECT_ID}
   VERTEX_LOCATION: ${VERTEX_LOCATION}
+  VERTEX_AI_API_KEY: ${VERTEX_AI_API_KEY}
   VERTEX_SERVICE_ACCOUNT_JSON_B64: ${VERTEX_SERVICE_ACCOUNT_JSON_B64}
 EOF
 cat > "${OUT_DIR}/kagent-agentgateway.yaml" <<EOF

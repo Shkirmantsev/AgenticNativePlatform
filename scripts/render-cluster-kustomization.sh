@@ -30,8 +30,6 @@ if [[ "${LMSTUDIO_ENABLED}" == "true" ]]; then
 fi
 if [[ "${SECRETS_MODE}" == "sops" ]]; then
   echo '  - ../../../secrets/'"${ENVIRONMENT}"
-elif [[ "${SECRETS_MODE}" == "plaintext" ]]; then
-  echo '  - ../../../generated/secrets/'"${ENVIRONMENT}"
 fi
 cat <<EOF
   - ../../../overlays/${ENVIRONMENT}
