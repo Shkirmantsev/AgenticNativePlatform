@@ -337,6 +337,16 @@ make terraform-apply TOPOLOGY=local TF_BIN=tofu
 ```
 
 Install Flux:
+=======
+# AgenticNativePlatform
+
+Cloud-native AI agentic enterprise platform based on Kubernetes (educational project).
+
+## Install Flux controllers
+
+This repo now provides **both** targets so topology intent is explicit.
+
+### Local topology (kind, minikube, k3d)
 
 ```bash
 make install-flux-local
@@ -371,4 +381,28 @@ make verify
 ![Install_k3s_server_screenshot](./assets/install-k3s-server.png)
 
 ![Kubeconfig_screenshot](./assets/export-kubeconfig.png)
+
+
+### Non-local/shared topology (dev/test/prod clusters)
+
+Use the generic target and optionally pass the kube context:
+
+```bash
+make install-flux
+# or
+make install-flux KUBE_CONTEXT=dev-cluster
+```
+
+## Why two targets?
+
+- `install-flux-local` is a local-focused entrypoint.
+- `install-flux` is topology-neutral and supports explicit context selection.
+
+This removes ambiguity from the previous docs-only instruction.
+=======
+Cloud-native AI agentic enterprise platform, based on Kubernetes (education project).
+
+## Flux bootstrap
+
+Use Makefile targets for local and non-local clusters. See details in [docs/flux-bootstrap.md](docs/flux-bootstrap.md).
 

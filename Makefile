@@ -205,3 +205,20 @@ test-ollama: require-kubeconfig ## Check the in-cluster Ollama endpoint
 test-vllm: require-kubeconfig ## Check the in-cluster vLLM endpoint
 	kubectl -n ai-models run vllm-curl --rm -i --restart=Never --image=curlimages/curl:8.10.1 -- \
 	  curl -fsSL http://vllm-openai.ai-models.svc.cluster.local:8000/v1/models
+
+.PHONY: install-flux-local install-flux
+
+# Install Flux controllers for local clusters (kind/minikube/k3d).
+install-flux-local:
+	flux install
+
+# Install Flux controllers for non-local/shared clusters.
+# Example: make install-flux KUBE_CONTEXT=dev-cluster
+install-flux:
+	@if [ -n "$(KUBE_CONTEXT)" ]; then \
+		echo "Installing Flux into context $(KUBE_CONTEXT)"; \
+		flux --context "$(KUBE_CONTEXT)" install; \
+	else \
+		echo "Installing Flux into current context"; \
+		flux install; \
+	fi
