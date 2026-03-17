@@ -133,7 +133,7 @@
           arch="amd64"
           if [ "$(uname -m)" = "aarch64" ]; then arch="arm64"; fi
           version="$(curl -fsSL https://api.github.com/repos/getsops/sops/releases/latest | jq -r .tag_name | sed 's/^v//')"
-          curl -fsSL -o /usr/local/bin/sops "https://github.com/getsops/sops/releases/latest/download/sops-v${version}.linux.${arch}"
+          curl -fsSL -o /usr/local/bin/sops "https://github.com/getsops/sops/releases/download/v${version}/sops-v${version}.linux.${arch}"
           chmod 0755 /usr/local/bin/sops
         fi
       args:

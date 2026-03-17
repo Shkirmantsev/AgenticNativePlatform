@@ -1,5 +1,5 @@
-# Generated inventories are normally written to ansible/generated/<topology>.ini by Terraform.
-# This static example exists only as a fallback.
+# Generated inventories are normally written to ansible/generated/<topology>.ini by Terraform/OpenTofu.
+# This static example exists only as a fallback for local debugging.
 
 [k3s_server]
 localhost ansible_host=127.0.0.1 ansible_user=dmytro ansible_connection=local ansible_python_interpreter=/usr/bin/python3
