@@ -1,0 +1,52 @@
+# Replace the image reference with your built echo-server image.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: echo-mcp
+  namespace: kagent
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-mcp
+  namespace: kagent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo-mcp
+  template:
+    metadata:
+      labels:
+        app: echo-mcp
+    spec:
+      serviceAccountName: echo-mcp
+      automountServiceAccountToken: false
+      containers:
+        - name: echo-mcp
+          image: ghcr.io/example/echo-mcp:0.1.0
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+              ephemeral-storage: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+              ephemeral-storage: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-mcp
+  namespace: kagent
+spec:
+  selector:
+    app: echo-mcp
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
