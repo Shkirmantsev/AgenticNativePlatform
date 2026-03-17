@@ -53,8 +53,6 @@ repo/
 
 Flux does **not** read your local working directory. It pulls from the **remote Git URL** configured in a `GitRepository` object and then applies a path inside that same remote repository.
 
-The monorepo layout used here is a normal Flux repository pattern.
-
 ### Commit these paths to the remote Git repository
 
 - `charts/`
@@ -62,22 +60,26 @@ The monorepo layout used here is a normal Flux repository pattern.
 - `flux/overlays/`
 - `flux/generated/<topology>/`
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`
-- `flux/secrets/<env>/` only when using `SECRETS_MODE=sops` or `SECRETS_MODE=plaintext`
+- `flux/secrets/<env>/` only when using `SECRETS_MODE=sops`
+- `docs/`
+- `scripts/`
+- `mcp/`
 
 ### Do not commit
 
 - `.env`
-- local `terraform.tfvars`
+- local `terraform.tfvars` / `terraform.auto.tfvars`
 - `.kube/generated/`
 - `ansible/generated/`
 - local SOPS private keys
+- local plaintext rendered secrets under `.generated/`
 
 ## Operator tools
 
 Use:
 
 ```bash
-make tools-install-local
+make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
 ```
 
 This runs the Ansible playbook `ansible/playbooks/install-local-tools.yml`.
@@ -89,11 +91,11 @@ The playbook installs:
 - `helm`
 - `flux`
 - optional `k9s`
-- optional `OpenTofu` or `Terraform`
+- optional `OpenTofu` and/or `Terraform`
 
 ### k9s behavior on non-Ubuntu systems
 
-`k9s` is installed through the official GitHub release tarball on Linux instead of a hard Ubuntu-only `.deb` path, and it is skipped with an explicit message on unsupported systems instead of failing the whole playbook. The K9s project publishes portable release binaries.
+`k9s` is installed through the official GitHub release tarball on Linux instead of a hard Ubuntu-only `.deb` path, and it is skipped with an explicit message on unsupported systems instead of failing the whole playbook.
 
 ### OpenTofu and Terraform
 
@@ -103,18 +105,17 @@ The default in the Makefile is:
 
 ```make
 IAC_TOOL ?= tofu
-INSTALL_K9S ?= true
 TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
 ```
 
-So by default the repository uses **OpenTofu** as the infrastructure CLI, which is a good fit for a fully open-source workflow. OpenTofu documents installation methods for Linux, and Terraform documents official package installation for Debian/Ubuntu.
+So by default the repository uses **OpenTofu** as the infrastructure CLI.
 
 You can switch modes at runtime:
 
 ```bash
-make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
-make tools-install-local IAC_TOOL=terraform INSTALL_K9S=false
-make tools-install-local IAC_TOOL=both INSTALL_K9S=true
+make tools-install-local IAC_TOOL=tofu
+make tools-install-local IAC_TOOL=terraform
+make tools-install-local IAC_TOOL=both
 
 make terraform-init TOPOLOGY=local TF_BIN=tofu
 make terraform-apply TOPOLOGY=local TF_BIN=tofu
@@ -141,7 +142,6 @@ RUNTIME=none
 SECRETS_MODE=external
 LMSTUDIO_ENABLED=false
 IAC_TOOL=tofu
-INSTALL_K9S=true
 
 LOCAL_HOST_IP=192.168.1.108
 LMSTUDIO_HOST_IP=192.168.1.108
@@ -168,18 +168,12 @@ make terraform-init TOPOLOGY=local TF_BIN=tofu
 make terraform-apply TOPOLOGY=local TF_BIN=tofu
 ```
 
-### 5. Bootstrap the local k3s topology
+### 5. Bootstrap the local host and install k3s
 
 ```bash
 make bootstrap-hosts TOPOLOGY=local
 make install-k3s-server TOPOLOGY=local
 make kubeconfig TOPOLOGY=local
-```
-
-Or use the shortcut:
-
-```bash
-make cluster-up-local
 ```
 
 ### 6. Install Flux controllers into the cluster
@@ -188,7 +182,7 @@ make cluster-up-local
 make install-flux-local
 ```
 
-### 7. Create first-stage external secrets directly in the cluster
+### 7. Create external secrets directly in the cluster
 
 ```bash
 make apply-plaintext-secrets ENV=dev
@@ -198,7 +192,7 @@ make apply-plaintext-secrets ENV=dev
 
 Flux will only reconcile from the pushed remote repository.
 
-### 9. Register the Git source and root Kustomization
+### 9. Bootstrap Flux Git source and reconcile
 
 ```bash
 make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
@@ -252,7 +246,7 @@ The intended lifecycle is:
 3. push
 4. let Flux reconcile
 
-Do not use manual `helm install` or `helm upgrade` as the main operating model. Flux `GitRepository`, `Kustomization`, and `HelmRelease` are the intended declarative control plane.
+Do not use manual `helm install` or `helm upgrade` as the main operating model. Flux `GitRepository` and `HelmRelease` are the intended declarative control plane.
 
 ## Stop and start the platform without uninstalling the cluster
 
@@ -278,7 +272,7 @@ When you are ready to move to encrypted GitOps:
 1. install tools locally:
 
 ```bash
-make tools-install-local
+make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
 ```
 
 2. generate an `age` key locally
@@ -295,18 +289,7 @@ Keep encrypted manifests in the same repository that Flux reconciles.
 
 The canonical path uses LiteLLM because it gives a single OpenAI-compatible abstraction layer for remote providers and optional local backends.
 
-If you need it later, `agentgateway` can also be configured to route directly to supported providers such as Gemini or Anthropic without LiteLLM in the middle. Use LiteLLM by default, and only bypass it when you deliberately want provider-specific behavior. The project keeps `agentgateway` in Kubernetes mode only, and `kagent` remains installed in Kubernetes through its documented installation path.
-
-
-## Demo assets and Kubernetes-native examples
-
-The repository keeps Kubernetes-native demo assets instead of a standalone gateway demo:
-
-- `charts/kagent-agents` packages sample `ModelConfig`, `Agent`, and `RemoteMCPServer` resources for `kagent`.
-- `charts/ai-runtimes` is an optional umbrella chart for demos and manual experiments.
-- `mcp/echo-server` is a small MCP example you can package later with kmcp or use as a learning reference.
-
-The default production-style path stays modular and Flux-managed. The demo assets remain in the repo so you can learn from them without changing the main architecture.
+If you need it later, `agentgateway` can also be configured to route directly to supported providers such as Gemini or Anthropic without LiteLLM in the middle. Use LiteLLM by default, and only bypass it when you deliberately want provider-specific behavior.
 
 ## Useful commands
 
@@ -346,3 +329,17 @@ Verify local state:
 ```bash
 make verify
 ```
+
+## Installation result example
+
+![Install_start_screenshot1](./assets/make-tools-install-local1.png)
+
+![Install_start_screenshot2](./assets/make-tools-install-local2.png)
+
+![Bootstrap_hosts_screenshot](./assets/bootstrap-hosts.png)
+
+![Install_k3s_server_screenshot](./assets/install-k3s-server.png)
+
+![Kubeconfig_screenshot](./assets/export-kubeconfig.png)
+
+

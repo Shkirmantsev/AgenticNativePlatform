@@ -19,21 +19,19 @@ locals {
     subsets    = [{ addresses = [{ ip = var.lmstudio_host_ip }], ports = [{ port = var.lmstudio_port }] }]
   })
 
+  lmstudio_values = <<-EOT
+hostIP: ${var.lmstudio_host_ip}
+port: ${var.lmstudio_port}
+EOT
+
   lmstudio_values_configmap = yamlencode({
     apiVersion = "v1"
     kind       = "ConfigMap"
     metadata   = { name = "lmstudio-values", namespace = "flux-system" }
-    data       = { "values.yaml" = <<EOF
-hostIP: ${var.lmstudio_host_ip}
-port: ${var.lmstudio_port}
-EOF
-}
+    data       = { "values.yaml" = local.lmstudio_values }
   })
 
-  metallb_resources = join(<<EOF
----
-EOF
-, [
+  metallb_resources = join("\n---\n", [
     yamlencode({
       apiVersion = "metallb.io/v1beta1"
       kind       = "IPAddressPool"
@@ -50,11 +48,11 @@ EOF
 
   topology_values = yamlencode({
     topology = {
-      name = var.topology
+      name         = var.topology
       controlPlane = var.control_plane
-      workers = var.workers
-      lmstudio = { host = var.lmstudio_host_ip, port = var.lmstudio_port }
-      metallb = { start = var.metallb_start, end = var.metallb_end }
+      workers      = var.workers
+      lmstudio     = { host = var.lmstudio_host_ip, port = var.lmstudio_port }
+      metallb      = { start = var.metallb_start, end = var.metallb_end }
     }
   })
 }

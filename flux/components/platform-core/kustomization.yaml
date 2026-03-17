@@ -15,6 +15,5 @@ resources:
   - ../redis
   - ../observability
   - ../kagent
-  - ../kagent-agents
   - ../kmcp
   - ../policies
