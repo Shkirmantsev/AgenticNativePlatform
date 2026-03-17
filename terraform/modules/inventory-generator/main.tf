@@ -23,14 +23,17 @@ locals {
     apiVersion = "v1"
     kind       = "ConfigMap"
     metadata   = { name = "lmstudio-values", namespace = "flux-system" }
-    data       = { "values.yaml" = "hostIP: ${var.lmstudio_host_ip}
+    data       = { "values.yaml" = <<EOF
+hostIP: ${var.lmstudio_host_ip}
 port: ${var.lmstudio_port}
-" }
+EOF
+}
   })
 
-  metallb_resources = join("
+  metallb_resources = join(<<EOF
 ---
-", [
+EOF
+, [
     yamlencode({
       apiVersion = "metallb.io/v1beta1"
       kind       = "IPAddressPool"

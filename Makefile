@@ -15,7 +15,13 @@ INSTALL_K9S ?= true
 IAC_TOOL ?= tofu
 TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
 TF_DIR ?= terraform/environments/$(TOPOLOGY)
-ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/inventory.ini.example)
+
+ifeq ($(TOPOLOGY),local)
+ANSIBLE_INVENTORY ?= $(if $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/generated/$(TOPOLOGY).ini,ansible/inventory.ini.example)
+else
+ANSIBLE_INVENTORY ?= ansible/generated/$(TOPOLOGY).ini
+endif
+
 KUBECONFIG_DIR ?= .kube/generated
 
 STOP_NAMESPACES ?= metallb-system istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
@@ -60,8 +66,11 @@ join-workers: ## Join worker nodes to the k3s cluster
 label-llm-nodes: ## Label worker nodes as runtime-capable for self-hosted LLM workloads
 	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/label-llm-nodes.yml
 
-kubeconfig: ## Export kubeconfig from the control-plane host to .kube/generated
-	mkdir -p $(KUBECONFIG_DIR)
+check-inventory:
+	@test -f "$(ANSIBLE_INVENTORY)" || (echo "Missing inventory: $(ANSIBLE_INVENTORY). Run topology generation first."; exit 1)
+
+kubeconfig: check-inventory ## Export kubeconfig from the control-plane host to .kube/generated
+	mkdir -p .kube/generated
 	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/export-kubeconfig.yml
 
 uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventory
