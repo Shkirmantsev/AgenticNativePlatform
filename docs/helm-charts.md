@@ -1,15 +1,36 @@
-# Local Helm charts and templates
+# Helm charts in this repository
 
-This repository intentionally contains local Helm charts so the declarative glue layer is visible and reviewable.
+These local charts are reconciled by Flux from the **same Git repository** that also contains the Flux manifests.
 
-## Charts
+## Production-style modular charts
 
-- `helm/charts/litellm-config`: Deployment, Service, and ConfigMap for LiteLLM.
-- `helm/charts/external-services`: Templates for LM Studio `Service + Endpoints`.
-- `helm/charts/kagent-agents`: `ModelConfig`, `ModelProviderConfig`, `RemoteMCPServer`, and sample `Agent`.
-- `helm/charts/ai-runtimes`: Optional TEI, vLLM, and Ollama runtime templates.
-- `helm/charts/agentgateway-standalone-demo`: Standalone-style `config.yaml` demo in Kubernetes with UI on `localhost:15000/ui` after port-forward.
+- `charts/litellm-proxy`
+- `charts/lmstudio-external`
+- `charts/ollama-runtime`
+- `charts/vllm-cpu`
+- `charts/tei-embeddings`
+- `charts/kagent-agents`
 
-## Why local charts exist in addition to Flux HelmReleases
+## Demo / alternative packaging chart
 
-Third-party platform components such as kgateway, agentgateway, KServe, and Istio are installed from upstream OCI/Helm repositories through Flux `HelmRelease` resources. The local charts in this repository cover the **glue layer**: config, external endpoints, sample agent definitions, and demos.
+- `charts/ai-runtimes`
+
+This chart is intentionally kept for demos, experiments, and alternative manual Helm workflows. It is not the default production-style path.
+
+## How values are injected
+
+Flux `HelmRelease` objects under `flux/components/*/release.yaml` load values from generated `ConfigMap` objects in `flux/generated/<topology>/`.
+
+Examples:
+
+- `flux/generated/<topology>/litellm-values-configmap.yaml`
+- `flux/generated/<topology>/lmstudio-values-configmap.yaml`
+- `flux/generated/<topology>/ollama-values-configmap.yaml`
+- `flux/generated/<topology>/vllm-values-configmap.yaml`
+- `flux/generated/<topology>/tei-values-configmap.yaml`
+
+## Secret handling modes
+
+- `SECRETS_MODE=external`: create Kubernetes Secrets directly from `.env` with `make apply-plaintext-secrets`; Flux does not manage secrets yet.
+- `SECRETS_MODE=sops`: encrypt manifests in `flux/secrets/<env>/` and let Flux decrypt them.
+- `SECRETS_MODE=plaintext`: commit plain generated secrets under `flux/generated/secrets/<env>/` for disposable lab use only.
