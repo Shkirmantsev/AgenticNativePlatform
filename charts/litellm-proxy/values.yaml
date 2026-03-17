@@ -5,7 +5,19 @@ image:
   pullPolicy: IfNotPresent
 service:
   port: 4000
-resources: {}
+serviceAccount:
+  create: true
+  name: litellm
+  automountServiceAccountToken: false
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+    ephemeral-storage: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+    ephemeral-storage: "1Gi"
 existingSecretName: litellm-provider-secrets
 config: |
   general_settings:

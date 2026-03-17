@@ -1,3 +1,12 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Values.namespace }}
+automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+---
+{{- end }}
 {{- if .Values.hfToken }}
 apiVersion: v1
 kind: Secret
@@ -33,17 +42,19 @@ spec:
     metadata:
       labels: {app: vllm-openai}
     spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       containers:
         - name: vllm-openai
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
           args:
-            - --host
-            - 0.0.0.0
-            - --port
-            - "8000"
-            - --model
-            - {{ .Values.model | quote }}
+            - >-
+              vllm serve {{ .Values.model }}
+              --host 0.0.0.0
+              --port 8000
+              --max-model-len 2048
           env:
             - name: VLLM_CPU_KVCACHE_SPACE
               value: {{ .Values.env.VLLM_CPU_KVCACHE_SPACE | quote }}
@@ -62,6 +73,7 @@ spec:
 {{- end }}
           ports:
             - containerPort: 8000
+              name: http
           volumeMounts:
             - name: model-cache
               mountPath: /root/.cache/huggingface

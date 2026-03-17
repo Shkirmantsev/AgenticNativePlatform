@@ -1,3 +1,12 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Values.namespace }}
+automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+---
+{{- end }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -22,6 +31,8 @@ spec:
     metadata:
       labels: {app: ollama}
     spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       containers:
         - name: ollama
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -62,6 +73,8 @@ metadata:
 spec:
   template:
     spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
       containers:
         - name: pull
@@ -71,4 +84,13 @@ spec:
             - |
               until curl -sf http://ollama:11434/api/tags >/dev/null; do sleep 5; done
               curl -s http://ollama:11434/api/pull -d '{"name":"{{ .Values.modelPull.model }}"}'
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+              ephemeral-storage: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+              ephemeral-storage: "512Mi"
 {{- end }}

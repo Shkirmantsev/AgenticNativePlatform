@@ -1,5 +1,12 @@
 {{- if eq .Values.runtime.type "ollama" }}
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ollama
+  namespace: {{ .Values.namespace }}
+automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: ollama-models
@@ -23,6 +30,8 @@ spec:
     metadata:
       labels: { app: ollama }
     spec:
+      serviceAccountName: ollama
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       nodeSelector:
         llm-runtime: "true"
       containers:
@@ -33,6 +42,8 @@ spec:
           env:
             - name: OLLAMA_KEEP_ALIVE
               value: 30m
+          resources:
+{{ toYaml .Values.ollama.resources | indent 12 }}
           volumeMounts:
             - name: models
               mountPath: /root/.ollama

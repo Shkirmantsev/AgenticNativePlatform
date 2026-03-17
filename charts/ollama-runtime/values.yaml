@@ -5,10 +5,22 @@ image:
   pullPolicy: IfNotPresent
 service:
   port: 11434
+serviceAccount:
+  create: true
+  name: ollama
+  automountServiceAccountToken: false
 modelPull:
   enabled: true
   model: qwen2.5:7b-instruct
-resources: {}
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+    ephemeral-storage: "2Gi"
+  limits:
+    cpu: "2000m"
+    memory: "4Gi"
+    ephemeral-storage: "10Gi"
 persistence:
   enabled: true
   size: 20Gi

@@ -1,5 +1,12 @@
 {{- if eq .Values.runtime.type "vllm" }}
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vllm-openai
+  namespace: {{ .Values.namespace }}
+automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: vllm-models
@@ -23,6 +30,8 @@ spec:
     metadata:
       labels: { app: vllm-openai }
     spec:
+      serviceAccountName: vllm-openai
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       nodeSelector:
         llm-runtime: "true"
       containers:
@@ -49,6 +58,8 @@ spec:
             - name: LD_PRELOAD
               value: {{ .Values.vllm.ldPreload | quote }}
             {{- end }}
+          resources:
+{{ toYaml .Values.vllm.resources | indent 12 }}
           volumeMounts:
             - name: hf-cache
               mountPath: /root/.cache/huggingface
