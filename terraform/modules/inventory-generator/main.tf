@@ -12,29 +12,38 @@ locals {
     workers       = var.workers
   })
 
-  metallb_values = yamlencode({
-    metallb = {
-      pool = {
-        start = var.metallb_start
-        end   = var.metallb_end
-      }
-    }
-  })
-
-  node_labels_env = join("
-", concat([
-    "CONTROL_PLANE_NAME=${var.control_plane.name}",
-    "CONTROL_PLANE_IP=${var.control_plane.ansible_host}",
-    "LMSTUDIO_HOST_IP=${var.lmstudio_host_ip}",
-    "LMSTUDIO_PORT=${var.lmstudio_port}",
-  ], [for w in var.workers : "WORKER_${upper(replace(w.name, "-", "_"))}=${w.ansible_host}"]))
-
   lmstudio_endpoint = yamlencode({
     apiVersion = "v1"
     kind       = "Endpoints"
     metadata   = { name = "lmstudio-external", namespace = "ai-gateway" }
     subsets    = [{ addresses = [{ ip = var.lmstudio_host_ip }], ports = [{ port = var.lmstudio_port }] }]
   })
+
+  lmstudio_values_configmap = yamlencode({
+    apiVersion = "v1"
+    kind       = "ConfigMap"
+    metadata   = { name = "lmstudio-values", namespace = "flux-system" }
+    data       = { "values.yaml" = "hostIP: ${var.lmstudio_host_ip}
+port: ${var.lmstudio_port}
+" }
+  })
+
+  metallb_resources = join("
+---
+", [
+    yamlencode({
+      apiVersion = "metallb.io/v1beta1"
+      kind       = "IPAddressPool"
+      metadata   = { name = "primary-pool", namespace = "metallb-system" }
+      spec       = { addresses = ["${var.metallb_start}-${var.metallb_end}"] }
+    }),
+    yamlencode({
+      apiVersion = "metallb.io/v1beta1"
+      kind       = "L2Advertisement"
+      metadata   = { name = "primary-pool", namespace = "metallb-system" }
+      spec       = { ipAddressPools = ["primary-pool"] }
+    })
+  ])
 
   topology_values = yamlencode({
     topology = {
@@ -52,14 +61,9 @@ resource "local_file" "inventory" {
   content  = local.inventory
 }
 
-resource "local_file" "metallb_values" {
+resource "local_file" "metallb_resources" {
   filename = "${path.root}/../../../flux/generated/${var.topology}/metallb-values.yaml"
-  content  = local.metallb_values
-}
-
-resource "local_file" "node_labels_env" {
-  filename = "${path.root}/../../../flux/generated/${var.topology}/node-labels.env"
-  content  = local.node_labels_env
+  content  = local.metallb_resources
 }
 
 resource "local_file" "lmstudio_endpoint" {
@@ -70,4 +74,9 @@ resource "local_file" "lmstudio_endpoint" {
 resource "local_file" "topology_values" {
   filename = "${path.root}/../../../flux/generated/${var.topology}/topology-values.yaml"
   content  = local.topology_values
+}
+
+resource "local_file" "lmstudio_values_configmap" {
+  filename = "${path.root}/../../../flux/generated/${var.topology}/lmstudio-values-configmap.yaml"
+  content  = local.lmstudio_values_configmap
 }
