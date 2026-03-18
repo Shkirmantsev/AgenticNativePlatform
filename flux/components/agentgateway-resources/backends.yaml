@@ -7,5 +7,5 @@ spec:
   ai:
     provider:
       openai: {}
-    host: litellm.ai-gateway.svc.cluster.local
-    port: 4000
+      host: litellm.ai-gateway.svc.cluster.local
+      port: 4000
