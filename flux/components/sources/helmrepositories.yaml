@@ -52,7 +52,7 @@ spec:
   interval: 1h
   url: https://qdrant.github.io/qdrant-helm
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kgateway-chart
@@ -63,7 +63,7 @@ spec:
   ref:
     semver: ">=2.2.0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: agentgateway-crds-chart
@@ -74,7 +74,7 @@ spec:
   ref:
     semver: ">=1.0.0-0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: agentgateway-chart
@@ -85,7 +85,7 @@ spec:
   ref:
     semver: ">=1.0.0-0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kagent-crds-chart
@@ -96,7 +96,7 @@ spec:
   ref:
     semver: ">=0.7.0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kagent-chart
@@ -107,7 +107,7 @@ spec:
   ref:
     semver: ">=0.7.0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kserve-crd-chart
@@ -118,7 +118,7 @@ spec:
   ref:
     semver: ">=0.17.0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kserve-chart
@@ -129,7 +129,7 @@ spec:
   ref:
     semver: ">=0.17.0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kmcp-crds-chart
@@ -140,7 +140,7 @@ spec:
   ref:
     semver: ">=0.1.0"
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kmcp-chart
