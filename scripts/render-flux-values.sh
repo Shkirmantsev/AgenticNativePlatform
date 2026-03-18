@@ -22,6 +22,7 @@ VLLM_CPU_KVCACHE_SPACE="${VLLM_CPU_KVCACHE_SPACE:-2}"
 VLLM_CPU_NUM_OF_RESERVED_CPU="${VLLM_CPU_NUM_OF_RESERVED_CPU:-1}"
 VLLM_LD_PRELOAD="${VLLM_LD_PRELOAD:-}"
 VLLM_IMAGE="${VLLM_IMAGE:-public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest}"
+ECHO_MCP_IMAGE="${ECHO_MCP_IMAGE:-ghcr.io/example/echo-mcp:0.1.0}"
 
 cat > "${GEN_DIR}/litellm-values-configmap.yaml" <<EOF
 apiVersion: v1
@@ -124,12 +125,23 @@ data:
       VLLM_LD_PRELOAD: "${VLLM_LD_PRELOAD}"
 EOF
 
+cat > "${GEN_DIR}/echo-mcp-values-configmap.yaml" <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: echo-mcp-values
+  namespace: flux-system
+data:
+  image: ${ECHO_MCP_IMAGE}
+EOF
+
 resource_entries=()
 for generated_file in \
   litellm-values-configmap.yaml \
   tei-values-configmap.yaml \
   ollama-values-configmap.yaml \
   vllm-values-configmap.yaml \
+  echo-mcp-values-configmap.yaml \
   lmstudio-values-configmap.yaml \
   metallb-values.yaml \
   lmstudio-endpoint.yaml; do

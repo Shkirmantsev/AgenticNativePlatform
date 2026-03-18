@@ -118,6 +118,36 @@ make cluster-start
 `cluster-start` resumes the source, HelmReleases, and staged Kustomizations, then reconciles them in order.
 It also force-reconciles all existing HelmReleases in `flux-system` so workloads scaled down by `cluster-stop` are pushed back to their desired replica counts instead of remaining at zero because the release looked otherwise in-sync.
 
+## Local image import for optional sample workloads
+
+Local Docker images are not automatically visible to `k3s`, because the cluster runs on containerd rather than the Docker daemon image store.
+
+For the optional `echo-mcp` sample, you can avoid pushing to a registry by importing the built image into all `k3s` nodes:
+
+```bash
+make build-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make save-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make preimport-echo-mcp-image-tarball TOPOLOGY=local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+```
+
+Or use the shortcut:
+
+```bash
+make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+```
+
+After importing, keep the same image tag in:
+
+```bash
+make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+The concrete sample image is injected through generated Flux inputs from `ECHO_MCP_IMAGE`. The component manifests keep a neutral placeholder image so the repo does not hard-code a user-specific tag.
+
+The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
+Use the `make` targets directly instead of `sudo make`; the embedded Ansible tasks already run with privilege escalation.
+
 Remove k3s from the current topology:
 
 ```bash

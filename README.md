@@ -231,6 +231,82 @@ make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=vllm SECRETS_MODE=externa
 make reconcile
 ```
 
+## Optional echo MCP sample
+
+`echo-mcp` is a sample MCP workload used by the `kmcp` / `RemoteMCPServer` examples. It is not required for the base platform bootstrap.
+
+Important:
+
+- if `platform-applications` is failing, do not assume `echo-mcp` is the first cause
+- fix Flux or CRD/schema reconciliation errors first
+- only treat `echo-mcp` as a blocker after the application stage is applying successfully
+
+The sample implementation lives in:
+
+- `mcp/echo-server/`
+
+To use it:
+
+1. Decide whether you want a registry-backed image or a local-only image import.
+
+Registry-backed flow:
+
+```bash
+docker build -t ghcr.io/<your-user>/echo-mcp:0.1.0 mcp/echo-server
+docker push ghcr.io/<your-user>/echo-mcp:0.1.0
+```
+
+Local-only `k3s` flow without pushing:
+
+```bash
+make build-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make save-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make preimport-echo-mcp-image-tarball TOPOLOGY=local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+```
+
+Or run the combined shortcut:
+
+```bash
+make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+```
+
+This works because `k3s` imports tarballs from `/var/lib/rancher/k3s/agent/images/` into containerd, and the sample Deployment now uses `imagePullPolicy: IfNotPresent`.
+The image reference in the manifest must exactly match the imported tag.
+The import target creates that directory automatically if your node does not have it yet.
+Run the `make` target directly; `sudo make ...` is not needed because the Ansible task already uses privilege escalation.
+
+2. Set `ECHO_MCP_IMAGE` in `.env` or pass it on the command line, then regenerate Flux inputs:
+
+```bash
+make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+The source manifests no longer hard-code your concrete image tag. The real value is injected into the generated applications stage from `ECHO_MCP_IMAGE`.
+
+3. Commit and push:
+
+```bash
+git add .env.example scripts/render-flux-values.sh scripts/render-cluster-kustomization.sh \
+  flux/components/kmcp-resources/echo-mcpserver.yaml flux/components/kmcp/echo-mcpserver.yaml \
+  flux/generated/local flux/generated/clusters/local-dev-none-external
+git commit -m "Use real echo MCP sample image"
+git push origin dev
+```
+
+4. Reconcile:
+
+```bash
+make reconcile
+```
+
+5. Verify:
+
+```bash
+kubectl -n kagent get deploy,svc,pods echo-mcp
+kubectl -n kagent get remotemcpserver echo-mcp -o yaml
+```
+
 ## Stop and restart the platform
 
 Pause workloads without uninstalling the cluster:

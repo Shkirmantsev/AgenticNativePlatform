@@ -42,12 +42,8 @@ if [[ -d "flux/generated/${TOPOLOGY}" ]]; then
   while IFS= read -r -d '' manifest; do
     name="$(basename "${manifest}")"
     case "${name}" in
-      kustomization.yaml|topology-values.yaml)
+      kustomization.yaml|topology-values.yaml|metallb-values.yaml|echo-mcp-values-configmap.yaml)
         continue
-        ;;
-      metallb-values.yaml)
-        cp "${manifest}" "${OUT_DIR}/apps/generated-${name}"
-        apps_generated+=("generated-${name}")
         ;;
       *)
         cp "${manifest}" "${OUT_DIR}/bootstrap/generated-${name}"
@@ -56,6 +52,14 @@ if [[ -d "flux/generated/${TOPOLOGY}" ]]; then
     esac
   done < <(find "flux/generated/${TOPOLOGY}" -maxdepth 1 -type f -name '*.yaml' -print0 | sort -z)
 fi
+
+for app_generated_name in metallb-values.yaml echo-mcp-values-configmap.yaml; do
+  app_generated_path="flux/generated/${TOPOLOGY}/${app_generated_name}"
+  if [[ -f "${app_generated_path}" ]]; then
+    cp "${app_generated_path}" "${OUT_DIR}/apps/generated-${app_generated_name}"
+    apps_generated+=("generated-${app_generated_name}")
+  fi
+done
 
 {
 cat <<EOF
@@ -173,6 +177,21 @@ for generated_file in "${apps_generated[@]}"; do
   echo "  - ${generated_file}"
 done
 echo '  - ../../../../overlays/'"${ENVIRONMENT}"
+cat <<'EOF'
+replacements:
+  - source:
+      kind: ConfigMap
+      name: echo-mcp-values
+      namespace: flux-system
+      fieldPath: data.image
+    targets:
+      - select:
+          kind: Deployment
+          name: echo-mcp
+          namespace: kagent
+        fieldPaths:
+          - spec.template.spec.containers.0.image
+EOF
 } > "${OUT_DIR}/apps/kustomization.yaml"
 
 echo "Rendered ${OUT_DIR}/kustomization.yaml"

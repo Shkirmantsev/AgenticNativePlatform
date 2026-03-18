@@ -1,4 +1,4 @@
-# Replace the image reference with your built echo-server image.
+# The actual image is injected from generated Flux inputs via ECHO_MCP_IMAGE.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -25,7 +25,8 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: echo-mcp
-          image: ghcr.io/example/echo-mcp:0.1.0
+          image: echo-mcp
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
           resources:

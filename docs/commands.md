@@ -91,6 +91,34 @@ make preimport-vllm-image-tarball TOPOLOGY=local VLLM_IMAGE_TARBALL=/tmp/vllm-cp
 make preimport-vllm-image-online TOPOLOGY=local VLLM_IMAGE=public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
 ```
 
+## echo-mcp local image import without pushing
+
+Build and import the optional sample MCP image into `k3s` containerd:
+
+```bash
+make build-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make save-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make preimport-echo-mcp-image-tarball TOPOLOGY=local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+```
+
+Or use the shortcut:
+
+```bash
+make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+```
+
+Then set the same image tag in:
+
+```bash
+make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+The final image value is injected from `ECHO_MCP_IMAGE` into the generated applications stage, not hard-coded in the component YAML.
+
+These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is missing.
+Run them as your normal user; `sudo make ...` is not required.
+
 ## End-to-end bootstrap shortcuts
 
 ```bash
