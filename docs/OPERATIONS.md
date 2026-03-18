@@ -108,6 +108,7 @@ make cluster-stop
 - all HelmReleases in `flux-system`
 
 It then scales Deployments and StatefulSets to zero in the configured platform namespaces.
+It intentionally does not scale `metallb-system`; the MetalLB controller serves a validating webhook, and leaving it at `0` endpoints blocks later `IPAddressPool` reconciliation.
 
 Resume the platform and let Flux restore desired state:
 

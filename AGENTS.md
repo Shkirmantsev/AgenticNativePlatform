@@ -45,6 +45,7 @@ When updating this file:
 - AgentGateway: current Kubernetes `AgentgatewayBackend` CRDs use `spec.ai` with provider configuration, not legacy `spec.llm`; keep both active and duplicate repo manifests aligned with that schema.
 - AgentGateway: current policy CRD is `AgentgatewayPolicy`, not `BackendTrafficPolicy`; backend request timeout belongs under `spec.backend.http.requestTimeout`.
 - Stop/start flow: if `cluster-stop` scales Helm-managed workloads to zero, `cluster-start` must force-reconcile the affected HelmReleases; resume plus top-level Kustomization reconcile is not enough to restore objects like `Deployment/istiod` from `0/0`.
+- Stop/start flow: do not scale `metallb-system` to zero; MetalLB's controller backs the validating webhook for `IPAddressPool`, and zero endpoints blocks `platform-applications` dry-run on the next reconcile.
 - K3s image handling: local Docker builds are not visible to the cluster until imported into k3s/containerd; for sample images like `echo-mcp`, use tarball import targets and keep the manifest `image:` tag identical to the imported tag.
 - K3s image handling: `/var/lib/rancher/k3s/agent/images/` may be absent on fresh nodes; import targets should `mkdir -p` it first instead of assuming it already exists.
 - Sample workload image overrides: inject operator-specific images such as `ECHO_MCP_IMAGE` through generated Flux inputs in `flux/generated/<topology>` and stage-level Kustomize replacements, not by editing component manifests with user-specific tags.

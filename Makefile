@@ -22,7 +22,7 @@ ECHO_MCP_IMAGE ?= ghcr.io/example/echo-mcp:0.1.0
 ECHO_MCP_IMAGE_TARBALL ?= /tmp/echo-mcp-image.tar
 export KUBECONFIG
 
-STOP_NAMESPACES ?= metallb-system istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
+STOP_NAMESPACES ?= istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
 PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-applications platform
 
 .PHONY: help \
