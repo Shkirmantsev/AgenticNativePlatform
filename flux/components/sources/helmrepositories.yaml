@@ -116,7 +116,7 @@ spec:
   interval: 1h
   url: oci://ghcr.io/kserve/charts/kserve-crd
   ref:
-    semver: ">=0.17.0"
+    tag: v0.16.0
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
@@ -127,7 +127,7 @@ spec:
   interval: 1h
   url: oci://ghcr.io/kserve/charts/kserve
   ref:
-    semver: ">=0.17.0"
+    tag: v0.16.0
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
