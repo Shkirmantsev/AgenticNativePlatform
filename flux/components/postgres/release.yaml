@@ -6,13 +6,10 @@ metadata:
 spec:
   interval: 30m
   targetNamespace: context
-  chart:
-    spec:
-      chart: postgresql
-      sourceRef:
-        kind: HelmRepository
-        name: bitnami
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: bitnami-postgresql-chart
+    namespace: flux-system
   values:
     auth:
       username: platform

@@ -37,20 +37,33 @@ spec:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: bitnami
-  namespace: flux-system
-spec:
-  interval: 1h
-  url: https://charts.bitnami.com/bitnami
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
   name: qdrant
   namespace: flux-system
 spec:
   interval: 1h
   url: https://qdrant.github.io/qdrant-helm
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: bitnami-postgresql-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://registry-1.docker.io/bitnamicharts/postgresql
+  ref:
+    tag: 18.5.7
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: bitnami-redis-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://registry-1.docker.io/bitnamicharts/redis
+  ref:
+    tag: 25.3.5
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository

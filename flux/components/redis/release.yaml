@@ -6,13 +6,10 @@ metadata:
 spec:
   interval: 30m
   targetNamespace: context
-  chart:
-    spec:
-      chart: redis
-      sourceRef:
-        kind: HelmRepository
-        name: bitnami
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: bitnami-redis-chart
+    namespace: flux-system
   values:
     architecture: standalone
     master:
