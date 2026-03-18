@@ -1,5 +1,5 @@
 apiVersion: agentgateway.dev/v1alpha1
-kind: BackendTrafficPolicy
+kind: AgentgatewayPolicy
 metadata:
   name: litellm-upstream-policy
   namespace: agentgateway-system
@@ -8,5 +8,6 @@ spec:
     - group: agentgateway.dev
       kind: AgentgatewayBackend
       name: litellm-upstream
-  timeout:
-    request: 300s
+  backend:
+    http:
+      requestTimeout: 300s
