@@ -4,6 +4,8 @@ metadata:
   name: litellm-upstream
   namespace: agentgateway-system
 spec:
-  llm:
+  ai:
+    provider:
+      openai: {}
     host: litellm.ai-gateway.svc.cluster.local
     port: 4000

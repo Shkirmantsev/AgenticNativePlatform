@@ -23,6 +23,7 @@ ansible/generated/
 ansible/playbooks/.kube/
 .generated/
 .sops/
+tmp/
 age.agekey
 age.agekey.txt
 

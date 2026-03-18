@@ -55,9 +55,26 @@ spec:
       retries: 3
   values:
     tag: "0.7.23"
+    controller:
+      image:
+        tag: "0.7.23"
+      agentImage:
+        tag: "0.7.23"
+      skillsInitImage:
+        tag: "0.7.23"
+    ui:
+      image:
+        tag: "0.7.23"
     kagent-tools:
       tools:
         image:
           tag: "0.1.1"
     kmcp:
       enabled: false
+    providers:
+      openAI:
+        apiKeySecretRef: kagent-agentgateway
+        apiKeySecretKey: OPENAI_API_KEY
+        model: default-gemini
+        config:
+          baseUrl: "http://agentgateway.agentgateway-system.svc.cluster.local:8080/v1"
