@@ -1,146 +1,81 @@
 # Agentic Kubernetes Native Platform
 
-This repository is a GitOps-first, production-style starter platform for agentic AI workloads on Kubernetes.
+GitOps-first Kubernetes platform for agentic AI workloads. The default path is a single-node local `k3s` cluster managed through Make targets, Flux, HelmReleases, and generated Flux inputs committed to this repository.
 
-It is designed for these topology modes:
+## What this repository manages
+
+- `k3s` cluster bootstrap through Ansible
+- Flux GitOps reconciliation from the remote Git branch
+- `agentgateway`, `LiteLLM`, `kagent`, `KServe`
+- optional local runtimes: `LM Studio`, `Ollama`, `vLLM`
+- context services: `Qdrant`, `Redis`, `PostgreSQL`
+
+The canonical request path is:
+
+```text
+kagent -> agentgateway -> LiteLLM -> provider or local runtime
+```
+
+## Supported topologies
+
 - `local`
 - `minipc`
 - `hybrid`
 - `hybrid-remote`
 
-The platform is centered around:
-- `k3s` for the lightweight Kubernetes cluster
-- `Flux` for GitOps reconciliation from a remote Git repository
-- `agentgateway` in Kubernetes mode only
-- `LiteLLM` as the canonical provider abstraction layer
-- `LM Studio`, `Ollama`, and `vLLM` as optional LiteLLM backends
-- `kagent` as the declarative agent runtime
-- `Qdrant + Redis + PostgreSQL` as the context layer
-- `KServe` as the Kubernetes-native model serving control plane
+The default first-run mode is:
 
-## Canonical routing path
-
-The intended request path is:
-
-```text
-kagent -> agentgateway -> LiteLLM -> providers/backends
+```env
+TOPOLOGY=local
+ENV=dev
+RUNTIME=none
+SECRETS_MODE=external
+LMSTUDIO_ENABLED=false
+IAC_TOOL=tofu
 ```
 
-By default, the repository starts in a simple remote-only mode:
-- `TOPOLOGY=local`
-- `ENV=dev`
-- `RUNTIME=none`
-- `LMSTUDIO_ENABLED=false`
-- `SECRETS_MODE=external`
-- `IAC_TOOL=tofu`
+That keeps the first bootstrap simple: remote Gemini only, no in-cluster local runtime yet.
 
-That means the first start uses only a remote Gemini model and keeps local runtimes disabled.
+## Repository rules
 
-## Repository structure
+Flux reads the remote Git repository, not your local working tree. Commit and push everything Flux needs before reconciling.
 
-Use one Git repository for the first stage:
-
-```text
-repo/
-  charts/
-  flux/
-  terraform/
-  ansible/
-  docs/
-  scripts/
-  mcp/
-```
-
-Flux does **not** read your local working directory. It pulls from the **remote Git URL** configured in a `GitRepository` object and then applies a path inside that same remote repository.
-
-### Commit these paths to the remote Git repository
+Commit:
 
 - `charts/`
 - `flux/components/`
 - `flux/overlays/`
 - `flux/generated/<topology>/`
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`
-- `flux/secrets/<env>/` only when using `SECRETS_MODE=sops`
+- `flux/secrets/<env>/` only in `SECRETS_MODE=sops`
 - `docs/`
 - `scripts/`
 - `mcp/`
 
-### Do not commit
+Do not commit:
 
 - `.env`
-- local `terraform.tfvars` / `terraform.auto.tfvars`
 - `.kube/generated/`
+- `.generated/`
 - `ansible/generated/`
+- local `terraform.auto.tfvars`
 - local SOPS private keys
-- local plaintext rendered secrets under `.generated/`
 
-### Generated local artifacts
+Generated local behavior:
 
-- `make kubeconfig` writes the usable kubeconfig to `.kube/generated/current.yaml`
-- `KUBECONFIG` is exported by the `Makefile` to that path for `kubectl`, `flux`, and related targets
-- raw fetched kubeconfig copies are kept under `.kube/generated/raw/`
-- `flux/generated/<topology>/topology-values.yaml` is operator metadata only and is not part of any Kustomize `resources` list
+- `make kubeconfig` writes `.kube/generated/current.yaml`
+- the `Makefile` exports `KUBECONFIG` to that file automatically
+- `flux/generated/<topology>/topology-values.yaml` is operator metadata only and must not be applied
 
-## Operator tools
+## Install and bootstrap
 
-Use:
-
-```bash
-make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
-```
-
-This runs the Ansible playbook `ansible/playbooks/install-local-tools.yml`.
-
-The playbook installs:
-- `age`
-- `sops`
-- `kubectl`
-- `helm`
-- `flux`
-- optional `k9s`
-- optional `OpenTofu` and/or `Terraform`
-
-### k9s behavior on non-Ubuntu systems
-
-`k9s` is installed through the official GitHub release tarball on Linux instead of a hard Ubuntu-only `.deb` path, and it is skipped with an explicit message on unsupported systems instead of failing the whole playbook.
-
-### OpenTofu and Terraform
-
-The playbook can install `OpenTofu`, `Terraform`, both, or neither.
-
-The default in the Makefile is:
-
-```make
-IAC_TOOL ?= tofu
-TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
-```
-
-So by default the repository uses **OpenTofu** as the infrastructure CLI.
-
-You can switch modes at runtime:
-
-```bash
-make tools-install-local IAC_TOOL=tofu
-make tools-install-local IAC_TOOL=terraform
-make tools-install-local IAC_TOOL=both
-
-make terraform-init TOPOLOGY=local TF_BIN=tofu
-make terraform-apply TOPOLOGY=local TF_BIN=tofu
-```
-
-## First start without Git encryption
-
-This is the easiest startup path.
-
-### 1. Create your local environment file
+### 1. Create `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-### 2. Set the minimum values in `.env`
-
-Example:
+Minimum example:
 
 ```env
 TOPOLOGY=local
@@ -154,28 +89,29 @@ LOCAL_HOST_IP=192.168.1.108
 LMSTUDIO_HOST_IP=192.168.1.108
 
 GIT_REPO_URL=https://github.com/<your-user>/<your-repo>.git
-GIT_BRANCH=main
+GIT_BRANCH=dev
 
 GOOGLE_API_KEY=your-real-key
 GEMINI_MODEL=gemini-3.1-flash-lite-preview
 LMSTUDIO_EMBEDDING_MODEL=text-embedding-qwen3-embedding-0.6b
-OLLAMA_VERSION=v0.18.0
 ```
 
-### 3. Install local tools
+### 2. Install operator tools
 
 ```bash
 make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
 ```
 
-### 4. Initialize and apply infrastructure artifacts
+This installs `kubectl`, `helm`, `flux`, `age`, `sops`, and optional `k9s`.
+
+### 3. Render and apply infrastructure inputs
 
 ```bash
 make terraform-init TOPOLOGY=local TF_BIN=tofu
 make terraform-apply TOPOLOGY=local TF_BIN=tofu
 ```
 
-### 5. Bootstrap the local host and install k3s
+### 4. Bootstrap the host and install `k3s`
 
 ```bash
 make bootstrap-hosts TOPOLOGY=local
@@ -183,211 +119,15 @@ make install-k3s-server TOPOLOGY=local
 make kubeconfig TOPOLOGY=local
 ```
 
-### 6. Install Flux controllers into the cluster
+### 5. Install Flux controllers
+
+For the local topology:
 
 ```bash
 make install-flux-local
 ```
 
-This target expects `.kube/generated/current.yaml` to exist, so run `make kubeconfig TOPOLOGY=local` first if you have not already exported kubeconfig.
-
-### 7. Create external secrets directly in the cluster
-
-```bash
-make apply-plaintext-secrets ENV=dev
-```
-
-### 8. Commit and push the repository to your remote Git URL
-
-Flux will only reconcile from the pushed remote repository.
-
-### 9. Bootstrap Flux Git source and reconcile
-
-```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-make reconcile
-make verify
-```
-
-The generated Flux root is written to:
-
-```text
-flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml
-```
-
-That generated cluster root now renders staged Flux `Kustomization` resources (`bootstrap`, `infrastructure`, `apps`) so CRD-providing charts reconcile before any dependent custom resources.
-
-The generated topology input directory also has its own Kustomization:
-
-```text
-flux/generated/<topology>/kustomization.yaml
-```
-
-Useful local checks:
-
-```bash
-kubectl kustomize flux/generated/<topology>
-kubectl kustomize flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>
-```
-
-## Runtime modes
-
-### Remote-only
-
-```bash
-RUNTIME=none
-LMSTUDIO_ENABLED=false
-```
-
-Use this for the first stable start.
-
-### Remote Gemini + LM Studio
-
-```bash
-RUNTIME=none
-LMSTUDIO_ENABLED=true
-```
-
-In this mode, LM Studio runs **outside** the cluster as a local desktop/service process, and Kubernetes only exposes it through `Service + Endpoints` so LiteLLM can route to it.
-
-### Remote Gemini + Ollama
-
-```bash
-RUNTIME=ollama
-LMSTUDIO_ENABLED=false
-```
-
-Ollama runs **inside** Kubernetes through a Helm release.
-
-### Remote Gemini + vLLM
-
-```bash
-RUNTIME=vllm
-LMSTUDIO_ENABLED=false
-```
-
-vLLM runs **inside** Kubernetes through a Helm release.
-
-## Changing parameters
-
-The intended lifecycle is:
-1. edit values or manifests in Git
-2. commit
-3. push
-4. let Flux reconcile
-
-Do not use manual `helm install` or `helm upgrade` as the main operating model. Flux `GitRepository` and `HelmRelease` are the intended declarative control plane.
-
-When adding new Kustomize resources in this repository, prefer directory references with a local `kustomization.yaml` over cross-directory single-file references. This keeps local `kubectl kustomize` validation aligned with the repository structure.
-
-## Stop and start the platform without uninstalling the cluster
-
-There is no single generic `kubectl` command that powers off a Kubernetes cluster. The safe portable option is to suspend GitOps reconciliation and scale platform workloads to zero, then resume them later.
-
-Use:
-
-```bash
-make cluster-stop
-make cluster-start
-```
-
-What they do:
-- `cluster-stop` suspends Flux reconciliation for the main Git source and Kustomization and scales platform Deployments and StatefulSets to zero in the configured namespaces.
-- `cluster-start` resumes Flux and lets Git desired state restore the platform.
-
-## Git encryption with SOPS
-
-For the very first start, use `SECRETS_MODE=external` and create secrets directly in the cluster from `.env` or local helper scripts. This avoids blocking the first bootstrap on encryption.
-
-When you are ready to move to encrypted GitOps:
-
-1. install tools locally:
-
-```bash
-make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
-```
-
-2. generate an `age` key locally
-3. create or update `.sops.yaml`
-4. render plaintext secret manifests
-5. encrypt them with `sops`
-6. create the Flux decryption secret in `flux-system`
-7. switch `SECRETS_MODE=sops`
-8. commit and push the encrypted manifests to the same GitOps repo
-
-Keep encrypted manifests in the same repository that Flux reconciles.
-
-## Direct provider routing without LiteLLM
-
-The canonical path uses LiteLLM because it gives a single OpenAI-compatible abstraction layer for remote providers and optional local backends.
-
-If you need it later, `agentgateway` can also be configured to route directly to supported providers such as Gemini or Anthropic without LiteLLM in the middle. Use LiteLLM by default, and only bypass it when you deliberately want provider-specific behavior.
-
-## Useful commands
-
-Install operator tools:
-
-```bash
-make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
-```
-
-Initialize infrastructure artifacts:
-
-```bash
-make terraform-init TOPOLOGY=local TF_BIN=tofu
-make terraform-apply TOPOLOGY=local TF_BIN=tofu
-```
-
-Install Flux:
-=======
-# AgenticNativePlatform
-
-Cloud-native AI agentic enterprise platform based on Kubernetes (educational project).
-
-## Install Flux controllers
-
-This repo now provides **both** targets so topology intent is explicit.
-
-### Local topology (kind, minikube, k3d)
-
-```bash
-make install-flux-local
-```
-
-Pause platform workloads:
-
-```bash
-make cluster-stop
-```
-
-Resume platform workloads:
-
-```bash
-make cluster-start
-```
-
-Verify local state:
-
-```bash
-make verify
-```
-
-## Installation result example
-
-![Install_start_screenshot1](./assets/make-tools-install-local1.png)
-
-![Install_start_screenshot2](./assets/make-tools-install-local2.png)
-
-![Bootstrap_hosts_screenshot](./assets/bootstrap-hosts.png)
-
-![Install_k3s_server_screenshot](./assets/install-k3s-server.png)
-
-![Kubeconfig_screenshot](./assets/export-kubeconfig.png)
-
-
-### Non-local/shared topology (dev/test/prod clusters)
-
-Use the generic target and optionally pass the kube context:
+For a shared/non-local cluster:
 
 ```bash
 make install-flux
@@ -395,15 +135,194 @@ make install-flux
 make install-flux KUBE_CONTEXT=dev-cluster
 ```
 
-## Why two targets?
+### 6. Create secrets for the first bootstrap
 
-- `install-flux-local` is a local-focused entrypoint.
-- `install-flux` is topology-neutral and supports explicit context selection.
+Use external secrets first:
 
-This removes ambiguity from the previous docs-only instruction.
-=======
-Cloud-native AI agentic enterprise platform, based on Kubernetes (education project).
+```bash
+make apply-plaintext-secrets ENV=dev
+```
 
-## Flux bootstrap
+### 7. Render Flux inputs
 
-Use Makefile targets for local and non-local clusters. See details in [docs/flux-bootstrap.md](docs/flux-bootstrap.md).
+```bash
+make flux-values TOPOLOGY=local
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+Optional local validation:
+
+```bash
+kubectl kustomize flux/generated/local
+kubectl kustomize flux/generated/clusters/local-dev-none-external
+```
+
+### 8. Commit and push generated Flux inputs
+
+Flux cannot reconcile files that exist only locally.
+
+```bash
+git add charts flux docs scripts
+git commit -m "Bootstrap platform manifests"
+git push origin dev
+```
+
+### 9. Bootstrap Flux Git objects
+
+```bash
+make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+### 10. Reconcile and verify
+
+```bash
+make reconcile
+make verify
+```
+
+The generated cluster root fans out into staged Flux Kustomizations:
+
+- `platform-bootstrap`
+- `platform-infrastructure`
+- `platform-applications`
+
+This ordering is intentional. CRD-providing charts reconcile before dependent custom resources.
+
+## Change the platform safely
+
+The intended lifecycle is:
+
+1. edit manifests, values, or charts in Git
+2. regenerate Flux inputs if topology/runtime inputs changed
+3. commit
+4. push
+5. let Flux reconcile, or run `make reconcile`
+
+Do not treat manual `helm install` or `helm upgrade` as the main operating model. Flux is the control plane here.
+
+## Switch runtime modes
+
+Remote-only:
+
+```bash
+make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make reconcile
+```
+
+Remote Gemini + external LM Studio:
+
+```bash
+make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=true
+make reconcile
+```
+
+Remote Gemini + Ollama:
+
+```bash
+make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=ollama SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make reconcile
+```
+
+Remote Gemini + vLLM:
+
+```bash
+make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=vllm SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make reconcile
+```
+
+## Stop and restart the platform
+
+Pause workloads without uninstalling the cluster:
+
+```bash
+make cluster-stop
+```
+
+Resume from Git desired state:
+
+```bash
+make cluster-start
+```
+
+`cluster-stop` now suspends the staged Flux Kustomizations and HelmReleases before scaling workloads down. `cluster-start` resumes them in order and reconciles the staged Kustomizations explicitly.
+
+## Move to SOPS later
+
+Once the basic platform works, switch from `SECRETS_MODE=external` to `SECRETS_MODE=sops`.
+
+```bash
+make sops-age-key
+make render-sops-secrets ENV=dev
+make encrypt-secrets ENV=dev
+make sops-bootstrap-cluster
+```
+
+Then switch `SECRETS_MODE=sops`, commit the encrypted manifests, push, and reconcile.
+
+## Verify and test
+
+```bash
+make verify
+make test-litellm
+make port-forward-kagent
+make test-a2a-agent
+make port-forward-agentgateway
+make test-agentgateway-openai
+```
+
+## Remove the environment
+
+Remove `k3s` from the selected topology:
+
+```bash
+make uninstall-k3s TOPOLOGY=local
+```
+
+Destroy local Terraform/OpenTofu artifacts:
+
+```bash
+make terraform-destroy TOPOLOGY=local TF_BIN=tofu
+```
+
+## Troubleshooting
+
+If a Flux command talks to `http://localhost:8080`, your shell is not using the repo kubeconfig. Use:
+
+```bash
+export KUBECONFIG="$PWD/.kube/generated/current.yaml"
+```
+
+If `make reconcile` or `make cluster-start` appears stuck, inspect the staged objects directly:
+
+```bash
+flux get kustomizations -A
+flux get helmreleases -A
+kubectl get pods -A
+kubectl get events -A --sort-by=.lastTimestamp | tail -n 100
+```
+
+If `istio-cni` is not ready on `k3s`, verify the chart is using the K3s-specific paths:
+
+- `cniConfDir=/var/lib/rancher/k3s/agent/etc/cni/net.d`
+- `cniBinDir=/var/lib/rancher/k3s/data/cni`
+
+## Additional docs
+
+- [Operations](docs/OPERATIONS.md)
+- [Commands](docs/commands.md)
+- [Flux bootstrap notes](docs/flux-bootstrap.md)
+- [Architecture](docs/architecture.md)
+- [ADR index](docs/adr/README.md)
+
+
+## Installation result example
+
+![Install_start_screenshot1](./.assets/make-tools-install-local1.png)
+
+![Install_start_screenshot2](./.assets/make-tools-install-local2.png)
+
+![Bootstrap_hosts_screenshot](./.assets/bootstrap-hosts.png)
+
+![Install_k3s_server_screenshot](./.assets/install-k3s-server.png)
+
+![Kubeconfig_screenshot](./.assets/export-kubeconfig.png)

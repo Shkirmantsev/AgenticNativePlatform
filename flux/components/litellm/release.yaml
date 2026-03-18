@@ -10,6 +10,7 @@ spec:
   chart:
     spec:
       chart: ./charts/litellm-proxy
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: platform

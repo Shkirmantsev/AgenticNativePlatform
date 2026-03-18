@@ -101,11 +101,21 @@ Pause the platform without removing the cluster:
 make cluster-stop
 ```
 
+`cluster-stop` suspends:
+
+- `GitRepository/flux-system/platform`
+- staged child Kustomizations such as `platform-bootstrap`, `platform-infrastructure`, `platform-applications`
+- all HelmReleases in `flux-system`
+
+It then scales Deployments and StatefulSets to zero in the configured platform namespaces.
+
 Resume the platform and let Flux restore desired state:
 
 ```bash
 make cluster-start
 ```
+
+`cluster-start` resumes the source, HelmReleases, and staged Kustomizations, then reconciles them in order.
 
 Remove k3s from the current topology:
 
@@ -118,3 +128,12 @@ Destroy local Terraform/OpenTofu artifacts:
 ```bash
 make terraform-destroy TOPOLOGY=local TF_BIN=tofu
 ```
+
+## Known K3s-specific runtime detail
+
+When using Istio CNI on K3s, the chart must target the K3s agent-managed CNI paths:
+
+- `cniConfDir=/var/lib/rancher/k3s/agent/etc/cni/net.d`
+- `cniBinDir=/var/lib/rancher/k3s/data/cni`
+
+If `istio-cni` waits forever on an empty `/etc/cni/net.d`, the HelmRelease is using generic Kubernetes defaults instead of the K3s paths.

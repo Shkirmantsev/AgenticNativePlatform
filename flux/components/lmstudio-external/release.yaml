@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: ./charts/lmstudio-external
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: platform

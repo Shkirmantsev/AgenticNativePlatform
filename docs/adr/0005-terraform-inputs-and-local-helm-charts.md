@@ -11,8 +11,10 @@ Earlier revisions mixed `.env` expectations with Terraform without actually wiri
 - `.env` is reserved for Make and helper scripts.
 - Terraform generates inventory, MetalLB values, and LM Studio endpoint artifacts.
 - Local Helm charts are added for LiteLLM configuration, external service wiring, optional runtime templates, and demo flows.
+- Flux `HelmRelease` resources that point at repo-local charts under `./charts/...` use `chart.spec.reconcileStrategy: Revision` so chart file changes rebuild packaged chart artifacts without requiring a `Chart.yaml` version bump during iterative development.
 
 ## Consequences
 - Host IPs and LM Studio wiring are now explicit and topology-specific.
 - The repository exposes both upstream Helm-managed platform components and local Helm templates for the platform glue layer.
 - Plaintext generated files stay local, while encrypted GitOps-safe outputs can be committed.
+- Local chart debugging is less surprising because a Git revision change is enough to trigger a rebuilt Flux `HelmChart` artifact.

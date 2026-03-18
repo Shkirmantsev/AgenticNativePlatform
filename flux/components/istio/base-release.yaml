@@ -70,6 +70,10 @@ spec:
         name: istio
         namespace: flux-system
       version: 1.26.x
+  values:
+    # k3s uses its own agent-managed CNI config and plugin directories.
+    cniConfDir: /var/lib/rancher/k3s/agent/etc/cni/net.d
+    cniBinDir: /var/lib/rancher/k3s/data/cni
   install:
     remediation:
       retries: 3

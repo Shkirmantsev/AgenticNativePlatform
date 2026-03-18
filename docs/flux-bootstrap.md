@@ -24,3 +24,11 @@ make install-flux KUBE_CONTEXT=dev-cluster
 
 - `install-flux-local`: local bootstrap convenience target.
 - `install-flux`: topology-neutral target, with optional explicit context.
+
+After `make bootstrap-flux-git`, this repository reconciles through the staged root:
+
+- `platform-bootstrap`
+- `platform-infrastructure`
+- `platform-applications`
+
+For operational checks, prefer `flux get kustomizations -A` over watching only the parent `platform` object.

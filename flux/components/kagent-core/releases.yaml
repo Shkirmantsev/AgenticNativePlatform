@@ -21,6 +21,10 @@ spec:
   values:
     kmcp:
       enabled: false
+    providers:
+      openAI:
+        apiKeySecretRef: kagent-agentgateway
+        apiKeySecretKey: OPENAI_API_KEY
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -36,6 +40,7 @@ spec:
   chart:
     spec:
       chart: ./charts/vendor/kagent
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: platform

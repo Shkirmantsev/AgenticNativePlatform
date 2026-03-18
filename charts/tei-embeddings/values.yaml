@@ -10,6 +10,8 @@ serviceAccount:
   name: tei-embeddings
   automountServiceAccountToken: false
 model: Qwen/Qwen3-Embedding-0.6B
+extraArgs:
+  - --auto-truncate
 resources:
   requests:
     cpu: "250m"

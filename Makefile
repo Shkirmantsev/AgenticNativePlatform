@@ -21,6 +21,7 @@ KUBECONFIG ?= $(abspath $(KUBECONFIG_DIR)/current.yaml)
 export KUBECONFIG
 
 STOP_NAMESPACES ?= metallb-system istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
+PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-applications platform
 
 .PHONY: help \
 	tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
@@ -113,12 +114,24 @@ render-cluster-root: ## Render the Flux root kustomization for the selected topo
 install-flux-local: require-kubeconfig ## Install Flux controllers into the current cluster
 	flux install
 
+install-flux: require-kubeconfig ## Install Flux controllers into the selected/current cluster
+	@if [ -n "$(KUBE_CONTEXT)" ]; then \
+		echo "Installing Flux into context $(KUBE_CONTEXT)"; \
+		flux --context "$(KUBE_CONTEXT)" install; \
+	else \
+		echo "Installing Flux into current context"; \
+		flux install; \
+	fi
+
 bootstrap-flux-git: require-kubeconfig flux-values render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
 	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/bootstrap-flux-git.sh
 
 reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
 	@flux reconcile source git platform -n flux-system || true
-	@flux reconcile kustomization platform -n flux-system --with-source || true
+	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
+	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  flux reconcile kustomization $$k -n flux-system --with-source || true; \
+	done
 
 verify: require-kubeconfig ## Basic local verification of cluster and Flux state
 	kubectl get nodes -o wide || true
@@ -152,8 +165,14 @@ sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key i
 	./scripts/bootstrap-sops-secret.sh
 
 cluster-stop: require-kubeconfig ## Pause platform workloads without uninstalling the cluster
+	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
+	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  flux suspend kustomization $$k -n flux-system || true; \
+	done
 	@flux suspend source git platform -n flux-system || true
-	@flux suspend kustomization platform -n flux-system || true
+	@for hr in $$(kubectl -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  flux suspend helmrelease $$hr -n flux-system || true; \
+	done
 	@for ns in $(STOP_NAMESPACES); do \
 	  kubectl get ns $$ns >/dev/null 2>&1 || continue; \
 	  kubectl -n $$ns get deploy -o name 2>/dev/null | xargs -r -n1 kubectl -n $$ns scale --replicas=0; \
@@ -162,8 +181,18 @@ cluster-stop: require-kubeconfig ## Pause platform workloads without uninstallin
 
 cluster-start: require-kubeconfig ## Resume platform workloads from Git desired state
 	@flux resume source git platform -n flux-system || true
-	@flux resume kustomization platform -n flux-system || true
-	@flux reconcile kustomization platform -n flux-system --with-source || true
+	@for hr in $$(kubectl -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  flux resume helmrelease $$hr -n flux-system || true; \
+	done
+	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
+	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  flux resume kustomization $$k -n flux-system || true; \
+	done
+	@flux reconcile source git platform -n flux-system || true
+	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
+	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  flux reconcile kustomization $$k -n flux-system --with-source || true; \
+	done
 
 preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s image import directory on all nodes
 	@test -n "$(VLLM_IMAGE_TARBALL)" || (echo "Set VLLM_IMAGE_TARBALL=/path/to/image.tar" >&2; exit 1)
@@ -205,20 +234,3 @@ test-ollama: require-kubeconfig ## Check the in-cluster Ollama endpoint
 test-vllm: require-kubeconfig ## Check the in-cluster vLLM endpoint
 	kubectl -n ai-models run vllm-curl --rm -i --restart=Never --image=curlimages/curl:8.10.1 -- \
 	  curl -fsSL http://vllm-openai.ai-models.svc.cluster.local:8000/v1/models
-
-.PHONY: install-flux-local install-flux
-
-# Install Flux controllers for local clusters (kind/minikube/k3d).
-install-flux-local:
-	flux install
-
-# Install Flux controllers for non-local/shared clusters.
-# Example: make install-flux KUBE_CONTEXT=dev-cluster
-install-flux:
-	@if [ -n "$(KUBE_CONTEXT)" ]; then \
-		echo "Installing Flux into context $(KUBE_CONTEXT)"; \
-		flux --context "$(KUBE_CONTEXT)" install; \
-	else \
-		echo "Installing Flux into current context"; \
-		flux install; \
-	fi

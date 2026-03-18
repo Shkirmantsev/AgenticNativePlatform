@@ -26,7 +26,14 @@ spec:
         - name: tei
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args: ["--model-id", {{ .Values.model | quote }}, "--port", "80"]
+          args:
+            - --model-id
+            - {{ .Values.model | quote }}
+            - --port
+            - "80"
+{{- range .Values.extraArgs }}
+            - {{ . | quote }}
+{{- end }}
           ports:
             - containerPort: 80
           readinessProbe:

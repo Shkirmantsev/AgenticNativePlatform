@@ -107,6 +107,14 @@ make cluster-stop
 make cluster-start
 ```
 
+These targets now operate on the staged Flux objects as well as the top-level `platform` object. If startup still looks slow, inspect the staged status directly:
+
+```bash
+flux get kustomizations -A
+flux get helmreleases -A
+kubectl get pods -A
+```
+
 ## Bootstrap SOPS decryption in-cluster
 
 ```bash
