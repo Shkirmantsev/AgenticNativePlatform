@@ -215,6 +215,8 @@ The generated Flux root is written to:
 flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml
 ```
 
+That generated cluster root now renders staged Flux `Kustomization` resources (`bootstrap`, `infrastructure`, `apps`) so CRD-providing charts reconcile before any dependent custom resources.
+
 The generated topology input directory also has its own Kustomization:
 
 ```text
@@ -405,4 +407,3 @@ Cloud-native AI agentic enterprise platform, based on Kubernetes (education proj
 ## Flux bootstrap
 
 Use Makefile targets for local and non-local clusters. See details in [docs/flux-bootstrap.md](docs/flux-bootstrap.md).
-

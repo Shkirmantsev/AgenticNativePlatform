@@ -1,0 +1,9 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: litellm-upstream
+  namespace: agentgateway-system
+spec:
+  llm:
+    host: litellm.ai-gateway.svc.cluster.local
+    port: 4000

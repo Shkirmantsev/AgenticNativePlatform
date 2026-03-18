@@ -49,6 +49,7 @@ Do not commit:
 
 - `flux/generated/<topology>/kustomization.yaml` is the generated topology input root
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml` is the generated cluster root used by bootstrap scripts
+- the generated cluster root fans out into staged Flux `Kustomization` resources so CRDs and charts install before dependent custom resources
 - `flux/generated/<topology>/topology-values.yaml` is informational metadata for operators and is not applied to Kubernetes
 
 Validate generated manifests with:
