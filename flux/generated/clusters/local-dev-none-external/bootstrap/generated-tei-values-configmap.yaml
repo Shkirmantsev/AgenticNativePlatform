@@ -5,4 +5,4 @@ metadata:
   namespace: flux-system
 data:
   values.yaml: |
-    model: Qwen/Qwen3-Embedding-0.6B
+    model: onnx-models/all-MiniLM-L6-v2-onnx

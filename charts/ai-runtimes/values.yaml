@@ -10,7 +10,7 @@ lmstudio:
 tei:
   enabled: true
   image: ghcr.io/huggingface/text-embeddings-inference:1.8
-  modelId: Qwen/Qwen3-Embedding-0.6B
+  modelId: onnx-models/all-MiniLM-L6-v2-onnx
   resources:
     requests:
       cpu: "250m"

@@ -54,5 +54,10 @@ spec:
     remediation:
       retries: 3
   values:
+    tag: "0.7.23"
+    kagent-tools:
+      tools:
+        image:
+          tag: "0.1.1"
     kmcp:
       enabled: false

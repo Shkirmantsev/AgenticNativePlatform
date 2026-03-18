@@ -22,3 +22,4 @@ The platform must be easy to start in a home-lab environment, but it must also s
 - Production-like encrypted GitOps remains available without redesigning the repo.
 - Operators have one source of truth for manifests, charts, and docs.
 - Stop/start flows must account for the staged child Kustomizations, not only the top-level `platform` object.
+- If stop/start works by suspending Flux objects and scaling workloads to zero, restart must also force HelmRelease reconciliation or Helm-managed Deployments such as `istiod` can remain at `0/0` even though the release is marked ready.

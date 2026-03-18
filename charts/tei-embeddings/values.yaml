@@ -9,7 +9,7 @@ serviceAccount:
   create: true
   name: tei-embeddings
   automountServiceAccountToken: false
-model: Qwen/Qwen3-Embedding-0.6B
+model: onnx-models/all-MiniLM-L6-v2-onnx
 extraArgs:
   - --auto-truncate
 resources:

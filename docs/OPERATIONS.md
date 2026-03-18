@@ -116,6 +116,7 @@ make cluster-start
 ```
 
 `cluster-start` resumes the source, HelmReleases, and staged Kustomizations, then reconciles them in order.
+It also force-reconciles all existing HelmReleases in `flux-system` so workloads scaled down by `cluster-stop` are pushed back to their desired replica counts instead of remaining at zero because the release looked otherwise in-sync.
 
 Remove k3s from the current topology:
 
@@ -135,5 +136,13 @@ When using Istio CNI on K3s, the chart must target the K3s agent-managed CNI pat
 
 - `cniConfDir=/var/lib/rancher/k3s/agent/etc/cni/net.d`
 - `cniBinDir=/var/lib/rancher/k3s/data/cni`
+- `ambient.enabled=true` when the platform uses `ztunnel` and ambient-labeled namespaces
 
 If `istio-cni` waits forever on an empty `/etc/cni/net.d`, the HelmRelease is using generic Kubernetes defaults instead of the K3s paths.
+If `ztunnel` stays unready and logs that `/var/run/ztunnel/ztunnel.sock` is missing, `istio-cni` is running without ambient mode enabled.
+
+## Known TEI CPU detail
+
+The default `tei-embeddings` deployment uses the CPU Text Embeddings Inference image. For that path, prefer an ONNX-backed embedding model such as `onnx-models/all-MiniLM-L6-v2-onnx`.
+
+If `tei-embeddings` downloads tokenizer files and then fails looking for `model.onnx`, the configured model does not ship the ONNX artifacts that this runtime expects.

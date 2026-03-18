@@ -94,6 +94,7 @@ GIT_BRANCH=dev
 GOOGLE_API_KEY=your-real-key
 GEMINI_MODEL=gemini-3.1-flash-lite-preview
 LMSTUDIO_EMBEDDING_MODEL=text-embedding-qwen3-embedding-0.6b
+EMBEDDING_MODEL=onnx-models/all-MiniLM-L6-v2-onnx
 ```
 
 ### 2. Install operator tools
@@ -245,6 +246,8 @@ make cluster-start
 ```
 
 `cluster-stop` now suspends the staged Flux Kustomizations and HelmReleases before scaling workloads down. `cluster-start` resumes them in order and reconciles the staged Kustomizations explicitly.
+It also force-reconciles existing HelmReleases so workloads that were manually scaled to zero, such as `istiod`, are restored to their Helm-managed replica counts.
+For the default CPU TEI path, keep `EMBEDDING_MODEL` on an ONNX-backed model such as `onnx-models/all-MiniLM-L6-v2-onnx`; models without `model.onnx` artifacts can leave `tei-embeddings` stuck even when Flux itself is healthy.
 
 ## Move to SOPS later
 

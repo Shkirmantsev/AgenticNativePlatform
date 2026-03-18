@@ -193,6 +193,9 @@ cluster-start: require-kubeconfig ## Resume platform workloads from Git desired 
 	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  flux reconcile kustomization $$k -n flux-system --with-source || true; \
 	done
+	@for hr in $$(kubectl -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  flux reconcile helmrelease $$hr -n flux-system --force || true; \
+	done
 
 preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s image import directory on all nodes
 	@test -n "$(VLLM_IMAGE_TARBALL)" || (echo "Set VLLM_IMAGE_TARBALL=/path/to/image.tar" >&2; exit 1)

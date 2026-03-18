@@ -13,6 +13,7 @@ Earlier revisions mixed `.env` expectations with Terraform without actually wiri
 - Local Helm charts are added for LiteLLM configuration, external service wiring, optional runtime templates, and demo flows.
 - Flux `HelmRelease` resources that point at repo-local charts under `./charts/...` use `chart.spec.reconcileStrategy: Revision` so chart file changes rebuild packaged chart artifacts without requiring a `Chart.yaml` version bump during iterative development.
 - Repo-local chart templates must not emit raw Flux-packaged `Chart.Version` values into Kubernetes labels, and images that default from `Chart.Version` should be pinned explicitly when upstream registries do not publish build-metadata tags.
+- When vendored subcharts publish different image tags than the parent chart, pin those subchart image tags directly instead of using a blanket `global.tag` override.
 
 ## Consequences
 - Host IPs and LM Studio wiring are now explicit and topology-specific.
@@ -20,3 +21,4 @@ Earlier revisions mixed `.env` expectations with Terraform without actually wiri
 - Plaintext generated files stay local, while encrypted GitOps-safe outputs can be committed.
 - Local chart debugging is less surprising because a Git revision change is enough to trigger a rebuilt Flux `HelmChart` artifact.
 - Local chart authors need to treat Flux-added build metadata as packaging information, not as a safe default Kubernetes label value.
+- Local chart authors also need to respect subchart version boundaries when pinning image tags, or a parent-chart fix can break a healthy subchart rollout.

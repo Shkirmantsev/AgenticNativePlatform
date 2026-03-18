@@ -74,6 +74,8 @@ spec:
     # k3s uses its own agent-managed CNI config and plugin directories.
     cniConfDir: /var/lib/rancher/k3s/agent/etc/cni/net.d
     cniBinDir: /var/lib/rancher/k3s/data/cni
+    ambient:
+      enabled: true
   install:
     remediation:
       retries: 3

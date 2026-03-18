@@ -7,3 +7,23 @@ spec:
   description: Example echo MCP server managed by kmcp.
   protocol: STREAMABLE_HTTP
   url: "http://echo-mcp.kagent.svc.cluster.local:3001/mcp"
+---
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: kagent-tool-server
+  namespace: kagent
+spec:
+  description: Compatibility alias for the kagent bundled tool server.
+  protocol: STREAMABLE_HTTP
+  url: "http://kagent-kagent-tools.kagent.svc.cluster.local:8084/mcp"
+---
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: kagent-grafana-mcp
+  namespace: kagent
+spec:
+  description: Compatibility alias for the kagent bundled grafana MCP server.
+  protocol: STREAMABLE_HTTP
+  url: "http://kagent-kagent-grafana-mcp.kagent.svc.cluster.local:8000/mcp"
