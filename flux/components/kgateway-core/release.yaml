@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   targetNamespace: kgateway-system
   chartRef:
     kind: OCIRepository
@@ -12,6 +13,11 @@ spec:
     namespace: flux-system
   install:
     createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     gateway:
       service:

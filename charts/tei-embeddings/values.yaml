@@ -1,7 +1,7 @@
 namespace: ai-models
 image:
   repository: ghcr.io/huggingface/text-embeddings-inference
-  tag: 1.8
+  tag: cpu-1.8
   pullPolicy: IfNotPresent
 service:
   port: 80

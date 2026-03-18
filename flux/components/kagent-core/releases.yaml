@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   targetNamespace: kagent
   chartRef:
     kind: OCIRepository
@@ -12,6 +13,11 @@ spec:
     namespace: flux-system
   install:
     createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     kmcp:
       enabled: false
@@ -23,13 +29,24 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   dependsOn:
     - name: kagent-crds
   targetNamespace: kagent
-  chartRef:
-    kind: OCIRepository
-    name: kagent-chart
-    namespace: flux-system
+  chart:
+    spec:
+      chart: ./charts/vendor/kagent
+      sourceRef:
+        kind: GitRepository
+        name: platform
+        namespace: flux-system
+      interval: 1m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     kmcp:
       enabled: false

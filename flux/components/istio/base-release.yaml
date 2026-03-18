@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   targetNamespace: istio-system
   chart:
     spec:
@@ -16,6 +17,11 @@ spec:
       version: 1.26.x
   install:
     createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -24,6 +30,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   dependsOn:
     - name: istio-base
   targetNamespace: istio-system
@@ -37,6 +44,12 @@ spec:
       version: 1.26.x
   values:
     profile: ambient
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -45,6 +58,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   dependsOn:
     - name: istiod
   targetNamespace: istio-system
@@ -56,6 +70,12 @@ spec:
         name: istio
         namespace: flux-system
       version: 1.26.x
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -64,6 +84,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   dependsOn:
     - name: istio-cni
   targetNamespace: istio-system
@@ -75,3 +96,9 @@ spec:
         name: istio
         namespace: flux-system
       version: 1.26.x
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3

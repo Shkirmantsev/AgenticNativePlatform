@@ -1,0 +1,97 @@
+{{- include "kagent.validateController" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kagent.fullname" . }}-controller
+  namespace: {{ include "kagent.namespace" . }}
+  labels:
+    {{- include "kagent.controller.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicas }}
+  selector:
+    matchLabels:
+      {{- include "kagent.controller.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/controller-configmap.yaml") . | sha256sum }}
+        {{- with .Values.controller.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "kagent.controller.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.controller.imagePullSecrets | default .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml (.Values.controller.podSecurityContext | default .Values.podSecurityContext) | nindent 8 }}
+      serviceAccountName: {{ include "kagent.fullname" . }}-controller
+      {{- if or (eq .Values.database.type "sqlite") (gt (len .Values.controller.volumes) 0) }}
+      volumes:
+      {{- if eq .Values.database.type "sqlite" }}
+      - name: sqlite-volume
+        emptyDir:
+          sizeLimit: 500Mi
+          medium: Memory
+      {{- end }}
+      {{- with .Values.controller.volumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- end }}
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: controller
+          image: "{{ .Values.controller.image.registry | default .Values.registry  }}/{{ .Values.controller.image.repository }}:{{ coalesce .Values.tag .Values.controller.image.tag .Chart.Version }}"
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy | default .Values.imagePullPolicy }}
+          env:
+            - name: KAGENT_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- with .Values.controller.env }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "kagent.fullname" . }}-controller
+            {{- with .Values.controller.envFrom }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.controller.service.ports.targetPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.controller.securityContext | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+          {{- if or (eq .Values.database.type "sqlite") (gt (len .Values.controller.volumeMounts) 0) }}
+          volumeMounts:
+            {{- if eq .Values.database.type "sqlite" }}
+            - name: sqlite-volume
+              mountPath: /sqlite-volume
+            {{- end }}
+            {{- with .Values.controller.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}

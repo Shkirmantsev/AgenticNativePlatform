@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   targetNamespace: agentgateway-system
   chartRef:
     kind: OCIRepository
@@ -12,6 +13,11 @@ spec:
     namespace: flux-system
   install:
     createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -20,6 +26,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 9m
   dependsOn:
     - name: agentgateway-crds
   targetNamespace: agentgateway-system
@@ -27,6 +34,12 @@ spec:
     kind: OCIRepository
     name: agentgateway-chart
     namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     service:
       type: ClusterIP

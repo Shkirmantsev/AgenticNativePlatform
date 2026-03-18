@@ -44,6 +44,15 @@ spec:
   url: https://qdrant.github.io/qdrant-helm
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: jetstack
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://charts.jetstack.io
+---
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: bitnami-postgresql-chart
@@ -106,17 +115,6 @@ metadata:
 spec:
   interval: 1h
   url: oci://ghcr.io/kagent-dev/kagent/helm/kagent-crds
-  ref:
-    semver: ">=0.7.0"
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: kagent-chart
-  namespace: flux-system
-spec:
-  interval: 1h
-  url: oci://ghcr.io/kagent-dev/kagent/helm/kagent
   ref:
     semver: ">=0.7.0"
 ---

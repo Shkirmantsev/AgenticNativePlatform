@@ -5,6 +5,7 @@ resources:
   - ../istio
   - ../kgateway-core
   - ../agentgateway-core
+  - ../cert-manager
   - ../litellm
   - ../kserve
   - ../tei
