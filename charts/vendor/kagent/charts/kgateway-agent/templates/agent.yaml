@@ -212,7 +212,7 @@ spec:
     tools:
       - type: McpServer
         mcpServer:
-          name: kagent-tool-server
+          name: {{ include "kagent.toolServerName" . }}
           kind: RemoteMCPServer
           apiGroup: kagent.dev
           toolNames:

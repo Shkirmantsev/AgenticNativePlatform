@@ -57,7 +57,7 @@ spec:
     tools:
       - type: McpServer
         mcpServer:
-          name: kagent-tool-server
+          name: {{ include "kagent.toolServerName" . }}
           kind: RemoteMCPServer
           apiGroup: kagent.dev
           toolNames:
@@ -65,7 +65,7 @@ spec:
           - k8s_get_available_api_resources
       - type: McpServer
         mcpServer:
-          name: kagent-grafana-mcp
+          name: {{ include "kagent.grafanaMCPServerName" . }}
           kind: RemoteMCPServer
           apiGroup: kagent.dev
           toolNames:

@@ -99,7 +99,7 @@ Important:
 
 - it uses the current `.env` values for `TOPOLOGY`, `ENV`, `RUNTIME`, `SECRETS_MODE`, and related inputs
 - it assumes Flux should read the generated manifests from the remote Git branch, not only from your local working tree
-- if rendering changes `flux/generated/<topology>/` or `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`, the target stops and tells you to commit and push those changes before continuing
+- after `terraform-apply` materializes topology inputs, it renders `flux/generated/...` and stops before host bootstrap if those tracked manifests need commit and push
 
 Standard follow-up commands:
 

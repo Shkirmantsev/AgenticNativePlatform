@@ -58,15 +58,16 @@ make run-cluster-from-scratch
 That target orchestrates the existing building blocks in order:
 
 1. install local operator tools
-2. provision the selected topology
-3. install Flux
-4. apply first-pass secrets
-5. render Flux inputs
-6. bootstrap the Flux Git objects
-7. reconcile staged Kustomizations and HelmReleases
-8. print cluster status
+2. provision the selected topology inputs
+3. render tracked Flux inputs and verify they are already committed
+4. continue host bootstrap and kubeconfig export
+5. install Flux
+6. apply first-pass secrets
+7. bootstrap the Flux Git objects
+8. reconcile staged Kustomizations and HelmReleases
+9. print cluster status
 
-It intentionally stops if the render step changes tracked generated manifests under `flux/generated/...`, because Flux reads the remote Git branch rather than your local working tree.
+It intentionally stops after the topology render step if tracked generated manifests under `flux/generated/...` changed locally, because Flux reads the remote Git branch rather than your local working tree.
 
 If `k9s` looks empty, it is usually reading the wrong kubeconfig or a narrowed namespace view. Prefer:
 

@@ -41,7 +41,7 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
 	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
 	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote run-cluster-from-scratch \
-	flux-values render-cluster-root install-flux-local bootstrap-flux-git reconcile verify cluster-status \
+	flux-values render-cluster-root ensure-generated-flux-clean install-flux-local bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
 	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
@@ -126,6 +126,7 @@ uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventor
 cluster-up-local: ## Bootstrap a single-node local topology
 	$(MAKE) terraform-init TOPOLOGY=local TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=local TF_BIN=$(TF_BIN)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=local ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=local
 	$(MAKE) install-k3s-server TOPOLOGY=local
 	$(MAKE) kubeconfig TOPOLOGY=local
@@ -133,6 +134,7 @@ cluster-up-local: ## Bootstrap a single-node local topology
 cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 	$(MAKE) terraform-init TOPOLOGY=minipc TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=minipc TF_BIN=$(TF_BIN)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=minipc ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=minipc
 	$(MAKE) install-k3s-server TOPOLOGY=minipc
 	$(MAKE) kubeconfig TOPOLOGY=minipc
@@ -140,6 +142,7 @@ cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker topology
 	$(MAKE) terraform-init TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid
 	$(MAKE) join-workers TOPOLOGY=hybrid
@@ -149,6 +152,7 @@ cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker t
 cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation and remote worker nodes
 	$(MAKE) terraform-init TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid-remote ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid-remote
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid-remote
 	$(MAKE) join-workers TOPOLOGY=hybrid-remote
@@ -168,14 +172,6 @@ run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, appl
 	else \
 	  $(MAKE) apply-plaintext-secrets TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
 	fi
-	@$(MAKE) flux-values TOPOLOGY=$(TOPOLOGY)
-	@$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
-	@changed="$$(git status --porcelain -- "flux/generated/$(TOPOLOGY)" "flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)")"; \
-	if [ -n "$$changed" ]; then \
-	  echo "Generated Flux manifests changed locally. Commit and push them before continuing:"; \
-	  echo "$$changed"; \
-	  exit 1; \
-	fi
 	@$(MAKE) bootstrap-flux-git TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	@$(MAKE) cluster-status TOPOLOGY=$(TOPOLOGY)
@@ -185,6 +181,14 @@ flux-values: ## Render non-secret Flux ConfigMaps for the selected topology
 
 render-cluster-root: ## Render the Flux root kustomization for the selected topology/env/runtime/secrets mode
 	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/render-cluster-kustomization.sh
+
+ensure-generated-flux-clean: flux-values render-cluster-root ## Render tracked Flux inputs and fail before cluster install continues if GitOps inputs need commit/push
+	@changed="$$(git status --porcelain -- "flux/generated/$(TOPOLOGY)" "flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)")"; \
+	if [ -n "$$changed" ]; then \
+	  echo "Generated Flux manifests changed locally. Commit and push them before continuing:"; \
+	  echo "$$changed"; \
+	  exit 1; \
+	fi
 
 install-flux-local: require-kubeconfig ## Install Flux controllers into the current cluster
 	$(FLUX) install

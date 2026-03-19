@@ -18,7 +18,7 @@ make run-cluster-from-scratch
 This is the preferred first-run command.
 It installs local tools, brings up the selected topology, installs Flux, applies the initial secrets, renders Flux inputs, bootstraps the Git source, reconciles the staged Kustomizations, and prints cluster status.
 
-If the render step changes tracked files under `flux/generated/<topology>/` or `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`, the target stops and asks you to commit and push those generated manifests before it continues.
+After `terraform-apply` writes the topology-specific inputs, it renders the tracked files under `flux/generated/<topology>/` and `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`. If those renders change tracked files, the target stops before host bootstrap continues and asks you to commit and push them first.
 
 Useful follow-up commands:
 

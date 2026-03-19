@@ -43,6 +43,20 @@ default-model-config
 {{- end }}
 
 {{/*
+Compute the RemoteMCPServer name for the built-in tool server.
+*/}}
+{{- define "kagent.toolServerName" -}}
+{{- printf "%s-tool-server" (include "kagent.fullname" .) -}}
+{{- end }}
+
+{{/*
+Compute the RemoteMCPServer name for the built-in Grafana MCP server.
+*/}}
+{{- define "kagent.grafanaMCPServerName" -}}
+{{- printf "%s-grafana-mcp" (include "kagent.fullname" .) -}}
+{{- end }}
+
+{{/*
 Expand the namespace of the release.
 Allows overriding it for multi-namespace deployments in combined charts.
 */}}
