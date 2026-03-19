@@ -12,7 +12,7 @@ metadata:
   name: echo-mcp
   namespace: kagent
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: echo-mcp
