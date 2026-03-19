@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - release.yaml
   - gateway.yaml
+  - referencegrants.yaml
   - backends.yaml
   - httproutes.yaml
   - policy.yaml
