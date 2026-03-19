@@ -326,13 +326,27 @@ Resume from Git desired state:
 make cluster-resume
 ```
 
-`cluster-pause` suspends the staged Flux Kustomizations and HelmReleases before scaling workloads down. `cluster-resume` resumes them in order and reconciles the staged Kustomizations explicitly.
-It reconciles `platform-bootstrap` first, force-reconciles the existing HelmReleases, then waits on `platform-infrastructure`, `platform-applications`, and the top-level `platform` root.
-That keeps the restart flow aligned with Helm-managed workloads that were scaled to zero during `cluster-pause`.
-`metallb-system` is intentionally left running during `cluster-pause`; scaling the MetalLB controller to zero breaks its validating webhook and can block the next `platform-applications` reconcile on `IPAddressPool`.
-`cluster-pause` is a pause, not a full host shutdown: expect core/system pods and DaemonSets such as `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary to remain running.
-`cluster-stop` and `cluster-start` remain as compatibility aliases, but `cluster-pause` and `cluster-resume` are the preferred names.
-For the default CPU TEI path, keep `EMBEDDING_MODEL` on an ONNX-backed model such as `onnx-models/all-MiniLM-L6-v2-onnx`; models without `model.onnx` artifacts can leave `tei-embeddings` stuck even when Flux itself is healthy.
+What `cluster-pause` does:
+
+- suspends the staged Flux Kustomizations and HelmReleases
+- scales Deployments and StatefulSets down in the configured platform namespaces
+
+What `cluster-resume` does:
+
+- resumes the staged Flux objects in order
+- reconciles `platform-bootstrap` first
+- force-reconciles the existing HelmReleases
+- then waits on `platform-infrastructure`, `platform-applications`, and the top-level `platform` root
+
+That ordering keeps restart behavior aligned with Helm-managed workloads that were scaled to zero during `cluster-pause`.
+
+Important notes:
+
+- `metallb-system` is intentionally left running during `cluster-pause`; scaling the MetalLB controller to zero breaks its validating webhook and can block the next `platform-applications` reconcile on `IPAddressPool`
+- `cluster-pause` is a pause, not a full host shutdown; expect core/system pods and DaemonSets such as `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary to remain running
+- `cluster-stop` and `cluster-start` remain as compatibility aliases, but `cluster-pause` and `cluster-resume` are the preferred names
+- for the default CPU TEI path, keep `EMBEDDING_MODEL` on an ONNX-backed model such as `onnx-models/all-MiniLM-L6-v2-onnx`; models without `model.onnx` artifacts can leave `tei-embeddings` stuck even when Flux itself is healthy
+
 Use this built-in status check after a restart:
 
 ```bash
