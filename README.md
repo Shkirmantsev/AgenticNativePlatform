@@ -312,24 +312,26 @@ kubectl -n kagent get remotemcpserver echo-mcp -o yaml
 kubectl -n kagent logs deploy/echo-mcp
 ```
 
-## Stop and restart the platform
+## Pause, resume, and remove the platform
 
 Pause workloads without uninstalling the cluster:
 
 ```bash
-make cluster-stop
+make cluster-pause
 ```
 
 Resume from Git desired state:
 
 ```bash
-make cluster-start
+make cluster-resume
 ```
 
-`cluster-stop` now suspends the staged Flux Kustomizations and HelmReleases before scaling workloads down. `cluster-start` resumes them in order and reconciles the staged Kustomizations explicitly.
+`cluster-pause` suspends the staged Flux Kustomizations and HelmReleases before scaling workloads down. `cluster-resume` resumes them in order and reconciles the staged Kustomizations explicitly.
 It reconciles `platform-bootstrap` first, force-reconciles the existing HelmReleases, then waits on `platform-infrastructure`, `platform-applications`, and the top-level `platform` root.
-That keeps the restart flow aligned with Helm-managed workloads that were scaled to zero during `cluster-stop`.
-`metallb-system` is intentionally left running during `cluster-stop`; scaling the MetalLB controller to zero breaks its validating webhook and can block the next `platform-applications` reconcile on `IPAddressPool`.
+That keeps the restart flow aligned with Helm-managed workloads that were scaled to zero during `cluster-pause`.
+`metallb-system` is intentionally left running during `cluster-pause`; scaling the MetalLB controller to zero breaks its validating webhook and can block the next `platform-applications` reconcile on `IPAddressPool`.
+`cluster-pause` is a pause, not a full host shutdown: expect core/system pods and DaemonSets such as `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary to remain running.
+`cluster-stop` and `cluster-start` remain as compatibility aliases, but `cluster-pause` and `cluster-resume` are the preferred names.
 For the default CPU TEI path, keep `EMBEDDING_MODEL` on an ONNX-backed model such as `onnx-models/all-MiniLM-L6-v2-onnx`; models without `model.onnx` artifacts can leave `tei-embeddings` stuck even when Flux itself is healthy.
 Use this built-in status check after a restart:
 
@@ -477,18 +479,18 @@ make test-litellm
 make close-research-access
 ```
 
-## Remove the environment
-
-Remove `k3s` from the selected topology:
+Remove only the cluster and keep infrastructure:
 
 ```bash
-make uninstall-k3s TOPOLOGY=local
+make cluster-remove TOPOLOGY=local
 ```
 
-Destroy local Terraform/OpenTofu artifacts:
+## Remove the environment
+
+Remove the cluster and Terraform/OpenTofu infrastructure together:
 
 ```bash
-make terraform-destroy TOPOLOGY=local TF_BIN=tofu
+make environment-destroy TOPOLOGY=local TF_BIN=tofu
 ```
 
 ## Troubleshooting
@@ -502,7 +504,7 @@ kubectl --kubeconfig .kube/generated/current.yaml get pods -A
 flux --kubeconfig .kube/generated/current.yaml get kustomizations -A
 ```
 
-If `make reconcile` or `make cluster-start` appears stuck, inspect the staged objects directly:
+If `make reconcile` or `make cluster-resume` appears stuck, inspect the staged objects directly:
 
 ```bash
 make cluster-status

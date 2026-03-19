@@ -99,15 +99,15 @@ make sops-bootstrap-cluster
 
 `make sops-bootstrap-cluster` uses the repo kubeconfig automatically once `make kubeconfig TOPOLOGY=<topology>` has written `.kube/generated/current.yaml`.
 
-## Start, stop, and teardown
+## Pause, resume, and teardown
 
 Pause the platform without removing the cluster:
 
 ```bash
-make cluster-stop
+make cluster-pause
 ```
 
-`cluster-stop` suspends:
+`cluster-pause` suspends:
 
 - `GitRepository/flux-system/platform`
 - staged child Kustomizations such as `platform-bootstrap`, `platform-infrastructure`, `platform-applications`
@@ -115,16 +115,18 @@ make cluster-stop
 
 It then scales Deployments and StatefulSets to zero in the configured platform namespaces.
 It intentionally does not scale `metallb-system`; the MetalLB controller serves a validating webhook, and leaving it at `0` endpoints blocks later `IPAddressPool` reconciliation.
+It also does not stop system namespaces or DaemonSets, so pods such as `flux-system`, `kube-system`, `cert-manager`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will remain running by design.
 
 Resume the platform and let Flux restore desired state:
 
 ```bash
-make cluster-start
+make cluster-resume
 make cluster-status
 ```
 
-`cluster-start` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, then force-reconciles all existing HelmReleases in `flux-system` before waiting on `platform-infrastructure`, `platform-applications`, and `platform`.
-That ordering reduces false "stuck" waits after `cluster-stop` because Helm-managed Deployments are driven back to their desired replica counts before the staged Flux roots wait on readiness.
+`cluster-resume` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, then force-reconciles all existing HelmReleases in `flux-system` before waiting on `platform-infrastructure`, `platform-applications`, and `platform`.
+That ordering reduces false "stuck" waits after `cluster-pause` because Helm-managed Deployments are driven back to their desired replica counts before the staged Flux roots wait on readiness.
+`cluster-stop` and `cluster-start` remain as compatibility aliases for the previous names.
 
 `make reconcile` follows the same staged idea without the suspend/resume step:
 
@@ -132,6 +134,18 @@ That ordering reduces false "stuck" waits after `cluster-stop` because Helm-mana
 2. reconcile `platform-bootstrap`
 3. force-reconcile HelmReleases
 4. wait on `platform-infrastructure`, `platform-applications`, and `platform`
+
+Remove only the cluster and keep infrastructure:
+
+```bash
+make cluster-remove TOPOLOGY=local
+```
+
+Remove the cluster and Terraform/OpenTofu infrastructure together:
+
+```bash
+make environment-destroy TOPOLOGY=local TF_BIN=tofu
+```
 
 ## Local access paths for operators
 

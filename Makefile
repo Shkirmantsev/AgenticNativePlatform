@@ -44,7 +44,7 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	flux-values render-cluster-root install-flux-local bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
-	cluster-stop cluster-start preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
+	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
 	build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball prepare-echo-mcp-image-local \
 	k9s-local port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-research-access close-research-access \
@@ -225,7 +225,7 @@ decrypt-secrets: ## Decrypt committed SOPS secrets into .generated/decrypted/<en
 sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key into flux-system for SOPS decryption
 	./scripts/bootstrap-sops-secret.sh
 
-cluster-stop: require-kubeconfig ## Pause platform workloads without uninstalling the cluster
+cluster-pause: require-kubeconfig ## Pause platform workloads without uninstalling the cluster
 	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) suspend kustomization $$k -n flux-system || true; \
@@ -239,8 +239,10 @@ cluster-stop: require-kubeconfig ## Pause platform workloads without uninstallin
 	  $(KUBECTL) -n $$ns get deploy -o name 2>/dev/null | xargs -r -n1 $(KUBECTL) -n $$ns scale --replicas=0; \
 	  $(KUBECTL) -n $$ns get statefulset -o name 2>/dev/null | xargs -r -n1 $(KUBECTL) -n $$ns scale --replicas=0; \
 	done
+	@echo "cluster-pause completed: Flux roots and HelmReleases are suspended, and Deployments/StatefulSets in platform namespaces were scaled to 0."
+	@echo "System namespaces and DaemonSets remain running by design (for example flux-system, kube-system, cert-manager, metallb-system, ztunnel, istio-cni, node-exporter, loki-canary)."
 
-cluster-start: require-kubeconfig ## Resume platform workloads from Git desired state
+cluster-resume: require-kubeconfig ## Resume platform workloads from Git desired state
 	@$(FLUX) resume source git platform -n flux-system || true
 	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
 	  $(FLUX) resume helmrelease $$hr -n flux-system || true; \
@@ -260,6 +262,19 @@ cluster-start: require-kubeconfig ## Resume platform workloads from Git desired 
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) reconcile kustomization $$k -n flux-system --with-source || true; \
 	done
+
+cluster-stop: ## Deprecated alias for cluster-pause
+	@$(MAKE) cluster-pause TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) IAC_TOOL=$(IAC_TOOL) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+
+cluster-start: ## Deprecated alias for cluster-resume
+	@$(MAKE) cluster-resume TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) IAC_TOOL=$(IAC_TOOL) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+
+cluster-remove: ## Remove only the k3s cluster from the selected topology and keep infrastructure/resources
+	@$(MAKE) uninstall-k3s TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+
+environment-destroy: ## Remove the k3s cluster and destroy Terraform/OpenTofu infrastructure for the selected topology
+	@$(MAKE) cluster-remove TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+	@$(MAKE) terraform-destroy TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN)
 
 preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s image import directory on all nodes
 	@test -n "$(VLLM_IMAGE_TARBALL)" || (echo "Set VLLM_IMAGE_TARBALL=/path/to/image.tar" >&2; exit 1)

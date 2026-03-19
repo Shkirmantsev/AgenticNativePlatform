@@ -226,14 +226,16 @@ make cluster-up-hybrid TOPOLOGY=hybrid
 make cluster-up-hybrid-remote TOPOLOGY=hybrid-remote
 ```
 
-## Stop and start the platform without deleting the cluster
+## Pause and resume the platform without deleting the cluster
 
 ```bash
-make cluster-stop
-make cluster-start
+make cluster-pause
+make cluster-resume
 ```
 
 These targets now operate on the staged Flux objects as well as the top-level `platform` object. If startup still looks slow, inspect the staged status directly:
+`cluster-pause` pauses platform workloads; it does not stop system namespaces or DaemonSets, so `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will still be present afterwards.
+`cluster-stop` and `cluster-start` remain as compatibility aliases.
 
 ```bash
 flux get kustomizations -A
@@ -250,9 +252,14 @@ make encrypt-secrets ENV=dev
 make sops-bootstrap-cluster
 ```
 
-## Teardown
+## Remove only the cluster
 
 ```bash
-make uninstall-k3s TOPOLOGY=local
-make terraform-destroy TOPOLOGY=local TF_BIN=tofu
+make cluster-remove TOPOLOGY=local
+```
+
+## Teardown cluster and infrastructure
+
+```bash
+make environment-destroy TOPOLOGY=local TF_BIN=tofu
 ```
