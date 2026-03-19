@@ -9,3 +9,8 @@ spec:
       openai: {}
       host: litellm.ai-gateway.svc.cluster.local
       port: 4000
+  policies:
+    ai:
+      routes:
+        /v1/models: Passthrough
+        /v1/embeddings: Passthrough
