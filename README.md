@@ -67,6 +67,37 @@ Generated local behavior:
 - common `make` targets in this repo bind `kubectl`, `flux`, and `k9s` to that kubeconfig automatically
 - `flux/generated/<topology>/topology-values.yaml` is operator metadata only and must not be applied
 
+## Quick start
+
+### Fastest path
+
+```bash
+cp .env.example .env
+# edit .env for your machine and credentials
+make run-cluster-from-scratch
+```
+
+`make run-cluster-from-scratch` is the preferred first-run command for the default workflow.
+It installs local operator tools, provisions the selected topology, installs Flux, applies the first-pass secrets, renders Flux inputs, bootstraps the Flux Git objects, reconciles the staged platform roots, and prints cluster status.
+
+Important:
+
+- it uses the current `.env` values for `TOPOLOGY`, `ENV`, `RUNTIME`, `SECRETS_MODE`, and related inputs
+- it assumes Flux should read the generated manifests from the remote Git branch, not only from your local working tree
+- if rendering changes `flux/generated/<topology>/` or `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`, the target stops and tells you to commit and push those changes before continuing
+
+Standard follow-up commands:
+
+```bash
+make cluster-status
+make verify
+make k9s-local
+```
+
+### Manual bootstrap
+
+Use the manual path only when you want to inspect or change each stage separately.
+
 ## Install and bootstrap
 
 ### 1. Create `.env`

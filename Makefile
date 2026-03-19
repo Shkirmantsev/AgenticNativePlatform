@@ -40,7 +40,7 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 .PHONY: help \
 	tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
 	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
-	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote \
+	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote run-cluster-from-scratch \
 	flux-values render-cluster-root install-flux-local bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
@@ -154,6 +154,31 @@ cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation a
 	$(MAKE) join-workers TOPOLOGY=hybrid-remote
 	$(MAKE) label-llm-nodes TOPOLOGY=hybrid-remote
 	$(MAKE) kubeconfig TOPOLOGY=hybrid-remote
+
+run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, and reconcile from the current repo state
+	@$(MAKE) tools-install-local IAC_TOOL=$(IAC_TOOL) INSTALL_K9S=$(INSTALL_K9S)
+	@$(MAKE) cluster-up-$(TOPOLOGY) TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+	@if [ "$(TOPOLOGY)" = "local" ]; then \
+	  $(MAKE) install-flux-local TOPOLOGY=$(TOPOLOGY); \
+	else \
+	  $(MAKE) install-flux TOPOLOGY=$(TOPOLOGY) KUBE_CONTEXT="$(KUBE_CONTEXT)"; \
+	fi
+	@if [ "$(SECRETS_MODE)" = "sops" ]; then \
+	  $(MAKE) sops-bootstrap-cluster TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
+	else \
+	  $(MAKE) apply-plaintext-secrets TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
+	fi
+	@$(MAKE) flux-values TOPOLOGY=$(TOPOLOGY)
+	@$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@changed="$$(git status --porcelain -- "flux/generated/$(TOPOLOGY)" "flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)")"; \
+	if [ -n "$$changed" ]; then \
+	  echo "Generated Flux manifests changed locally. Commit and push them before continuing:"; \
+	  echo "$$changed"; \
+	  exit 1; \
+	fi
+	@$(MAKE) bootstrap-flux-git TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) cluster-status TOPOLOGY=$(TOPOLOGY)
 
 flux-values: ## Render non-secret Flux ConfigMaps for the selected topology
 	./scripts/render-flux-values.sh $(TOPOLOGY)
