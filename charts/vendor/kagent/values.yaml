@@ -99,6 +99,9 @@ controller:
   # -- Node labels to match for `Pod` [scheduling](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/).
   nodeSelector: {}
 
+  podLabels:
+    istio.io/dataplane-mode: none
+
   image:
     registry: ""
     repository: kagent-dev/kagent/controller
