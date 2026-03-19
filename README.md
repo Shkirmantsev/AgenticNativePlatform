@@ -64,7 +64,7 @@ Do not commit:
 Generated local behavior:
 
 - `make kubeconfig` writes `.kube/generated/current.yaml`
-- `make` targets in this repo bind `kubectl`, `flux`, `helm`, and `k9s` to that kubeconfig automatically
+- common `make` targets in this repo bind `kubectl`, `flux`, and `k9s` to that kubeconfig automatically
 - `flux/generated/<topology>/topology-values.yaml` is operator metadata only and must not be applied
 
 ## Install and bootstrap
@@ -302,6 +302,8 @@ git push origin dev
 make reconcile
 ```
 
+`make reconcile` reconciles `platform-bootstrap` first, then force-reconciles Flux HelmReleases before waiting on `platform-infrastructure`, `platform-applications`, and `platform`.
+
 5. Verify:
 
 ```bash
@@ -492,7 +494,7 @@ make terraform-destroy TOPOLOGY=local TF_BIN=tofu
 ## Troubleshooting
 
 If a raw `kubectl` or `flux` command talks to `http://localhost:8080`, your shell is not using the repo kubeconfig.
-Repo `make` targets already bind the right kubeconfig.
+Repo `make` targets already bind the right kubeconfig explicitly.
 For raw commands, prefer the explicit flag:
 
 ```bash

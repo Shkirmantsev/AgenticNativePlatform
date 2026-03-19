@@ -24,7 +24,7 @@ make reconcile
 make verify
 ```
 
-`make install-flux-local`, `make reconcile`, `make verify`, `make cluster-status`, and `make sops-bootstrap-cluster` use `.kube/generated/current.yaml` through the `Makefile`.
+`make install-flux-local`, `make reconcile`, `make verify`, `make cluster-status`, and `make sops-bootstrap-cluster` use `.kube/generated/current.yaml` through explicit `kubectl` / `flux` binding in the `Makefile`.
 
 ## Validate generated manifests locally
 
@@ -39,6 +39,8 @@ kubectl kustomize flux/generated/clusters/local-dev-none-external
 make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 ```
+
+`make reconcile` now reconciles `platform-bootstrap` first, then force-reconciles HelmReleases before waiting on the higher staged Kustomizations.
 
 ## Switch to LM Studio external backend
 

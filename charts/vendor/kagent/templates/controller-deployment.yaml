@@ -70,6 +70,9 @@ spec:
             - name: http
               containerPort: {{ .Values.controller.service.ports.targetPort }}
               protocol: TCP
+            - name: health
+              containerPort: {{ .Values.controller.healthPort }}
+              protocol: TCP
           resources:
             {{- toYaml .Values.controller.resources | nindent 12 }}
           securityContext:
@@ -77,7 +80,7 @@ spec:
           startupProbe:
             httpGet:
               path: /health
-              port: http
+              port: health
             periodSeconds: {{ .Values.controller.startupProbe.periodSeconds }}
             initialDelaySeconds: {{ .Values.controller.startupProbe.initialDelaySeconds }}
             failureThreshold: {{ .Values.controller.startupProbe.failureThreshold }}
@@ -85,7 +88,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: http
+              port: health
             periodSeconds: {{ .Values.controller.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.controller.readinessProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.controller.readinessProbe.timeoutSeconds }}

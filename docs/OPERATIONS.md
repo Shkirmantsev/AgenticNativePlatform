@@ -41,7 +41,7 @@ Do not commit:
 ## Local kubeconfig behavior
 
 - `make kubeconfig` writes the usable kubeconfig to `.kube/generated/current.yaml`
-- repo `make` targets bind that kubeconfig automatically
+- repo `make` targets bind that kubeconfig explicitly
 - `flux` and `kubectl` targets that talk to the cluster expect that file to exist
 - stale files under `ansible/playbooks/.kube/` are old artifacts and can be deleted
 
@@ -125,6 +125,13 @@ make cluster-status
 
 `cluster-start` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, then force-reconciles all existing HelmReleases in `flux-system` before waiting on `platform-infrastructure`, `platform-applications`, and `platform`.
 That ordering reduces false "stuck" waits after `cluster-stop` because Helm-managed Deployments are driven back to their desired replica counts before the staged Flux roots wait on readiness.
+
+`make reconcile` follows the same staged idea without the suspend/resume step:
+
+1. reconcile Git source
+2. reconcile `platform-bootstrap`
+3. force-reconcile HelmReleases
+4. wait on `platform-infrastructure`, `platform-applications`, and `platform`
 
 ## Local access paths for operators
 

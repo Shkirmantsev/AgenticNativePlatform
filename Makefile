@@ -31,6 +31,8 @@ PROMETHEUS_LOCAL_PORT ?= 9090
 QDRANT_LOCAL_PORT ?= 6333
 LITELLM_MASTER_KEY ?= change-me
 export KUBECONFIG
+KUBECTL ?= kubectl --kubeconfig "$(KUBECONFIG)"
+FLUX ?= flux --kubeconfig "$(KUBECONFIG)"
 
 STOP_NAMESPACES ?= istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
 PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-applications platform
@@ -50,14 +52,14 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 
 define start_port_forward
 	@mkdir -p $(PORT_FORWARD_STATE_DIR)
-	@if [ -z "$$(kubectl -n $(3) get endpoints $(4) -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]; then \
+	@if [ -z "$$($(KUBECTL) -n $(3) get endpoints $(4) -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]; then \
 	  echo "$(1) cannot open because service $(3)/$(4) has no ready endpoints"; \
 	  exit 1; \
 	elif [ -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid" ] && kill -0 "$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")" 2>/dev/null; then \
 	  echo "$(1) is already available at $(2)"; \
 	else \
 	  rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
-	  kubectl -n $(3) port-forward svc/$(4) $(5):$(6) >"$(PORT_FORWARD_STATE_DIR)/$(1).log" 2>&1 & \
+	  $(KUBECTL) -n $(3) port-forward svc/$(4) $(5):$(6) >"$(PORT_FORWARD_STATE_DIR)/$(1).log" 2>&1 & \
 	  echo $$! >"$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
 	  sleep 2; \
 	  if ! kill -0 "$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")" 2>/dev/null; then \
@@ -160,47 +162,53 @@ render-cluster-root: ## Render the Flux root kustomization for the selected topo
 	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/render-cluster-kustomization.sh
 
 install-flux-local: require-kubeconfig ## Install Flux controllers into the current cluster
-	flux install
+	$(FLUX) install
 
 install-flux: require-kubeconfig ## Install Flux controllers into the selected/current cluster
 	@if [ -n "$(KUBE_CONTEXT)" ]; then \
 		echo "Installing Flux into context $(KUBE_CONTEXT)"; \
-		flux --context "$(KUBE_CONTEXT)" install; \
+		flux --kubeconfig "$(KUBECONFIG)" --context "$(KUBE_CONTEXT)" install; \
 	else \
 		echo "Installing Flux into current context"; \
-		flux install; \
+		$(FLUX) install; \
 	fi
 
 bootstrap-flux-git: require-kubeconfig flux-values render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
 	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/bootstrap-flux-git.sh
 
 reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
-	@flux reconcile source git platform -n flux-system || true
-	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
-	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
-	  flux reconcile kustomization $$k -n flux-system --with-source || true; \
+	@$(FLUX) reconcile source git platform -n flux-system || true
+	@if $(KUBECTL) -n flux-system get kustomization platform-bootstrap >/dev/null 2>&1; then \
+	  $(FLUX) reconcile kustomization platform-bootstrap -n flux-system --with-source || true; \
+	fi
+	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  $(FLUX) reconcile helmrelease $$hr -n flux-system --force || true; \
+	done
+	@for k in platform-infrastructure platform-applications platform; do \
+	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  $(FLUX) reconcile kustomization $$k -n flux-system --with-source || true; \
 	done
 
 verify: require-kubeconfig ## Basic local verification of cluster and Flux state
-	kubectl get nodes -o wide || true
-	kubectl get ns || true
-	kubectl get gitrepositories -A || true
-	kubectl get kustomizations -A || true
-	kubectl get helmreleases -A || true
+	$(KUBECTL) get nodes -o wide || true
+	$(KUBECTL) get ns || true
+	$(KUBECTL) get gitrepositories -A || true
+	$(KUBECTL) get kustomizations -A || true
+	$(KUBECTL) get helmreleases -A || true
 
 cluster-status: require-kubeconfig ## Show staged Flux, HelmRelease, and pod readiness state
-	flux get kustomizations -A || true
-	flux get helmreleases -A || true
-	kubectl get pods -A || true
+	$(FLUX) get kustomizations -A || true
+	$(FLUX) get helmreleases -A || true
+	$(KUBECTL) get pods -A || true
 
 render-plaintext-secrets: ## Render local plaintext Kubernetes Secrets from .env into .generated/secrets/<env>
 	ENV=$(ENV) ./scripts/render-plaintext-secrets.sh
 
 apply-plaintext-secrets: require-kubeconfig render-plaintext-secrets ## Apply local plaintext secrets directly to the cluster (not committed to Git)
-	kubectl apply -k .generated/secrets/$(ENV)
+	$(KUBECTL) apply -k .generated/secrets/$(ENV)
 
 delete-plaintext-secrets: require-kubeconfig ## Delete local plaintext secret resources from the cluster
-	-kubectl delete -k .generated/secrets/$(ENV)
+	-$(KUBECTL) delete -k .generated/secrets/$(ENV)
 
 sops-age-key: ## Generate a local age key and update .sops.yaml using the generated public recipient
 	./scripts/create-age-key.sh
@@ -219,38 +227,38 @@ sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key i
 
 cluster-stop: require-kubeconfig ## Pause platform workloads without uninstalling the cluster
 	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
-	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
-	  flux suspend kustomization $$k -n flux-system || true; \
+	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  $(FLUX) suspend kustomization $$k -n flux-system || true; \
 	done
-	@flux suspend source git platform -n flux-system || true
-	@for hr in $$(kubectl -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
-	  flux suspend helmrelease $$hr -n flux-system || true; \
+	@$(FLUX) suspend source git platform -n flux-system || true
+	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  $(FLUX) suspend helmrelease $$hr -n flux-system || true; \
 	done
 	@for ns in $(STOP_NAMESPACES); do \
-	  kubectl get ns $$ns >/dev/null 2>&1 || continue; \
-	  kubectl -n $$ns get deploy -o name 2>/dev/null | xargs -r -n1 kubectl -n $$ns scale --replicas=0; \
-	  kubectl -n $$ns get statefulset -o name 2>/dev/null | xargs -r -n1 kubectl -n $$ns scale --replicas=0; \
+	  $(KUBECTL) get ns $$ns >/dev/null 2>&1 || continue; \
+	  $(KUBECTL) -n $$ns get deploy -o name 2>/dev/null | xargs -r -n1 $(KUBECTL) -n $$ns scale --replicas=0; \
+	  $(KUBECTL) -n $$ns get statefulset -o name 2>/dev/null | xargs -r -n1 $(KUBECTL) -n $$ns scale --replicas=0; \
 	done
 
 cluster-start: require-kubeconfig ## Resume platform workloads from Git desired state
-	@flux resume source git platform -n flux-system || true
-	@for hr in $$(kubectl -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
-	  flux resume helmrelease $$hr -n flux-system || true; \
+	@$(FLUX) resume source git platform -n flux-system || true
+	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  $(FLUX) resume helmrelease $$hr -n flux-system || true; \
 	done
 	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
-	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
-	  flux resume kustomization $$k -n flux-system || true; \
+	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  $(FLUX) resume kustomization $$k -n flux-system || true; \
 	done
-	@flux reconcile source git platform -n flux-system || true
-	@if kubectl -n flux-system get kustomization platform-bootstrap >/dev/null 2>&1; then \
-	  flux reconcile kustomization platform-bootstrap -n flux-system --with-source || true; \
+	@$(FLUX) reconcile source git platform -n flux-system || true
+	@if $(KUBECTL) -n flux-system get kustomization platform-bootstrap >/dev/null 2>&1; then \
+	  $(FLUX) reconcile kustomization platform-bootstrap -n flux-system --with-source || true; \
 	fi
-	@for hr in $$(kubectl -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
-	  flux reconcile helmrelease $$hr -n flux-system --force || true; \
+	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  $(FLUX) reconcile helmrelease $$hr -n flux-system --force || true; \
 	done
 	@for k in platform-infrastructure platform-applications platform; do \
-	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
-	  flux reconcile kustomization $$k -n flux-system --with-source || true; \
+	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  $(FLUX) reconcile kustomization $$k -n flux-system --with-source || true; \
 	done
 
 preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s image import directory on all nodes
@@ -282,25 +290,25 @@ k9s-local: require-kubeconfig ## Open k9s against the repo kubeconfig across all
 	k9s --kubeconfig "$(KUBECONFIG)" --all-namespaces
 
 port-forward-agentgateway: require-kubeconfig ## Port-forward AgentGateway to localhost:15000
-	kubectl -n agentgateway-system port-forward svc/agentgateway-proxy $(AGENTGATEWAY_LOCAL_PORT):8080
+	$(KUBECTL) -n agentgateway-system port-forward svc/agentgateway-proxy $(AGENTGATEWAY_LOCAL_PORT):8080
 
 port-forward-kagent: require-kubeconfig ## Port-forward the kagent controller API to localhost:8083
-	kubectl -n kagent port-forward svc/kagent-kagent-controller $(KAGENT_A2A_LOCAL_PORT):8083
+	$(KUBECTL) -n kagent port-forward svc/kagent-kagent-controller $(KAGENT_A2A_LOCAL_PORT):8083
 
 port-forward-kagent-ui: require-kubeconfig ## Port-forward the kagent UI to localhost:8080
-	kubectl -n kagent port-forward svc/kagent-kagent-ui $(KAGENT_UI_LOCAL_PORT):8080
+	$(KUBECTL) -n kagent port-forward svc/kagent-kagent-ui $(KAGENT_UI_LOCAL_PORT):8080
 
 port-forward-litellm: require-kubeconfig ## Port-forward LiteLLM to localhost:4000
-	kubectl -n ai-gateway port-forward svc/litellm $(LITELLM_LOCAL_PORT):4000
+	$(KUBECTL) -n ai-gateway port-forward svc/litellm $(LITELLM_LOCAL_PORT):4000
 
 port-forward-grafana: require-kubeconfig ## Port-forward Grafana to localhost:3000
-	kubectl -n observability port-forward svc/observability-kube-prometheus-stack-grafana $(GRAFANA_LOCAL_PORT):80
+	$(KUBECTL) -n observability port-forward svc/observability-kube-prometheus-stack-grafana $(GRAFANA_LOCAL_PORT):80
 
 port-forward-prometheus: require-kubeconfig ## Port-forward Prometheus to localhost:9090
-	kubectl -n observability port-forward svc/observability-kube-prometh-prometheus $(PROMETHEUS_LOCAL_PORT):9090
+	$(KUBECTL) -n observability port-forward svc/observability-kube-prometh-prometheus $(PROMETHEUS_LOCAL_PORT):9090
 
 port-forward-qdrant: require-kubeconfig ## Port-forward Qdrant to localhost:6333
-	kubectl -n context port-forward svc/context-qdrant $(QDRANT_LOCAL_PORT):6333
+	$(KUBECTL) -n context port-forward svc/context-qdrant $(QDRANT_LOCAL_PORT):6333
 
 open-kagent-ui: require-kubeconfig ## Open the kagent UI at http://localhost:8080
 	$(call start_port_forward,kagent-ui,http://localhost:$(KAGENT_UI_LOCAL_PORT),kagent,kagent-kagent-ui,$(KAGENT_UI_LOCAL_PORT),8080)
