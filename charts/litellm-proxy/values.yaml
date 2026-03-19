@@ -9,6 +9,8 @@ serviceAccount:
   create: true
   name: litellm
   automountServiceAccountToken: false
+# Keep LiteLLM listening on the pod IP, not only loopback, so in-cluster
+# callers such as AgentGateway and Istio ambient workloads can reach it.
 resources:
   requests:
     cpu: "100m"
