@@ -9,9 +9,6 @@ spec:
       kind: HTTPRoute
       namespace: ai-gateway
   to:
-    - group: agentgateway.dev
-      kind: AgentgatewayBackend
-      name: litellm-upstream
     - group: ""
       kind: Service
       name: agentgateway-proxy
