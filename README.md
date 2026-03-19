@@ -274,6 +274,7 @@ make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-us
 This works because `k3s` imports tarballs from `/var/lib/rancher/k3s/agent/images/` into containerd, and the sample Deployment now uses `imagePullPolicy: IfNotPresent`.
 The image reference in the manifest must exactly match the imported tag.
 The import target creates that directory automatically if your node does not have it yet.
+The import target also runs `k3s ctr images import ...` immediately, so a new tag such as `0.2.0` is available to the kubelet right away instead of waiting for background processing.
 Run the `make` target directly. On a local workstation, the ad-hoc Ansible command will use `sudo` and prompt if needed. Do not wrap it in `sudo make ...`.
 
 2. Set `ECHO_MCP_IMAGE` in `.env` or pass it on the command line, then regenerate Flux inputs:

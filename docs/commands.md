@@ -117,6 +117,7 @@ make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=extern
 The final image value is injected from `ECHO_MCP_IMAGE` into the generated applications stage, not hard-coded in the component YAML.
 
 These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is missing.
+They also import the tarball into `k3s` containerd immediately with `k3s ctr images import`.
 Run them as your normal user; `sudo make ...` is not required. On a local workstation, the ad-hoc Ansible command will prompt through `sudo` if it needs your password.
 
 ## End-to-end bootstrap shortcuts

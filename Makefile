@@ -205,6 +205,7 @@ preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s im
 	@test -n "$(VLLM_IMAGE_TARBALL)" || (echo "Set VLLM_IMAGE_TARBALL=/path/to/image.tar" >&2; exit 1)
 	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
 	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(VLLM_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/vllm-image.tar mode=0644"
+	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m shell -a "k3s ctr images import /var/lib/rancher/k3s/agent/images/vllm-image.tar"
 
 preimport-vllm-image-online: ## Pre-pull the vLLM image on all nodes using ctr in k3s containerd
 	@test -n "$(VLLM_IMAGE)" || (echo "Set VLLM_IMAGE=repo:tag" >&2; exit 1)
@@ -221,6 +222,7 @@ preimport-echo-mcp-image-tarball: ## Copy an echo-mcp image tarball into the k3s
 	@test -n "$(ECHO_MCP_IMAGE_TARBALL)" || (echo "Set ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar" >&2; exit 1)
 	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
 	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(ECHO_MCP_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/echo-mcp-image.tar mode=0644"
+	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m shell -a "k3s ctr images import /var/lib/rancher/k3s/agent/images/echo-mcp-image.tar"
 
 prepare-echo-mcp-image-local: build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball ## Build, save, and import the sample echo-mcp image into k3s nodes without pushing
 
