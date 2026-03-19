@@ -27,7 +27,9 @@ spec:
     matchLabels: {app: litellm}
   template:
     metadata:
-      labels: {app: litellm}
+      labels:
+        app: litellm
+        istio.io/dataplane-mode: none
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
