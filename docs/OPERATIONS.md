@@ -41,14 +41,13 @@ Do not commit:
 ## Local kubeconfig behavior
 
 - `make kubeconfig` writes the usable kubeconfig to `.kube/generated/current.yaml`
-- the `Makefile` exports `KUBECONFIG` to that path by default
+- repo `make` targets bind that kubeconfig automatically
 - `flux` and `kubectl` targets that talk to the cluster expect that file to exist
 - stale files under `ansible/playbooks/.kube/` are old artifacts and can be deleted
 
 If `k9s` looks empty, it is usually reading the wrong kubeconfig or a narrowed namespace view. Prefer:
 
 ```bash
-export KUBECONFIG="$PWD/.kube/generated/current.yaml"
 make k9s-local
 ```
 
@@ -98,7 +97,7 @@ make encrypt-secrets ENV=dev
 make sops-bootstrap-cluster
 ```
 
-`make sops-bootstrap-cluster` requires kubeconfig to be exported first, so run `make kubeconfig TOPOLOGY=<topology>` before it if needed.
+`make sops-bootstrap-cluster` uses the repo kubeconfig automatically once `make kubeconfig TOPOLOGY=<topology>` has written `.kube/generated/current.yaml`.
 
 ## Start, stop, and teardown
 
@@ -121,10 +120,11 @@ Resume the platform and let Flux restore desired state:
 
 ```bash
 make cluster-start
+make cluster-status
 ```
 
-`cluster-start` resumes the source, HelmReleases, and staged Kustomizations, then reconciles them in order.
-It also force-reconciles all existing HelmReleases in `flux-system` so workloads scaled down by `cluster-stop` are pushed back to their desired replica counts instead of remaining at zero because the release looked otherwise in-sync.
+`cluster-start` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, then force-reconciles all existing HelmReleases in `flux-system` before waiting on `platform-infrastructure`, `platform-applications`, and `platform`.
+That ordering reduces false "stuck" waits after `cluster-stop` because Helm-managed Deployments are driven back to their desired replica counts before the staged Flux roots wait on readiness.
 
 ## Local access paths for operators
 

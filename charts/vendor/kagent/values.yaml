@@ -111,6 +111,15 @@ controller:
     limits:
       cpu: 2
       memory: 512Mi
+  startupProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    failureThreshold: 12
+    timeoutSeconds: 1
+  readinessProbe:
+    periodSeconds: 30
+    failureThreshold: 3
+    timeoutSeconds: 1
   service:
     type: ClusterIP
     ports:

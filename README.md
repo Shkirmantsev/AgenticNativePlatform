@@ -64,7 +64,7 @@ Do not commit:
 Generated local behavior:
 
 - `make kubeconfig` writes `.kube/generated/current.yaml`
-- the `Makefile` exports `KUBECONFIG` to that file automatically
+- `make` targets in this repo bind `kubectl`, `flux`, `helm`, and `k9s` to that kubeconfig automatically
 - `flux/generated/<topology>/topology-values.yaml` is operator metadata only and must not be applied
 
 ## Install and bootstrap
@@ -325,18 +325,23 @@ make cluster-start
 ```
 
 `cluster-stop` now suspends the staged Flux Kustomizations and HelmReleases before scaling workloads down. `cluster-start` resumes them in order and reconciles the staged Kustomizations explicitly.
-It also force-reconciles existing HelmReleases so workloads that were manually scaled to zero, such as `istiod`, are restored to their Helm-managed replica counts.
+It reconciles `platform-bootstrap` first, force-reconciles the existing HelmReleases, then waits on `platform-infrastructure`, `platform-applications`, and the top-level `platform` root.
+That keeps the restart flow aligned with Helm-managed workloads that were scaled to zero during `cluster-stop`.
 `metallb-system` is intentionally left running during `cluster-stop`; scaling the MetalLB controller to zero breaks its validating webhook and can block the next `platform-applications` reconcile on `IPAddressPool`.
 For the default CPU TEI path, keep `EMBEDDING_MODEL` on an ONNX-backed model such as `onnx-models/all-MiniLM-L6-v2-onnx`; models without `model.onnx` artifacts can leave `tei-embeddings` stuck even when Flux itself is healthy.
+Use this built-in status check after a restart:
+
+```bash
+make cluster-status
+```
 
 ## Explore the cluster locally
 
 If `k9s` looks empty, it is usually using the wrong kubeconfig or a namespace filter.
 
-Use the repo kubeconfig and show all namespaces:
+Use the bound repo target:
 
 ```bash
-export KUBECONFIG="$PWD/.kube/generated/current.yaml"
 make k9s-local
 ```
 
@@ -486,19 +491,20 @@ make terraform-destroy TOPOLOGY=local TF_BIN=tofu
 
 ## Troubleshooting
 
-If a Flux command talks to `http://localhost:8080`, your shell is not using the repo kubeconfig. Use:
+If a raw `kubectl` or `flux` command talks to `http://localhost:8080`, your shell is not using the repo kubeconfig.
+Repo `make` targets already bind the right kubeconfig.
+For raw commands, prefer the explicit flag:
 
 ```bash
-export KUBECONFIG="$PWD/.kube/generated/current.yaml"
+kubectl --kubeconfig .kube/generated/current.yaml get pods -A
+flux --kubeconfig .kube/generated/current.yaml get kustomizations -A
 ```
 
 If `make reconcile` or `make cluster-start` appears stuck, inspect the staged objects directly:
 
 ```bash
-flux get kustomizations -A
-flux get helmreleases -A
-kubectl get pods -A
-kubectl get events -A --sort-by=.lastTimestamp | tail -n 100
+make cluster-status
+kubectl --kubeconfig .kube/generated/current.yaml get events -A --sort-by=.lastTimestamp | tail -n 100
 ```
 
 If `istio-cni` is not ready on `k3s`, verify the chart is using the K3s-specific paths:

@@ -18,7 +18,9 @@ spec:
     matchLabels: {app: tei-embeddings}
   template:
     metadata:
-      labels: {app: tei-embeddings}
+      labels:
+        app: tei-embeddings
+{{ toYaml .Values.podLabels | indent 8 }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
@@ -42,6 +44,13 @@ spec:
               port: 80
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: model-cache
+              mountPath: {{ .Values.cache.mountPath }}
+      volumes:
+        - name: model-cache
+          emptyDir:
+            sizeLimit: {{ .Values.cache.sizeLimit }}
 ---
 apiVersion: v1
 kind: Service

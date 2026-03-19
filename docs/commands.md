@@ -24,7 +24,7 @@ make reconcile
 make verify
 ```
 
-`make install-flux-local`, `make reconcile`, `make verify`, and `make sops-bootstrap-cluster` use `KUBECONFIG=.kube/generated/current.yaml` through the `Makefile`.
+`make install-flux-local`, `make reconcile`, `make verify`, `make cluster-status`, and `make sops-bootstrap-cluster` use `.kube/generated/current.yaml` through the `Makefile`.
 
 ## Validate generated manifests locally
 
@@ -65,6 +65,7 @@ make reconcile
 
 ```bash
 make verify
+make cluster-status
 make k9s-local
 make open-research-access
 make test-a2a-agent
@@ -76,7 +77,6 @@ make close-research-access
 If `k9s` looks empty, run it against the repo kubeconfig and all namespaces:
 
 ```bash
-export KUBECONFIG="$PWD/.kube/generated/current.yaml"
 make k9s-local
 ```
 

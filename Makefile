@@ -39,7 +39,7 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
 	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
 	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote \
-	flux-values render-cluster-root install-flux-local bootstrap-flux-git reconcile verify \
+	flux-values render-cluster-root install-flux-local bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
 	cluster-stop cluster-start preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
@@ -188,6 +188,11 @@ verify: require-kubeconfig ## Basic local verification of cluster and Flux state
 	kubectl get kustomizations -A || true
 	kubectl get helmreleases -A || true
 
+cluster-status: require-kubeconfig ## Show staged Flux, HelmRelease, and pod readiness state
+	flux get kustomizations -A || true
+	flux get helmreleases -A || true
+	kubectl get pods -A || true
+
 render-plaintext-secrets: ## Render local plaintext Kubernetes Secrets from .env into .generated/secrets/<env>
 	ENV=$(ENV) ./scripts/render-plaintext-secrets.sh
 
@@ -237,12 +242,15 @@ cluster-start: require-kubeconfig ## Resume platform workloads from Git desired 
 	  flux resume kustomization $$k -n flux-system || true; \
 	done
 	@flux reconcile source git platform -n flux-system || true
-	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
-	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
-	  flux reconcile kustomization $$k -n flux-system --with-source || true; \
-	done
+	@if kubectl -n flux-system get kustomization platform-bootstrap >/dev/null 2>&1; then \
+	  flux reconcile kustomization platform-bootstrap -n flux-system --with-source || true; \
+	fi
 	@for hr in $$(kubectl -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
 	  flux reconcile helmrelease $$hr -n flux-system --force || true; \
+	done
+	@for k in platform-infrastructure platform-applications platform; do \
+	  kubectl -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
+	  flux reconcile kustomization $$k -n flux-system --with-source || true; \
 	done
 
 preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s image import directory on all nodes

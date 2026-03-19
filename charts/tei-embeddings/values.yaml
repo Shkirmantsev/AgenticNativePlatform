@@ -9,6 +9,11 @@ serviceAccount:
   create: true
   name: tei-embeddings
   automountServiceAccountToken: false
+podLabels:
+  istio.io/dataplane-mode: none
+cache:
+  mountPath: /data
+  sizeLimit: 2Gi
 model: onnx-models/all-MiniLM-L6-v2-onnx
 extraArgs:
   - --auto-truncate
