@@ -234,6 +234,7 @@ make reconcile
 ## Optional echo MCP sample
 
 `echo-mcp` is a sample MCP workload used by the `kmcp` / `RemoteMCPServer` examples. It is not required for the base platform bootstrap.
+The image packaging under `mcp/echo-server/` now wraps the official reference package `@modelcontextprotocol/server-everything` from `modelcontextprotocol/servers` and exposes its real MCP streamable HTTP endpoint at `/mcp`. That reference server includes an `echo` tool.
 
 Important:
 
@@ -241,7 +242,7 @@ Important:
 - fix Flux or CRD/schema reconciliation errors first
 - only treat `echo-mcp` as a blocker after the application stage is applying successfully
 
-The sample implementation lives in:
+The sample packaging lives in:
 
 - `mcp/echo-server/`
 
@@ -273,7 +274,7 @@ make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-us
 This works because `k3s` imports tarballs from `/var/lib/rancher/k3s/agent/images/` into containerd, and the sample Deployment now uses `imagePullPolicy: IfNotPresent`.
 The image reference in the manifest must exactly match the imported tag.
 The import target creates that directory automatically if your node does not have it yet.
-Run the `make` target directly; `sudo make ...` is not needed because the Ansible task already uses privilege escalation.
+Run the `make` target directly. On a local workstation, the ad-hoc Ansible command will use `sudo` and prompt if needed. Do not wrap it in `sudo make ...`.
 
 2. Set `ECHO_MCP_IMAGE` in `.env` or pass it on the command line, then regenerate Flux inputs:
 
@@ -305,6 +306,7 @@ make reconcile
 ```bash
 kubectl -n kagent get deploy,svc,pods echo-mcp
 kubectl -n kagent get remotemcpserver echo-mcp -o yaml
+kubectl -n kagent logs deploy/echo-mcp
 ```
 
 ## Stop and restart the platform

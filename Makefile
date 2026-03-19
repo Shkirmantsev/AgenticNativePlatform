@@ -16,6 +16,7 @@ IAC_TOOL ?= tofu
 TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
 TF_DIR ?= terraform/environments/$(TOPOLOGY)
 ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/inventory.ini.example)
+ANSIBLE_BECOME_FLAGS ?=
 KUBECONFIG_DIR ?= .kube/generated
 KUBECONFIG ?= $(abspath $(KUBECONFIG_DIR)/current.yaml)
 ECHO_MCP_IMAGE ?= ghcr.io/example/echo-mcp:0.1.0
@@ -40,7 +41,7 @@ help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "%-32s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 tools-install-local: ## Install local operator tools (age, sops, kubectl, helm, flux, optional k9s, Terraform/OpenTofu)
-	ansible-playbook -i localhost, -c local ansible/playbooks/install-local-tools.yml --extra-vars "iac_tool=$(IAC_TOOL) install_k9s=$(INSTALL_K9S)"
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i localhost, -c local ansible/playbooks/install-local-tools.yml --extra-vars "iac_tool=$(IAC_TOOL) install_k9s=$(INSTALL_K9S)"
 
 render-terraform-tfvars: ## Render local terraform.auto.tfvars from .env for the selected topology
 	./scripts/render-terraform-tfvars.sh $(TOPOLOGY)
@@ -55,26 +56,26 @@ terraform-destroy: render-terraform-tfvars ## Destroy Terraform/OpenTofu artifac
 	$(TF_BIN) -chdir=$(TF_DIR) destroy -auto-approve
 
 bootstrap-hosts: ## Prepare the selected hosts for k3s
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/bootstrap-hosts.yml
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/bootstrap-hosts.yml
 
 install-k3s-server: ## Install the k3s server on the control-plane host
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/install-k3s-server.yml
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/install-k3s-server.yml
 
 join-workers: ## Join worker nodes to the k3s cluster
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/join-k3s-workers.yml
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/join-k3s-workers.yml
 
 label-llm-nodes: ## Label worker nodes as runtime-capable for self-hosted LLM workloads
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/label-llm-nodes.yml
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/label-llm-nodes.yml
 
 kubeconfig: ## Export kubeconfig from the control-plane host to .kube/generated
 	mkdir -p $(KUBECONFIG_DIR)
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/export-kubeconfig.yml
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/export-kubeconfig.yml
 
 require-kubeconfig:
 	@test -f "$(KUBECONFIG)" || (echo "Missing kubeconfig: $(KUBECONFIG). Run 'make kubeconfig TOPOLOGY=$(TOPOLOGY)' first." >&2; exit 1)
 
 uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventory
-	ansible-playbook -i $(ANSIBLE_INVENTORY) ansible/playbooks/uninstall-k3s.yml
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/uninstall-k3s.yml
 
 cluster-up-local: ## Bootstrap a single-node local topology
 	$(MAKE) terraform-init TOPOLOGY=local TF_BIN=$(TF_BIN)
@@ -202,12 +203,12 @@ cluster-start: require-kubeconfig ## Resume platform workloads from Git desired 
 
 preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s image import directory on all nodes
 	@test -n "$(VLLM_IMAGE_TARBALL)" || (echo "Set VLLM_IMAGE_TARBALL=/path/to/image.tar" >&2; exit 1)
-	ansible -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
-	ansible -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(VLLM_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/vllm-image.tar mode=0644"
+	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
+	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(VLLM_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/vllm-image.tar mode=0644"
 
 preimport-vllm-image-online: ## Pre-pull the vLLM image on all nodes using ctr in k3s containerd
 	@test -n "$(VLLM_IMAGE)" || (echo "Set VLLM_IMAGE=repo:tag" >&2; exit 1)
-	ansible -i $(ANSIBLE_INVENTORY) all -b -m shell -a "k3s ctr images pull $(VLLM_IMAGE)"
+	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m shell -a "k3s ctr images pull $(VLLM_IMAGE)"
 
 build-echo-mcp-image: ## Build the sample echo-mcp image locally with the configured ECHO_MCP_IMAGE tag
 	docker build -t $(ECHO_MCP_IMAGE) mcp/echo-server
@@ -218,8 +219,8 @@ save-echo-mcp-image: ## Save the local echo-mcp image to ECHO_MCP_IMAGE_TARBALL
 
 preimport-echo-mcp-image-tarball: ## Copy an echo-mcp image tarball into the k3s image import directory on all nodes
 	@test -n "$(ECHO_MCP_IMAGE_TARBALL)" || (echo "Set ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar" >&2; exit 1)
-	ansible -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
-	ansible -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(ECHO_MCP_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/echo-mcp-image.tar mode=0644"
+	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
+	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(ECHO_MCP_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/echo-mcp-image.tar mode=0644"
 
 prepare-echo-mcp-image-local: build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball ## Build, save, and import the sample echo-mcp image into k3s nodes without pushing
 

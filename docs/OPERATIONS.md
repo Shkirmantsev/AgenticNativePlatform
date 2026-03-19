@@ -147,7 +147,7 @@ make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=extern
 The concrete sample image is injected through generated Flux inputs from `ECHO_MCP_IMAGE`. The component manifests keep a neutral placeholder image so the repo does not hard-code a user-specific tag.
 
 The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
-Use the `make` targets directly instead of `sudo make`; the embedded Ansible tasks already run with privilege escalation.
+Use the `make` targets directly instead of `sudo make`; the embedded Ansible tasks already run with privilege escalation and will prompt through `sudo` on a local workstation when needed.
 
 Remove k3s from the current topology:
 
