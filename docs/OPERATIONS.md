@@ -45,6 +45,29 @@ Do not commit:
 - `flux` and `kubectl` targets that talk to the cluster expect that file to exist
 - stale files under `ansible/playbooks/.kube/` are old artifacts and can be deleted
 
+## One-command bootstrap
+
+For the standard first-run path, use:
+
+```bash
+cp .env.example .env
+# edit .env for your machine and credentials
+make run-cluster-from-scratch
+```
+
+That target orchestrates the existing building blocks in order:
+
+1. install local operator tools
+2. provision the selected topology
+3. install Flux
+4. apply first-pass secrets
+5. render Flux inputs
+6. bootstrap the Flux Git objects
+7. reconcile staged Kustomizations and HelmReleases
+8. print cluster status
+
+It intentionally stops if the render step changes tracked generated manifests under `flux/generated/...`, because Flux reads the remote Git branch rather than your local working tree.
+
 If `k9s` looks empty, it is usually reading the wrong kubeconfig or a narrowed namespace view. Prefer:
 
 ```bash

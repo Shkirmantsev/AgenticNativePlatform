@@ -13,6 +13,12 @@ Use:
 - **agentgateway** for agent-native policy and protocol-aware routing
 - **LiteLLM** for provider normalization
 
+Current north-south path:
+
+```text
+Internet -> LoadBalancer -> kgateway -> Istio Ambient -> agentgateway -> LiteLLM
+```
+
 ## Why not just one gateway?
 One gateway would mix public ingress concerns with model-provider abstraction and internal agent traffic governance.
 The chosen split keeps each layer smaller and easier to evolve.

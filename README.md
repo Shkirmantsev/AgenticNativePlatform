@@ -16,6 +16,21 @@ The canonical request path is:
 kagent -> agentgateway -> LiteLLM -> provider or local runtime
 ```
 
+## Architecture
+
+![Current platform architecture](./.assets/architecture-current.svg)
+
+Text fallback:
+
+```text
+Internet -> LoadBalancer -> kgateway -> Istio Ambient -> agentgateway -> LiteLLM
+kagent/kmcp -> agentgateway -> LiteLLM -> remote providers or optional local runtimes
+kagent/kmcp -> TEI, Qdrant, PostgreSQL, Redis
+KServe remains installed as the model-serving control plane and future evolution path
+```
+
+The north-south path is `Internet -> LoadBalancer -> kgateway -> Istio -> agentgateway -> LiteLLM`. From there, traffic goes either to remote providers or to optional local runtimes depending on `RUNTIME` and `LMSTUDIO_ENABLED`.
+
 ## Supported topologies
 
 - `local`

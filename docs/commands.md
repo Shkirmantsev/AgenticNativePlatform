@@ -7,6 +7,27 @@ make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
 make tools-install-local IAC_TOOL=terraform INSTALL_K9S=true
 ```
 
+## One-command bootstrap
+
+```bash
+cp .env.example .env
+# edit .env for your machine and credentials
+make run-cluster-from-scratch
+```
+
+This is the preferred first-run command.
+It installs local tools, brings up the selected topology, installs Flux, applies the initial secrets, renders Flux inputs, bootstraps the Git source, reconciles the staged Kustomizations, and prints cluster status.
+
+If the render step changes tracked files under `flux/generated/<topology>/` or `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`, the target stops and asks you to commit and push those generated manifests before it continues.
+
+Useful follow-up commands:
+
+```bash
+make cluster-status
+make verify
+make k9s-local
+```
+
 ## Default local remote-only startup
 
 ```bash
