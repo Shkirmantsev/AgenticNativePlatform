@@ -45,6 +45,13 @@ Do not commit:
 - `flux` and `kubectl` targets that talk to the cluster expect that file to exist
 - stale files under `ansible/playbooks/.kube/` are old artifacts and can be deleted
 
+If `k9s` looks empty, it is usually reading the wrong kubeconfig or a narrowed namespace view. Prefer:
+
+```bash
+export KUBECONFIG="$PWD/.kube/generated/current.yaml"
+make k9s-local
+```
+
 ## Generated Flux artifacts
 
 - `flux/generated/<topology>/kustomization.yaml` is the generated topology input root
@@ -118,6 +125,53 @@ make cluster-start
 
 `cluster-start` resumes the source, HelmReleases, and staged Kustomizations, then reconciles them in order.
 It also force-reconciles all existing HelmReleases in `flux-system` so workloads scaled down by `cluster-stop` are pushed back to their desired replica counts instead of remaining at zero because the release looked otherwise in-sync.
+
+## Local access paths for operators
+
+For local inspection from the workstation, use port-forwarding first. This does not require `kgateway`, MetalLB, or any external IP allocation.
+
+Open the common access paths in the background:
+
+```bash
+make open-research-access
+```
+
+Close them:
+
+```bash
+make close-research-access
+```
+
+That exposes:
+
+- `http://localhost:8080` for the kagent UI
+- `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` for the sample A2A card
+- `http://localhost:15000/v1/models` for AgentGateway
+- `http://localhost:4000/v1/models` for LiteLLM
+- `http://localhost:3000` for Grafana
+- `http://localhost:9090` for Prometheus
+- `http://localhost:6333/dashboard` for Qdrant
+
+If a target still does not come up, check the actual failure mode:
+
+- `Service ... has no ready endpoints` means the workload behind it is not running yet
+- `unable to listen on any of the requested ports` means the localhost port is already occupied on the workstation
+
+The access targets accept local port overrides, for example:
+
+```bash
+make open-litellm LITELLM_LOCAL_PORT=14000
+```
+
+LiteLLM itself requires `Authorization: Bearer <LITELLM_MASTER_KEY>`. If your `.env` has not overridden it yet, the first-bootstrap default is still `change-me`.
+
+Use `kgateway` plus MetalLB or another bare-metal exposure method only when you need stable LAN-facing or externally reachable URLs.
+On the default local topology, it is normal for Gateway resources to exist before they have an external `ADDRESS`; in that state, localhost port-forwarding remains the correct operator path.
+When the gateway-facing Service `agentgateway-proxy` has a MetalLB IP, the external AgentGateway endpoint is:
+
+```text
+http://<metallb-ip>:8080/v1/models
+```
 
 ## Local image import for optional sample workloads
 

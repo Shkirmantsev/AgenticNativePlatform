@@ -12,3 +12,4 @@ spec:
         - group: agentgateway.dev
           kind: AgentgatewayBackend
           name: litellm-upstream
+          namespace: agentgateway-system

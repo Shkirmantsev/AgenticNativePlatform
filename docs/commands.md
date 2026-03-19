@@ -65,9 +65,104 @@ make reconcile
 
 ```bash
 make verify
-make test-litellm
-make port-forward-kagent
+make k9s-local
+make open-research-access
 make test-a2a-agent
+make test-agentgateway-openai
+make test-litellm
+make close-research-access
+```
+
+If `k9s` looks empty, run it against the repo kubeconfig and all namespaces:
+
+```bash
+export KUBECONFIG="$PWD/.kube/generated/current.yaml"
+make k9s-local
+```
+
+## Local operator access
+
+Open all common localhost access paths in the background:
+
+```bash
+make open-research-access
+```
+
+Close them:
+
+```bash
+make close-research-access
+```
+
+URLs made available by `make open-research-access`:
+
+- `http://localhost:8080` kagent UI
+- `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` sample A2A card
+- `http://localhost:15000/v1/models` AgentGateway OpenAI-compatible API
+- `http://localhost:4000/v1/models` LiteLLM
+- `http://localhost:3000` Grafana
+- `http://localhost:9090` Prometheus
+- `http://localhost:6333/dashboard` Qdrant
+
+If one of those commands fails, the target now reports whether:
+
+- the Service has no ready endpoints
+- or the local port is already in use
+
+Override a busy localhost port like this:
+
+```bash
+make open-litellm LITELLM_LOCAL_PORT=14000
+make port-forward-agentgateway AGENTGATEWAY_LOCAL_PORT=16000
+```
+
+LiteLLM requires the master-key header:
+
+```bash
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
+```
+
+AgentGateway can be tested the same way:
+
+```bash
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
+```
+
+If MetalLB has assigned an external IP to `agentgateway-proxy`, the external URL is:
+
+```text
+http://<metallb-ip>:8080/v1/models
+```
+
+Open or close one endpoint at a time:
+
+```bash
+make open-kagent-ui
+make close-kagent-ui
+make open-kagent-a2a
+make close-kagent-a2a
+make open-agentgateway
+make close-agentgateway
+make open-litellm
+make close-litellm
+make open-grafana
+make close-grafana
+make open-prometheus
+make close-prometheus
+make open-qdrant
+make close-qdrant
+```
+
+Foreground alternatives:
+
+```bash
+make port-forward-kagent-ui
+make port-forward-kagent
+make port-forward-agentgateway
+make port-forward-litellm
+make port-forward-grafana
+make port-forward-prometheus
+make port-forward-qdrant
 ```
 
 ## vLLM image pre-import option B (tarball)

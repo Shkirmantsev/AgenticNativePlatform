@@ -14,6 +14,6 @@ spec:
             type: PathPrefix
             value: /v1/
       backendRefs:
-        - name: agentgateway
+        - name: agentgateway-proxy
           namespace: agentgateway-system
           port: 8080

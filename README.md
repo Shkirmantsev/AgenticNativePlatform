@@ -329,6 +329,123 @@ It also force-reconciles existing HelmReleases so workloads that were manually s
 `metallb-system` is intentionally left running during `cluster-stop`; scaling the MetalLB controller to zero breaks its validating webhook and can block the next `platform-applications` reconcile on `IPAddressPool`.
 For the default CPU TEI path, keep `EMBEDDING_MODEL` on an ONNX-backed model such as `onnx-models/all-MiniLM-L6-v2-onnx`; models without `model.onnx` artifacts can leave `tei-embeddings` stuck even when Flux itself is healthy.
 
+## Explore the cluster locally
+
+If `k9s` looks empty, it is usually using the wrong kubeconfig or a namespace filter.
+
+Use the repo kubeconfig and show all namespaces:
+
+```bash
+export KUBECONFIG="$PWD/.kube/generated/current.yaml"
+make k9s-local
+```
+
+Equivalent raw command:
+
+```bash
+k9s --kubeconfig .kube/generated/current.yaml --all-namespaces
+```
+
+For workstation research and UI access, use localhost port-forwarding first. It is the default and most reliable path on the local topology.
+You do not need bare-metal exposure, MetalLB, or `kgateway` just to inspect the cluster from your own machine.
+
+Open the common local endpoints in the background:
+
+```bash
+make open-research-access
+```
+
+Close them again:
+
+```bash
+make close-research-access
+```
+
+Available localhost URLs after `make open-research-access`:
+
+- `http://localhost:8080` — kagent UI
+- `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` — sample kagent A2A card
+- `http://localhost:15000/v1/models` — AgentGateway OpenAI-compatible API
+- `http://localhost:4000/v1/models` — LiteLLM directly
+- `http://localhost:3000` — Grafana
+- `http://localhost:9090` — Prometheus
+- `http://localhost:6333/dashboard` — Qdrant UI
+
+If a target cannot be opened, `make` now fails with the real cause instead of silently leaving a dead localhost URL behind.
+Two common cases are:
+
+- the backing Service has no ready endpoints yet
+- the chosen localhost port is already used by another process
+
+If a local port is busy, override it on the command line. Example:
+
+```bash
+make open-litellm LITELLM_LOCAL_PORT=14000
+```
+
+Then use:
+
+```text
+http://localhost:14000/v1/models
+```
+
+LiteLLM is intentionally protected by a master key. Use:
+
+```bash
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
+```
+
+AgentGateway fronts the same OpenAI-style route, so the same header is the safe default there:
+
+```bash
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
+```
+
+You can also open or close each endpoint independently:
+
+```bash
+make open-kagent-ui
+make close-kagent-ui
+make open-kagent-a2a
+make close-kagent-a2a
+make open-agentgateway
+make close-agentgateway
+make open-litellm
+make close-litellm
+make open-grafana
+make close-grafana
+make open-prometheus
+make close-prometheus
+make open-qdrant
+make close-qdrant
+```
+
+If you prefer a foreground session instead of background helpers, use:
+
+```bash
+make port-forward-kagent-ui
+make port-forward-kagent
+make port-forward-agentgateway
+make port-forward-litellm
+make port-forward-grafana
+make port-forward-prometheus
+make port-forward-qdrant
+```
+
+Use bare-metal exposure through MetalLB and `kgateway` only when you need stable LAN-facing or externally reachable URLs.
+On the default local topology, the Gateway objects may exist before they have an external `ADDRESS`; until that is configured and programmed, localhost port-forwarding is the expected operator workflow.
+When MetalLB has assigned an IP to `service/agentgateway-proxy`, the external AgentGateway URL shape is:
+
+```text
+http://<metallb-ip>:8080/v1/models
+```
+
+On your current local cluster, the live external IP is `192.168.1.240`, so the current external endpoint is:
+
+```text
+http://192.168.1.240:8080/v1/models
+```
+
 ## Move to SOPS later
 
 Once the basic platform works, switch from `SECRETS_MODE=external` to `SECRETS_MODE=sops`.
@@ -346,11 +463,11 @@ Then switch `SECRETS_MODE=sops`, commit the encrypted manifests, push, and recon
 
 ```bash
 make verify
-make test-litellm
-make port-forward-kagent
+make open-research-access
 make test-a2a-agent
-make port-forward-agentgateway
 make test-agentgateway-openai
+make test-litellm
+make close-research-access
 ```
 
 ## Remove the environment

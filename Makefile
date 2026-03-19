@@ -21,6 +21,15 @@ KUBECONFIG_DIR ?= .kube/generated
 KUBECONFIG ?= $(abspath $(KUBECONFIG_DIR)/current.yaml)
 ECHO_MCP_IMAGE ?= ghcr.io/example/echo-mcp:0.1.0
 ECHO_MCP_IMAGE_TARBALL ?= /tmp/echo-mcp-image.tar
+PORT_FORWARD_STATE_DIR ?= /tmp/agentic-native-platform-port-forwards
+KAGENT_UI_LOCAL_PORT ?= 8080
+KAGENT_A2A_LOCAL_PORT ?= 8083
+AGENTGATEWAY_LOCAL_PORT ?= 15000
+LITELLM_LOCAL_PORT ?= 4000
+GRAFANA_LOCAL_PORT ?= 3000
+PROMETHEUS_LOCAL_PORT ?= 9090
+QDRANT_LOCAL_PORT ?= 6333
+LITELLM_MASTER_KEY ?= change-me
 export KUBECONFIG
 
 STOP_NAMESPACES ?= istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
@@ -35,7 +44,42 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
 	cluster-stop cluster-start preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
 	build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball prepare-echo-mcp-image-local \
-	port-forward-agentgateway port-forward-kagent test-a2a-agent test-agentgateway-gemini test-agentgateway-openai test-litellm test-lmstudio test-ollama test-vllm
+	k9s-local port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant \
+	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-research-access close-research-access \
+	test-a2a-agent test-agentgateway-gemini test-agentgateway-openai test-litellm test-lmstudio test-ollama test-vllm
+
+define start_port_forward
+	@mkdir -p $(PORT_FORWARD_STATE_DIR)
+	@if [ -z "$$(kubectl -n $(3) get endpoints $(4) -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]; then \
+	  echo "$(1) cannot open because service $(3)/$(4) has no ready endpoints"; \
+	  exit 1; \
+	elif [ -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid" ] && kill -0 "$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")" 2>/dev/null; then \
+	  echo "$(1) is already available at $(2)"; \
+	else \
+	  rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	  kubectl -n $(3) port-forward svc/$(4) $(5):$(6) >"$(PORT_FORWARD_STATE_DIR)/$(1).log" 2>&1 & \
+	  echo $$! >"$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	  sleep 2; \
+	  if ! kill -0 "$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")" 2>/dev/null; then \
+	    echo "$(1) failed to open"; \
+	    sed -n '1,40p' "$(PORT_FORWARD_STATE_DIR)/$(1).log"; \
+	    rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	    exit 1; \
+	  fi; \
+	  echo "$(1) available at $(2)"; \
+	fi
+endef
+
+define stop_port_forward
+	@if [ -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid" ]; then \
+	  pid="$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")"; \
+	  if kill -0 "$$pid" 2>/dev/null; then kill "$$pid" 2>/dev/null || true; fi; \
+	  rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	  echo "$(1) closed"; \
+	else \
+	  echo "$(1) is not running"; \
+	fi
+endef
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "%-32s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -226,25 +270,103 @@ preimport-echo-mcp-image-tarball: ## Copy an echo-mcp image tarball into the k3s
 
 prepare-echo-mcp-image-local: build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball ## Build, save, and import the sample echo-mcp image into k3s nodes without pushing
 
-port-forward-agentgateway: require-kubeconfig ## Port-forward the Kubernetes agentgateway service to localhost:15000
-	kubectl -n agentgateway-system port-forward svc/agentgateway 15000:15000
+k9s-local: require-kubeconfig ## Open k9s against the repo kubeconfig across all namespaces
+	k9s --kubeconfig "$(KUBECONFIG)" --all-namespaces
 
-port-forward-kagent: require-kubeconfig ## Port-forward kagent controller to localhost:8083
-	kubectl -n kagent port-forward svc/kagent-controller 8083:8083
+port-forward-agentgateway: require-kubeconfig ## Port-forward AgentGateway to localhost:15000
+	kubectl -n agentgateway-system port-forward svc/agentgateway-proxy $(AGENTGATEWAY_LOCAL_PORT):8080
+
+port-forward-kagent: require-kubeconfig ## Port-forward the kagent controller API to localhost:8083
+	kubectl -n kagent port-forward svc/kagent-kagent-controller $(KAGENT_A2A_LOCAL_PORT):8083
+
+port-forward-kagent-ui: require-kubeconfig ## Port-forward the kagent UI to localhost:8080
+	kubectl -n kagent port-forward svc/kagent-kagent-ui $(KAGENT_UI_LOCAL_PORT):8080
+
+port-forward-litellm: require-kubeconfig ## Port-forward LiteLLM to localhost:4000
+	kubectl -n ai-gateway port-forward svc/litellm $(LITELLM_LOCAL_PORT):4000
+
+port-forward-grafana: require-kubeconfig ## Port-forward Grafana to localhost:3000
+	kubectl -n observability port-forward svc/observability-kube-prometheus-stack-grafana $(GRAFANA_LOCAL_PORT):80
+
+port-forward-prometheus: require-kubeconfig ## Port-forward Prometheus to localhost:9090
+	kubectl -n observability port-forward svc/observability-kube-prometh-prometheus $(PROMETHEUS_LOCAL_PORT):9090
+
+port-forward-qdrant: require-kubeconfig ## Port-forward Qdrant to localhost:6333
+	kubectl -n context port-forward svc/context-qdrant $(QDRANT_LOCAL_PORT):6333
+
+open-kagent-ui: require-kubeconfig ## Open the kagent UI at http://localhost:8080
+	$(call start_port_forward,kagent-ui,http://localhost:$(KAGENT_UI_LOCAL_PORT),kagent,kagent-kagent-ui,$(KAGENT_UI_LOCAL_PORT),8080)
+
+close-kagent-ui: ## Close the kagent UI port-forward
+	$(call stop_port_forward,kagent-ui)
+
+open-kagent-a2a: require-kubeconfig ## Open the kagent controller API at http://localhost:8083
+	$(call start_port_forward,kagent-a2a,http://localhost:$(KAGENT_A2A_LOCAL_PORT),kagent,kagent-kagent-controller,$(KAGENT_A2A_LOCAL_PORT),8083)
+
+close-kagent-a2a: ## Close the kagent controller API port-forward
+	$(call stop_port_forward,kagent-a2a)
+
+open-agentgateway: require-kubeconfig ## Open AgentGateway at http://localhost:15000
+	$(call start_port_forward,agentgateway,http://localhost:$(AGENTGATEWAY_LOCAL_PORT),agentgateway-system,agentgateway-proxy,$(AGENTGATEWAY_LOCAL_PORT),8080)
+
+close-agentgateway: ## Close the AgentGateway port-forward
+	$(call stop_port_forward,agentgateway)
+
+open-litellm: require-kubeconfig ## Open LiteLLM at http://localhost:4000
+	$(call start_port_forward,litellm,http://localhost:$(LITELLM_LOCAL_PORT),ai-gateway,litellm,$(LITELLM_LOCAL_PORT),4000)
+
+close-litellm: ## Close the LiteLLM port-forward
+	$(call stop_port_forward,litellm)
+
+open-grafana: require-kubeconfig ## Open Grafana at http://localhost:3000
+	$(call start_port_forward,grafana,http://localhost:$(GRAFANA_LOCAL_PORT),observability,observability-kube-prometheus-stack-grafana,$(GRAFANA_LOCAL_PORT),80)
+
+close-grafana: ## Close the Grafana port-forward
+	$(call stop_port_forward,grafana)
+
+open-prometheus: require-kubeconfig ## Open Prometheus at http://localhost:9090
+	$(call start_port_forward,prometheus,http://localhost:$(PROMETHEUS_LOCAL_PORT),observability,observability-kube-prometh-prometheus,$(PROMETHEUS_LOCAL_PORT),9090)
+
+close-prometheus: ## Close the Prometheus port-forward
+	$(call stop_port_forward,prometheus)
+
+open-qdrant: require-kubeconfig ## Open Qdrant at http://localhost:6333
+	$(call start_port_forward,qdrant,http://localhost:$(QDRANT_LOCAL_PORT),context,context-qdrant,$(QDRANT_LOCAL_PORT),6333)
+
+close-qdrant: ## Close the Qdrant port-forward
+	$(call stop_port_forward,qdrant)
+
+open-research-access: require-kubeconfig ## Open the main local research endpoints on localhost
+	$(MAKE) open-kagent-ui
+	$(MAKE) open-kagent-a2a
+	$(MAKE) open-agentgateway
+	$(MAKE) open-litellm
+	$(MAKE) open-grafana
+	$(MAKE) open-prometheus
+	$(MAKE) open-qdrant
+
+close-research-access: ## Close all background localhost research endpoints
+	$(MAKE) close-kagent-ui
+	$(MAKE) close-kagent-a2a
+	$(MAKE) close-agentgateway
+	$(MAKE) close-litellm
+	$(MAKE) close-grafana
+	$(MAKE) close-prometheus
+	$(MAKE) close-qdrant
 
 test-a2a-agent: ## Fetch the sample agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json | jq .
 
 test-agentgateway-gemini: ## Test the canonical OpenAI-compatible route through agentgateway -> LiteLLM -> Gemini
-	curl -fsSL http://localhost:15000/v1/models | jq .
+	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .
 
 test-agentgateway-openai: ## Test the agentgateway OpenAI-compatible route without requiring provider-specific CLI tools
-	curl -fsSL http://localhost:15000/v1/models | jq .
+	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .
 
 test-litellm: require-kubeconfig ## List available models directly from the LiteLLM service
-	kubectl -n ai-gateway port-forward svc/litellm 4000:4000 >/tmp/litellm-pf.log 2>&1 & echo $$! > /tmp/litellm-pf.pid; \
+	kubectl -n ai-gateway port-forward svc/litellm $(LITELLM_LOCAL_PORT):4000 >/tmp/litellm-pf.log 2>&1 & echo $$! > /tmp/litellm-pf.pid; \
 	sleep 3; \
-	curl -fsSL http://localhost:4000/v1/models | jq .; \
+	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(LITELLM_LOCAL_PORT)/v1/models | jq .; \
 	kill $$(cat /tmp/litellm-pf.pid)
 
 test-lmstudio: require-kubeconfig ## Check connectivity from the cluster to the external LM Studio endpoint
