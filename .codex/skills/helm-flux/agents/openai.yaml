@@ -1,0 +1,8 @@
+interface:
+  display_name: "Helm + Flux"
+  short_description: "Build and operate production-ready Helm GitOps"
+  default_prompt: "Use $helm-flux to build, validate, or troubleshoot production-ready Helm charts and Flux resources in this repository."
+
+policy:
+  allow_implicit_invocation: true
+
