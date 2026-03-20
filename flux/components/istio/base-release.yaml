@@ -90,7 +90,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
-  timeout: 9m
+  timeout: 15m
   dependsOn:
     - name: istio-cni
   targetNamespace: istio-system

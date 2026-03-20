@@ -22,6 +22,7 @@ metadata:
   name: litellm
   namespace: {{ .Values.namespace }}
 spec:
+  progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
   replicas: 1
   selector:
     matchLabels: {app: litellm}

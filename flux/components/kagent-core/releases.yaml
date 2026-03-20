@@ -34,7 +34,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
-  timeout: 15m
+  timeout: 30m
   dependsOn:
     - name: kagent-crds
   targetNamespace: kagent
@@ -63,6 +63,15 @@ spec:
       skillsInitImage:
         tag: "0.7.23"
     ui:
+      startupProbe:
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        failureThreshold: 18
+        timeoutSeconds: 1
+      readinessProbe:
+        periodSeconds: 30
+        failureThreshold: 3
+        timeoutSeconds: 1
       image:
         tag: "0.7.23"
     kagent-tools:

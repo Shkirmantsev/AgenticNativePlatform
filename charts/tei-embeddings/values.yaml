@@ -1,4 +1,6 @@
 namespace: ai-models
+deployment:
+  progressDeadlineSeconds: 1800
 image:
   repository: ghcr.io/huggingface/text-embeddings-inference
   tag: cpu-1.8

@@ -8,4 +8,6 @@ RUN npm install -g "@modelcontextprotocol/server-everything@${MCP_EVERYTHING_VER
 
 EXPOSE 3001
 
+USER 1000:1000
+
 CMD ["sh", "-c", "npm run -g start:streamableHttp --prefix \"$(npm root -g)/@modelcontextprotocol/server-everything\""]

@@ -60,11 +60,13 @@ When updating this file:
 - K3s image handling: copying a tarball into `/var/lib/rancher/k3s/agent/images/` is not enough for fast rollouts of a new tag; run `k3s ctr images import <tar>` in the target so kubelet can start the new image immediately instead of attempting a registry pull.
 - Ansible privilege escalation: for local ad-hoc `ansible ... -b` commands in this repo, plain `make ...` is preferred; let the local sudo prompt appear if needed, and do not assume `ANSIBLE_BECOME_FLAGS=-K` is required.
 - Sample workload image overrides: inject operator-specific images such as `ECHO_MCP_IMAGE` through generated Flux inputs in `flux/generated/<topology>` and stage-level Kustomize replacements, not by editing component manifests with user-specific tags.
+- Sample workload images: the local `mcp/echo-server` image must run with a numeric non-root UID/GID (for example `USER 1000:1000`); `runAsNonRoot` will reject root or named-only users during local kmcp rollouts.
 - Local operator access: verify Makefile port-forward targets against live `kubectl get svc -A` output; current local access uses `kagent-kagent-ui`, `kagent-kagent-controller`, and `agentgateway-system-agentgateway`, not the older short service names.
 - AgentGateway access: for north-south/operator access prefer the gateway-facing `Service/agentgateway-proxy` when it exists; the internal `agentgateway-system-agentgateway` service is not the canonical external entrypoint.
 - K3s + Istio CNI: set HelmRelease values `cniConfDir=/var/lib/rancher/k3s/agent/etc/cni/net.d`, `cniBinDir=/var/lib/rancher/k3s/data/cni`, and `ambient.enabled=true` when using `ztunnel`; otherwise `istio-cni` may look healthy while `ztunnel` never gets `/var/run/ztunnel/ztunnel.sock`.
 - TEI restart behavior: for local CPU embeddings, keep TEI on an ONNX-backed model, mount `/data` on an `emptyDir` cache, opt the pod out of ambient, and allow a longer Helm timeout; cold restarts otherwise flap on Hugging Face download retries and block `platform-infrastructure`.
 - TEI CPU defaults: use an ONNX-backed embedding model for `EMBEDDING_MODEL` and generated `tei-values`; models without `model.onnx` keep `tei-embeddings` in rollout even after Flux and Helm are otherwise healthy.
+- KServe chart behavior: upstream `ghcr.io/kserve/charts/kserve:v0.16.0` always renders the built-in `ClusterServingRuntime` objects and only toggles `spec.disabled`; in this repo, strip those objects with Helm post-renderer delete patches or stage them separately, otherwise first install can deadlock on the webhook before `kserve-controller-manager` has endpoints.
 - Generated metadata like `flux/generated/*/topology-values.yaml` is for operators only and must not be listed under Kustomize `resources`.
 
 ## Skills

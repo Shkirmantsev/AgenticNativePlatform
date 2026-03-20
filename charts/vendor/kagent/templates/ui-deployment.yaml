@@ -56,10 +56,14 @@ spec:
             httpGet:
               path: /health
               port: http
-            periodSeconds: 1
-            initialDelaySeconds: 1
+            periodSeconds: {{ .Values.ui.startupProbe.periodSeconds }}
+            initialDelaySeconds: {{ .Values.ui.startupProbe.initialDelaySeconds }}
+            failureThreshold: {{ .Values.ui.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.ui.startupProbe.timeoutSeconds }}
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            periodSeconds: 30
+            periodSeconds: {{ .Values.ui.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.ui.readinessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.ui.readinessProbe.timeoutSeconds }}

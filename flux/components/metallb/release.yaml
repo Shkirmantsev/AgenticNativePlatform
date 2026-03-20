@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 15m
   targetNamespace: metallb-system
   chart:
     spec:
@@ -16,6 +17,11 @@ spec:
       version: 0.15.x
   install:
     createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     speaker:
       frr:
