@@ -73,11 +73,15 @@ The optional `echo-mcp` sample follows that pattern. It is a real `MCPServer`, d
 Useful repository assets:
 
 - [Architecture SVG fallback](./.assets/architecture-current.svg)
-- [Tool installation screenshot 1](./.assets/make-tools-install-local1.png)
-- [Tool installation screenshot 2](./.assets/make-tools-install-local2.png)
-- [Bootstrap hosts screenshot](./.assets/bootstrap-hosts.png)
-- [Install k3s server screenshot](./.assets/install-k3s-server.png)
-- [Export kubeconfig screenshot](./.assets/export-kubeconfig.png)
+- [make-help](.assets/make-help.png)
+- [make-cluster-from-scratch](.assets/make-cluster-from-scratch.png)
+- [make-cluster-from-scratch2](.assets/make-cluster-from-scratch2.png)
+- [make-cluster-from-scratch3](.assets/make-cluster-from-scratch3.png)
+- [make-k9s-local](.assets/make-k9s-local.png)
+- [make-open-research-access](.assets/make-open-research-access.png)
+- [make-open-kagent-ui](.assets/kagent-ui1.png)
+- [make-open-kagent-ui2](.assets/kagent-ui2.png)
+- [make-open-kagent-ui3](.assets/kagent-ui3.png)
 
 ## Supported topologies
 
@@ -710,3 +714,35 @@ When you change manifests, charts, or generated inputs:
 
 Do not treat manual `helm install` or `helm upgrade` as the primary operating model.
 Flux is the control plane for this repository.
+
+
+## Visual Examples of work:
+
+call help documentation:
+
+![make-help](.assets/make-help.png)
+
+qick start of the cluster:
+
+![make-cluster-from-scratch](.assets/make-cluster-from-scratch.png)
+![make-cluster-from-scratch2](.assets/make-cluster-from-scratch2.png)
+![make-cluster-from-scratch3](.assets/make-cluster-from-scratch3.png)
+
+k9s monitoring (make k9s-local):
+
+![make-k9s-local](.assets/make-k9s-local.png)
+
+make open-research-access:
+
+![make-open-research-access](.assets/make-open-research-access.png)
+
+kagent UI (previously run make open-kagent-ui or make open-research-access -- see above):
+
+![make-open-kagent-ui](.assets/kagent-ui1.png)
+![make-open-kagent-ui2](.assets/kagent-ui2.png)
+![make-open-kagent-ui3](.assets/kagent-ui3.png)
+
+And other steps:
+- [make-open-kagent-ui4](.assets/kagent-ui4.png)
+- [make-open-kagent-ui5](.assets/kagent-ui5.png)
+- [make-open-kagent-ui6](.assets/kagent-ui6.png)
