@@ -5,11 +5,18 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
+  timeout: 15m
   targetNamespace: context
   chartRef:
     kind: OCIRepository
     name: bitnami-redis-chart
     namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     architecture: standalone
     master:

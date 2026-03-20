@@ -136,6 +136,21 @@ What it does:
 7. reconciles the staged platform roots
 8. prints cluster status
 
+Important:
+
+- these steps are already part of `make run-cluster-from-scratch`
+- you only need to run `make apply-plaintext-secrets`, `make bootstrap-flux-git`, and `make reconcile` manually if the one-command bootstrap stopped part-way through
+- on a cold local cluster, the first reconciliation can take a long time because Helm is pulling large images and local-path is provisioning PVCs for the first time
+
+If `run-cluster-from-scratch` stopped after Flux install but before Git bootstrap, resume with:
+
+```bash
+make apply-plaintext-secrets ENV=dev
+make bootstrap-flux-git TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make reconcile
+make cluster-status
+```
+
 ### Fastest destroy
 
 For Terraform/OpenTofu-based topologies:
@@ -330,6 +345,14 @@ make cluster-status
 make verify
 make k9s-local
 ```
+
+On the first local bootstrap, do not treat `Reconciliation in progress`, `ContainerCreating`, or `Pending` as an immediate failure.
+The first install often needs extra time for:
+
+- chart downloads
+- image pulls
+- PVC creation by `local-path`
+- Helm retries after early dependency timeouts
 
 ### 5. Open the main local access paths
 

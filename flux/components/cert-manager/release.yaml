@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
-  timeout: 9m
+  timeout: 15m
   targetNamespace: cert-manager
   chart:
     spec:
