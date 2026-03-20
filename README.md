@@ -623,13 +623,14 @@ make cluster-status
 Important behavior:
 
 - `cluster-pause` suspends the staged Flux roots and HelmReleases
-- `cluster-pause` scales Deployments and StatefulSets in platform namespaces to zero
-- `cluster-resume` reconciles `platform-bootstrap` first, then force-reconciles HelmReleases, then waits on higher stages
+- `cluster-pause` snapshots Deployment and StatefulSet replica targets in `ConfigMap/flux-system/cluster-pause-state` before scaling platform namespaces to zero
+- `cluster-resume` reconciles `platform-bootstrap`, restores the saved replica targets, fans out HelmRelease reconcile annotations, then waits on higher stages
 - `cluster-stop` and `cluster-start` remain compatibility aliases
 
 Design detail:
 
 - `metallb-system` is intentionally not scaled to zero because its validating webhook is needed on the next reconcile
+- the staged Flux health budgets are longer than the per-stage defaults because some HelmReleases in this repo have 15-30 minute cold-start timeouts
 
 ## Validate and troubleshoot
 

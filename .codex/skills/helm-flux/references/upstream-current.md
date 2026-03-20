@@ -44,6 +44,7 @@ Production-relevant rules from the docs:
 - Failure handling is configurable; install and upgrade support remediation and retry behavior.
 - `RetryOnFailure` and `RemediateOnFailure` are distinct strategies. Choose deliberately when rollout recovery matters.
 - `.spec.install.remediation` and `.spec.upgrade.remediation` control retries and whether the last failure is remediated.
+- The controller honors the standard reconcile annotations (`reconcile.fluxcd.io/requestedAt`, `forceAt`, `resetAt`) that the Flux CLI uses for one-off reconciliations. This is useful when you need to fan out many HelmRelease reconciliations without waiting serially on each CLI invocation.
 - Drift detection can be enabled with `.spec.driftDetection.mode: enabled`.
 - Drift detection can be scoped with ignore rules or disabled per resource by annotation when some fields must remain mutable.
 - `HelmRelease` can reconcile under a specific ServiceAccount via `.spec.serviceAccountName`; use this when cluster-admin scope is unnecessary.
@@ -65,3 +66,11 @@ Production-relevant rules from the docs:
 - `Revision` rebuilds when the underlying Git or Bucket source revision changes.
 - For Git-backed local charts, `ChartVersion` misses source-only changes unless `Chart.yaml` version also changes.
 - For repo-local chart packaging from Git content, `Revision` is usually the correct setting.
+
+## Related platform docs used in this repo
+
+- https://kagent.dev/docs/kagent
+- https://kagent.dev/docs/kagent/getting-started/quickstart
+- https://kagent.dev/docs/kmcp
+- https://kgateway.dev/docs/envoy/latest/
+- https://agentgateway.dev/docs/kubernetes/latest/

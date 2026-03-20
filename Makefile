@@ -31,11 +31,16 @@ GRAFANA_LOCAL_PORT ?= 3000
 PROMETHEUS_LOCAL_PORT ?= 9090
 QDRANT_LOCAL_PORT ?= 6333
 LITELLM_MASTER_KEY ?= change-me
+PAUSE_STATE_CONFIGMAP ?= cluster-pause-state
+PLATFORM_ROOT_TIMEOUT ?= 30m
+PLATFORM_BOOTSTRAP_TIMEOUT ?= 10m
+PLATFORM_INFRA_TIMEOUT ?= 15m
+PLATFORM_APPS_TIMEOUT ?= 20m
 export KUBECONFIG
 KUBECTL ?= kubectl --kubeconfig "$(KUBECONFIG)"
 FLUX ?= flux --kubeconfig "$(KUBECONFIG)"
 
-STOP_NAMESPACES ?= istio-system kgateway-system agentgateway-system ai-gateway ai-models context kagent observability kserve kmcp-system
+PAUSE_NAMESPACES ?= ai-gateway ai-models context
 PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-applications platform
 
 .PHONY: help \
@@ -88,6 +93,7 @@ help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "%-32s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 tools-install-local: ## Install local operator tools (age, sops, kubectl, helm, flux, optional k9s, Terraform/OpenTofu)
+	@sudo -v
 	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i localhost, -c local ansible/playbooks/install-local-tools.yml --extra-vars "iac_tool=$(IAC_TOOL) install_k9s=$(INSTALL_K9S)"
 
 render-terraform-tfvars: ## Render local terraform.auto.tfvars from .env for the selected topology
@@ -185,7 +191,7 @@ flux-values: ## Render non-secret Flux ConfigMaps for the selected topology
 	./scripts/render-flux-values.sh $(TOPOLOGY)
 
 render-cluster-root: ## Render the Flux root kustomization for the selected topology/env/runtime/secrets mode
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/render-cluster-kustomization.sh
+	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) ./scripts/render-cluster-kustomization.sh
 
 ensure-generated-flux-clean: flux-values render-cluster-root ## Render tracked Flux inputs and fail before cluster install continues if GitOps inputs need commit/push
 	@changed="$$(git status --porcelain -- "flux/generated/$(TOPOLOGY)" "flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)")"; \
@@ -208,15 +214,19 @@ install-flux: require-kubeconfig ## Install Flux controllers into the selected/c
 	fi
 
 bootstrap-flux-git: require-kubeconfig flux-values render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) ./scripts/bootstrap-flux-git.sh
+	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ROOT_TIMEOUT=$(PLATFORM_ROOT_TIMEOUT) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) ./scripts/bootstrap-flux-git.sh
 
 reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
 	@$(FLUX) reconcile source git platform -n flux-system || true
 	@if $(KUBECTL) -n flux-system get kustomization platform-bootstrap >/dev/null 2>&1; then \
 	  $(FLUX) reconcile kustomization platform-bootstrap -n flux-system --with-source || true; \
 	fi
-	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
-	  $(FLUX) reconcile helmrelease $$hr -n flux-system --force || true; \
+	@token="$$(date -u +"%Y-%m-%dT%H:%M:%SZ")"; \
+	for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  $(KUBECTL) -n flux-system annotate --overwrite helmrelease $$hr \
+	    reconcile.fluxcd.io/requestedAt="$$token" \
+	    reconcile.fluxcd.io/forceAt="$$token" \
+	    reconcile.fluxcd.io/resetAt="$$token" || true; \
 	done
 	@for k in platform-infrastructure platform-applications platform; do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
@@ -260,6 +270,7 @@ sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key i
 	./scripts/bootstrap-sops-secret.sh
 
 cluster-pause: require-kubeconfig ## Pause platform workloads without uninstalling the cluster
+	@PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/save-paused-workloads.sh
 	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) suspend kustomization $$k -n flux-system || true; \
@@ -268,13 +279,13 @@ cluster-pause: require-kubeconfig ## Pause platform workloads without uninstalli
 	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
 	  $(FLUX) suspend helmrelease $$hr -n flux-system || true; \
 	done
-	@for ns in $(STOP_NAMESPACES); do \
+	@for ns in $(PAUSE_NAMESPACES); do \
 	  $(KUBECTL) get ns $$ns >/dev/null 2>&1 || continue; \
 	  $(KUBECTL) -n $$ns get deploy -o name 2>/dev/null | xargs -r -n1 $(KUBECTL) -n $$ns scale --replicas=0; \
 	  $(KUBECTL) -n $$ns get statefulset -o name 2>/dev/null | xargs -r -n1 $(KUBECTL) -n $$ns scale --replicas=0; \
 	done
-	@echo "cluster-pause completed: Flux roots and HelmReleases are suspended, and Deployments/StatefulSets in platform namespaces were scaled to 0."
-	@echo "System namespaces and DaemonSets remain running by design (for example flux-system, kube-system, cert-manager, metallb-system, ztunnel, istio-cni, node-exporter, loki-canary)."
+	@echo "cluster-pause completed: Flux roots and HelmReleases are suspended, selected app/data replica targets were snapshotted, and pausable workloads were scaled to 0."
+	@echo "Infrastructure namespaces remain running by design so ambient, gateways, controllers, and cached images stay warm for fast resume."
 
 cluster-resume: require-kubeconfig ## Resume platform workloads from Git desired state
 	@$(FLUX) resume source git platform -n flux-system || true
@@ -289,8 +300,13 @@ cluster-resume: require-kubeconfig ## Resume platform workloads from Git desired
 	@if $(KUBECTL) -n flux-system get kustomization platform-bootstrap >/dev/null 2>&1; then \
 	  $(FLUX) reconcile kustomization platform-bootstrap -n flux-system --with-source || true; \
 	fi
-	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
-	  $(FLUX) reconcile helmrelease $$hr -n flux-system --force || true; \
+	@PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh
+	@token="$$(date -u +"%Y-%m-%dT%H:%M:%SZ")"; \
+	for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
+	  $(KUBECTL) -n flux-system annotate --overwrite helmrelease $$hr \
+	    reconcile.fluxcd.io/requestedAt="$$token" \
+	    reconcile.fluxcd.io/forceAt="$$token" \
+	    reconcile.fluxcd.io/resetAt="$$token" || true; \
 	done
 	@for k in platform-infrastructure platform-applications platform; do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \

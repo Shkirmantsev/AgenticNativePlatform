@@ -7,7 +7,7 @@ spec:
   interval: 10m
   prune: true
   wait: true
-  timeout: 10m
+  timeout: 15m
   dependsOn:
     - name: platform-bootstrap
   sourceRef:

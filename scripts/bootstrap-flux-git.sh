@@ -5,6 +5,7 @@ ENVIRONMENT="${ENV:-dev}"
 RUNTIME="${RUNTIME:-none}"
 SECRETS_MODE="${SECRETS_MODE:-external}"
 LMSTUDIO_ENABLED="${LMSTUDIO_ENABLED:-false}"
+PLATFORM_ROOT_TIMEOUT="${PLATFORM_ROOT_TIMEOUT:-60m}"
 GIT_REPO_URL="${GIT_REPO_URL:-}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 if [[ -z "${GIT_REPO_URL}" && -f .env ]]; then
@@ -46,7 +47,7 @@ spec:
   interval: 10m
   prune: true
   wait: true
-  timeout: 10m
+  timeout: ${PLATFORM_ROOT_TIMEOUT}
   sourceRef:
     kind: GitRepository
     name: platform

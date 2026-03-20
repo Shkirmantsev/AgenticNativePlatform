@@ -15,9 +15,10 @@ Use this skill for designing, deploying, and managing cloud-native Kubernetes ag
 
 1. Classify scope first: generic Kubernetes agent control plane, AgentGateway integration, or Solo.io platform integration.
 2. Use standard Kubernetes tools for deployment and diagnostics.
-3. Use `https://agentgateway.dev/docs/kubernetes/latest/` for AgentGateway Kubernetes installation and operations guidance.
-4. Use `https://www.solo.io/docs` (and linked product docs) for Solo.io product-specific architecture and CRD behavior.
-5. Prioritize observability and robust error handling for asynchronous agent tasks.
+3. Read [upstream-current.md](./references/upstream-current.md) when the task touches kagent, kmcp, AgentGateway, kgateway, or ambient operational tradeoffs.
+4. Use `https://agentgateway.dev/docs/kubernetes/latest/` for AgentGateway Kubernetes installation and operations guidance.
+5. Use `https://www.solo.io/docs` (and linked product docs) for Solo.io product-specific architecture and CRD behavior.
+6. Prioritize observability and robust error handling for asynchronous agent tasks.
 
 ## Tooling
 

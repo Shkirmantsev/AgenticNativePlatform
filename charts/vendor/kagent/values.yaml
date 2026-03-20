@@ -150,6 +150,8 @@ controller:
 
 ui:
   replicas: 1
+  podLabels:
+    istio.io/dataplane-mode: none
   image:
     registry: ""
     repository: kagent-dev/kagent/ui

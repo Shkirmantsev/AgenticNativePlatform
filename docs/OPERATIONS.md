@@ -159,7 +159,7 @@ make cluster-pause
 - staged child Kustomizations such as `platform-bootstrap`, `platform-infrastructure`, `platform-applications`
 - all HelmReleases in `flux-system`
 
-It then scales Deployments and StatefulSets to zero in the configured platform namespaces.
+It first snapshots the current Deployment and StatefulSet replica targets into `ConfigMap/flux-system/cluster-pause-state`, then scales the configured platform namespaces to zero.
 It intentionally does not scale `metallb-system`; the MetalLB controller serves a validating webhook, and leaving it at `0` endpoints blocks later `IPAddressPool` reconciliation.
 It also does not stop system namespaces or DaemonSets, so pods such as `flux-system`, `kube-system`, `cert-manager`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will remain running by design.
 
@@ -170,15 +170,15 @@ make cluster-resume
 make cluster-status
 ```
 
-`cluster-resume` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, then force-reconciles all existing HelmReleases in `flux-system` before waiting on `platform-infrastructure`, `platform-applications`, and `platform`.
-That ordering reduces false "stuck" waits after `cluster-pause` because Helm-managed Deployments are driven back to their desired replica counts before the staged Flux roots wait on readiness.
+`cluster-resume` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, restores the saved replica targets from `ConfigMap/flux-system/cluster-pause-state`, fans out HelmRelease reconcile annotations, and then waits on `platform-infrastructure`, `platform-applications`, and `platform`.
+That ordering avoids a common failure mode after `cluster-pause`: direct `kubectl scale` changes `spec.replicas` field ownership and can leave HPA-managed Deployments such as `istiod` stuck at `ScalingDisabled` when replicas stay at `0`.
 `cluster-stop` and `cluster-start` remain as compatibility aliases for the previous names.
 
 `make reconcile` follows the same staged idea without the suspend/resume step:
 
 1. reconcile Git source
 2. reconcile `platform-bootstrap`
-3. force-reconcile HelmReleases
+3. fan out HelmRelease reconcile annotations
 4. wait on `platform-infrastructure`, `platform-applications`, and `platform`
 
 Remove only the cluster and keep infrastructure:

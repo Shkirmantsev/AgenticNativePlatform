@@ -1,25 +1,6 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: echo-mcp-route
-  namespace: agentgateway-system
-spec:
-  parentRefs:
-    - name: agentgateway-proxy
-      namespace: agentgateway-system
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /mcp/echo
-      backendRefs:
-        - name: echo-mcp-backend
-          group: agentgateway.dev
-          kind: AgentgatewayBackend
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
   name: kagent-tools-mcp-route
   namespace: agentgateway-system
 spec:
@@ -33,24 +14,5 @@ spec:
             value: /mcp/kagent-tools
       backendRefs:
         - name: kagent-tools-mcp-backend
-          group: agentgateway.dev
-          kind: AgentgatewayBackend
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: grafana-mcp-route
-  namespace: agentgateway-system
-spec:
-  parentRefs:
-    - name: agentgateway-proxy
-      namespace: agentgateway-system
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /mcp/grafana
-      backendRefs:
-        - name: grafana-mcp-backend
           group: agentgateway.dev
           kind: AgentgatewayBackend

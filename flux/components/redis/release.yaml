@@ -18,6 +18,8 @@ spec:
     remediation:
       retries: 3
   values:
+    image:
+      tag: "8.6.1"
     architecture: standalone
     master:
       persistence:

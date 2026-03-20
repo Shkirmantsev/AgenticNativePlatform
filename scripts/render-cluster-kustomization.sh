@@ -5,6 +5,9 @@ ENVIRONMENT="${ENV:-dev}"
 RUNTIME="${RUNTIME:-none}"
 SECRETS_MODE="${SECRETS_MODE:-external}"
 LMSTUDIO_ENABLED="${LMSTUDIO_ENABLED:-false}"
+PLATFORM_BOOTSTRAP_TIMEOUT="${PLATFORM_BOOTSTRAP_TIMEOUT:-10m}"
+PLATFORM_INFRA_TIMEOUT="${PLATFORM_INFRA_TIMEOUT:-35m}"
+PLATFORM_APPS_TIMEOUT="${PLATFORM_APPS_TIMEOUT:-25m}"
 OUT_DIR="flux/generated/clusters/${TOPOLOGY}-${ENVIRONMENT}-${RUNTIME}-${SECRETS_MODE}"
 CLUSTER_PATH="./flux/generated/clusters/${TOPOLOGY}-${ENVIRONMENT}-${RUNTIME}-${SECRETS_MODE}"
 INFRA_COMPONENT="../../../../components/platform-infrastructure"
@@ -87,7 +90,7 @@ spec:
   interval: 10m
   prune: true
   wait: true
-  timeout: 10m
+  timeout: ${PLATFORM_BOOTSTRAP_TIMEOUT}
   sourceRef:
     kind: GitRepository
     name: platform
@@ -113,7 +116,7 @@ spec:
   interval: 10m
   prune: true
   wait: true
-  timeout: 10m
+  timeout: ${PLATFORM_INFRA_TIMEOUT}
   dependsOn:
     - name: platform-bootstrap
   sourceRef:
@@ -132,7 +135,7 @@ spec:
   interval: 10m
   prune: true
   wait: true
-  timeout: 10m
+  timeout: ${PLATFORM_APPS_TIMEOUT}
   dependsOn:
     - name: platform-infrastructure
   sourceRef:

@@ -18,6 +18,8 @@ spec:
     remediation:
       retries: 3
   values:
+    image:
+      tag: "18.3.0"
     auth:
       username: platform
       password: platform-change-me

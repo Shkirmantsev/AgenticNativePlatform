@@ -72,7 +72,7 @@ make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=externa
 make reconcile
 ```
 
-`make reconcile` now reconciles `platform-bootstrap` first, then force-reconciles HelmReleases before waiting on the higher staged Kustomizations.
+`make reconcile` now reconciles `platform-bootstrap` first, annotates all HelmReleases for immediate forced reconciliation, and then waits on the higher staged Kustomizations.
 
 ## Switch to LM Studio external backend
 
@@ -279,7 +279,7 @@ make cluster-resume
 ```
 
 These targets now operate on the staged Flux objects as well as the top-level `platform` object. If startup still looks slow, inspect the staged status directly:
-`cluster-pause` pauses platform workloads; it does not stop system namespaces or DaemonSets, so `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will still be present afterwards.
+`cluster-pause` pauses platform workloads and snapshots the current Deployment and StatefulSet replica targets before scaling them to zero; it does not stop system namespaces or DaemonSets, so `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will still be present afterwards.
 `cluster-stop` and `cluster-start` remain as compatibility aliases.
 
 ```bash

@@ -4,4 +4,3 @@ resources:
   - ../kgateway-resources
   - ../agentgateway-resources
   - ../kagent-resources
-  - ../kmcp-resources
