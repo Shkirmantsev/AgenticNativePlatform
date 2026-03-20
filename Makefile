@@ -19,6 +19,7 @@ ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/
 ANSIBLE_BECOME_FLAGS ?=
 KUBECONFIG_DIR ?= .kube/generated
 KUBECONFIG ?= $(abspath $(KUBECONFIG_DIR)/current.yaml)
+WORKSPACE_CLUSTER_NAME ?= agentic-native-platform
 ECHO_MCP_IMAGE ?= ghcr.io/example/echo-mcp:0.1.0
 ECHO_MCP_IMAGE_TARBALL ?= /tmp/echo-mcp-image.tar
 PORT_FORWARD_STATE_DIR ?= /tmp/agentic-native-platform-port-forwards
@@ -40,7 +41,7 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 .PHONY: help \
 	tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
 	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
-	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote run-cluster-from-scratch \
+	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote cluster-up-github-workspace run-cluster-from-scratch \
 	flux-values render-cluster-root ensure-generated-flux-clean install-flux-local bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
@@ -159,10 +160,14 @@ cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation a
 	$(MAKE) label-llm-nodes TOPOLOGY=hybrid-remote
 	$(MAKE) kubeconfig TOPOLOGY=hybrid-remote
 
+cluster-up-github-workspace: ## Bootstrap a GitHub workspace / Codespaces topology with k3d
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-workspace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" ./scripts/cluster-up-github-workspace.sh
+
 run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, and reconcile from the current repo state
 	@$(MAKE) tools-install-local IAC_TOOL=$(IAC_TOOL) INSTALL_K9S=$(INSTALL_K9S)
 	@$(MAKE) cluster-up-$(TOPOLOGY) TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
-	@if [ "$(TOPOLOGY)" = "local" ]; then \
+	@if [ "$(TOPOLOGY)" = "local" ] || [ "$(TOPOLOGY)" = "github-workspace" ]; then \
 	  $(MAKE) install-flux-local TOPOLOGY=$(TOPOLOGY); \
 	else \
 	  $(MAKE) install-flux TOPOLOGY=$(TOPOLOGY) KUBE_CONTEXT="$(KUBE_CONTEXT)"; \
@@ -298,12 +303,18 @@ cluster-stop: ## Deprecated alias for cluster-pause
 cluster-start: ## Deprecated alias for cluster-resume
 	@$(MAKE) cluster-resume TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) IAC_TOOL=$(IAC_TOOL) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 
-cluster-remove: ## Remove only the k3s cluster from the selected topology and keep infrastructure/resources
-	@$(MAKE) uninstall-k3s TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+cluster-remove: ## Remove only the cluster from the selected topology and keep infrastructure/resources
+	@if [ "$(TOPOLOGY)" = "github-workspace" ]; then \
+	  WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" ./scripts/cluster-remove-github-workspace.sh; \
+	else \
+	  $(MAKE) uninstall-k3s TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"; \
+	fi
 
-environment-destroy: ## Remove the k3s cluster and destroy Terraform/OpenTofu infrastructure for the selected topology
+environment-destroy: ## Remove the cluster and destroy Terraform/OpenTofu infrastructure when the topology uses it
 	@$(MAKE) cluster-remove TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
-	@$(MAKE) terraform-destroy TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN)
+	@if [ "$(TOPOLOGY)" != "github-workspace" ]; then \
+	  $(MAKE) terraform-destroy TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN); \
+	fi
 
 preimport-vllm-image-tarball: ## Copy a saved vLLM image tarball into the k3s image import directory on all nodes
 	@test -n "$(VLLM_IMAGE_TARBALL)" || (echo "Set VLLM_IMAGE_TARBALL=/path/to/image.tar" >&2; exit 1)
@@ -322,11 +333,16 @@ save-echo-mcp-image: ## Save the local echo-mcp image to ECHO_MCP_IMAGE_TARBALL
 	@test -n "$(ECHO_MCP_IMAGE_TARBALL)" || (echo "Set ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar" >&2; exit 1)
 	docker save $(ECHO_MCP_IMAGE) -o $(ECHO_MCP_IMAGE_TARBALL)
 
-preimport-echo-mcp-image-tarball: ## Copy an echo-mcp image tarball into the k3s image import directory on all nodes
+preimport-echo-mcp-image-tarball: ## Import an echo-mcp image tarball into the selected cluster runtime
 	@test -n "$(ECHO_MCP_IMAGE_TARBALL)" || (echo "Set ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar" >&2; exit 1)
-	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"
-	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(ECHO_MCP_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/echo-mcp-image.tar mode=0644"
-	ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m shell -a "k3s ctr images import /var/lib/rancher/k3s/agent/images/echo-mcp-image.tar"
+	@if [ "$(TOPOLOGY)" = "github-workspace" ]; then \
+	  docker load -i $(ECHO_MCP_IMAGE_TARBALL); \
+	  k3d image import $(ECHO_MCP_IMAGE) -c $(WORKSPACE_CLUSTER_NAME); \
+	else \
+	  ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m file -a "path=/var/lib/rancher/k3s/agent/images state=directory mode=0755"; \
+	  ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m copy -a "src=$(ECHO_MCP_IMAGE_TARBALL) dest=/var/lib/rancher/k3s/agent/images/echo-mcp-image.tar mode=0644"; \
+	  ansible $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) all -b -m shell -a "k3s ctr images import /var/lib/rancher/k3s/agent/images/echo-mcp-image.tar"; \
+	fi
 
 prepare-echo-mcp-image-local: build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball ## Build, save, and import the sample echo-mcp image into k3s nodes without pushing
 

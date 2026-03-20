@@ -1,53 +1,60 @@
-# The actual image is injected from generated Flux inputs via ECHO_MCP_IMAGE.
-apiVersion: v1
-kind: ServiceAccount
+apiVersion: kagent.dev/v1alpha1
+kind: MCPServer
 metadata:
   name: echo-mcp
   namespace: kagent
-automountServiceAccountToken: false
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: echo-mcp
-  namespace: kagent
+  labels:
+    kagent.dev/discovery: "disabled"
 spec:
-  replicas: 0
-  selector:
-    matchLabels:
-      app: echo-mcp
-  template:
-    metadata:
-      labels:
-        app: echo-mcp
-    spec:
-      serviceAccountName: echo-mcp
-      automountServiceAccountToken: false
-      containers:
-        - name: echo-mcp
-          image: echo-mcp
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3001
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-              ephemeral-storage: "128Mi"
-            limits:
-              cpu: "250m"
-              memory: "128Mi"
-              ephemeral-storage: "512Mi"
+  transportType: http
+  httpTransport:
+    targetPort: 3001
+    path: /mcp
+  deployment:
+    image: echo-mcp
+    imagePullPolicy: IfNotPresent
+    port: 3001
+    replicas: 1
+    labels:
+      app.kubernetes.io/name: echo-mcp
+      app.kubernetes.io/component: mcp
+      app.kubernetes.io/part-of: agentic-native-platform
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+        ephemeral-storage: "128Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+        ephemeral-storage: "512Mi"
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+    podSecurityContext:
+      seccompProfile:
+        type: RuntimeDefault
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: echo-mcp
+  name: echo-mcp-http
   namespace: kagent
+  annotations:
+    agentgateway.dev/mcp-path: /mcp
+  labels:
+    app.kubernetes.io/name: echo-mcp
+    app.kubernetes.io/component: mcp
+    app.kubernetes.io/part-of: agentic-native-platform
 spec:
   selector:
-    app: echo-mcp
+    app.kubernetes.io/name: echo-mcp
   ports:
-    - name: http
+    - name: mcp
       port: 3001
       targetPort: 3001
+      appProtocol: agentgateway.dev/mcp

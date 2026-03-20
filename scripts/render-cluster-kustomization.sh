@@ -7,6 +7,10 @@ SECRETS_MODE="${SECRETS_MODE:-external}"
 LMSTUDIO_ENABLED="${LMSTUDIO_ENABLED:-false}"
 OUT_DIR="flux/generated/clusters/${TOPOLOGY}-${ENVIRONMENT}-${RUNTIME}-${SECRETS_MODE}"
 CLUSTER_PATH="./flux/generated/clusters/${TOPOLOGY}-${ENVIRONMENT}-${RUNTIME}-${SECRETS_MODE}"
+INFRA_COMPONENT="../../../../components/platform-infrastructure"
+if [[ "${TOPOLOGY}" == "github-workspace" ]]; then
+  INFRA_COMPONENT="../../../../components/platform-infrastructure-workspace"
+fi
 
 case "${RUNTIME}" in
   none|ollama|vllm) ;;
@@ -158,7 +162,7 @@ cat <<EOF
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../../../components/platform-infrastructure
+  - ${INFRA_COMPONENT}
   - ../../../../components/platform-runtime-${RUNTIME}
 EOF
 if [[ "${LMSTUDIO_ENABLED}" == "true" ]]; then
@@ -186,11 +190,11 @@ replacements:
       fieldPath: data.image
     targets:
       - select:
-          kind: Deployment
+          kind: MCPServer
           name: echo-mcp
           namespace: kagent
         fieldPaths:
-          - spec.template.spec.containers.0.image
+          - spec.deployment.image
 EOF
 } > "${OUT_DIR}/apps/kustomization.yaml"
 

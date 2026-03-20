@@ -29,3 +29,24 @@ spec:
           examples:
             - Get all resources in the Kubernetes cluster.
             - Get the pods in the default namespace.
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: echo-validation-agent
+  namespace: kagent
+spec:
+  description: Validates the kmcp -> agentgateway -> kagent MCP path.
+  type: Declarative
+  declarative:
+    modelConfig: default-model-config
+    systemMessage: |-
+      You validate the echo MCP path.
+      When asked to test connectivity, call the echo tool and return the echoed value verbatim.
+    tools:
+      - type: McpServer
+        mcpServer:
+          name: echo-mcp
+          kind: RemoteMCPServer
+          toolNames:
+            - echo

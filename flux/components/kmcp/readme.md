@@ -1,7 +1,29 @@
 # kmcp notes
 
-`kagent` v0.7 includes the `kmcp` subproject by default when `kmcp.enabled=true` is set on the `kagent` and `kagent-crds` Helm releases.
+This repository installs `kmcp` separately through `flux/components/kmcp-core`.
 
-This directory contains a small sample workload that can be used as the external endpoint for `RemoteMCPServer`-style testing.
+Because of that, the `kagent` Helm releases must keep:
 
-If you want the full `kmcp` controller lifecycle for `MCPServer` resources, follow the official kmcp controller installation flow documented by the project and keep `kmcp.enabled=true` in the kagent releases.
+- `kmcp.enabled: false` on `kagent-crds`
+- `kmcp.enabled: false` on `kagent`
+
+The sample `echo-mcp` workload in this repository is intentionally implemented as a real
+`MCPServer` resource managed by `kmcp`.
+
+The repository also disables direct kagent discovery for that sample with:
+
+```yaml
+metadata:
+  labels:
+    kagent.dev/discovery: "disabled"
+```
+
+That is required because this repository intentionally places `agentgateway`
+in front of MCP traffic, so `kagent` should consume the gatewayed MCP endpoint
+through `RemoteMCPServer`, not auto-discover and bypass the gateway.
+
+Effective MCP path in this repo:
+
+```text
+kagent -> RemoteMCPServer -> agentgateway -> kmcp-managed MCP server
+```

@@ -4,9 +4,9 @@ metadata:
   name: echo-mcp
   namespace: kagent
 spec:
-  description: Example echo MCP server managed by kmcp.
+  description: Echo MCP server managed by kmcp and exposed through agentgateway.
   protocol: STREAMABLE_HTTP
-  url: "http://echo-mcp.kagent.svc.cluster.local:3001/mcp"
+  url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/echo"
 ---
 apiVersion: kagent.dev/v1alpha2
 kind: RemoteMCPServer
@@ -14,9 +14,9 @@ metadata:
   name: kagent-tool-server
   namespace: kagent
 spec:
-  description: Compatibility alias for the kagent bundled tool server.
+  description: kagent bundled tool server exposed through agentgateway.
   protocol: STREAMABLE_HTTP
-  url: "http://kagent-kagent-tools.kagent.svc.cluster.local:8084/mcp"
+  url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/kagent-tools"
 ---
 apiVersion: kagent.dev/v1alpha2
 kind: RemoteMCPServer
@@ -24,6 +24,6 @@ metadata:
   name: kagent-grafana-mcp
   namespace: kagent
 spec:
-  description: Compatibility alias for the kagent bundled grafana MCP server.
+  description: kagent bundled grafana MCP server exposed through agentgateway.
   protocol: STREAMABLE_HTTP
-  url: "http://kagent-kagent-grafana-mcp.kagent.svc.cluster.local:8000/mcp"
+  url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/grafana"

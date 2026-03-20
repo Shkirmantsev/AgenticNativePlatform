@@ -28,6 +28,17 @@ make verify
 make k9s-local
 ```
 
+## GitHub workspace / Codespaces bootstrap
+
+```bash
+cp .env.example .env
+make tools-install-local IAC_TOOL=tofu INSTALL_K9S=false
+make run-cluster-from-scratch TOPOLOGY=github-workspace ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+This topology uses `k3d` instead of Terraform + Ansible host provisioning.
+It also skips MetalLB and expects operator access through port-forwarding.
+
 ## Default local remote-only startup
 
 ```bash
@@ -225,6 +236,8 @@ Or use the shortcut:
 make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 ```
 
+On `TOPOLOGY=github-workspace`, the same target imports into the `k3d` cluster instead of `k3s` host containerd.
+
 Then set the same image tag in:
 
 ```bash
@@ -238,6 +251,16 @@ These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is
 They also import the tarball into `k3s` containerd immediately with `k3s ctr images import`.
 Run them as your normal user; `sudo make ...` is not required. On a local workstation, the ad-hoc Ansible command will prompt through `sudo` if it needs your password.
 
+## Validate lightweight KServe on local PC or GitHub workspace
+
+```bash
+kubectl --kubeconfig .kube/generated/current.yaml apply -f flux/components/kserve/samples/hf-tiny-inferenceservice.yaml
+kubectl --kubeconfig .kube/generated/current.yaml -n ai-models get inferenceservice flan-t5-small -w
+```
+
+When the service becomes ready, keep it as the default lightweight KServe validation path.
+Use the vLLM samples only afterwards.
+
 ## End-to-end bootstrap shortcuts
 
 ```bash
@@ -245,6 +268,7 @@ make cluster-up-local TOPOLOGY=local
 make cluster-up-minipc TOPOLOGY=minipc
 make cluster-up-hybrid TOPOLOGY=hybrid
 make cluster-up-hybrid-remote TOPOLOGY=hybrid-remote
+make cluster-up-github-workspace TOPOLOGY=github-workspace
 ```
 
 ## Pause and resume the platform without deleting the cluster

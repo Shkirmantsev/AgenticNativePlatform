@@ -1,66 +1,118 @@
 # Architecture
 
-## Topologies
+## Canonical deployment model
 
-The repository supports four topology modes:
+The canonical bootstrap path in this repository is the staged generated Flux root:
+
+- `platform-bootstrap`
+- `platform-infrastructure`
+- `platform-applications`
+
+Those are rendered under:
+
+- `flux/generated/<topology>/`
+- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`
+
+The older monolithic `platform-core` / `platform` path and the static pre-rendered
+`flux/clusters/*` roots are legacy compatibility paths and are not the primary
+bootstrap model for new work.
+
+## Runtime architecture
+
+```text
+External clients
+  -> kgateway
+  -> agentgateway
+
+kagent agents
+  -> agentgateway /v1/...  -> LiteLLM -> remote providers and optional local runtimes
+  -> agentgateway /mcp/... -> kmcp-managed MCP servers
+
+kmcp
+  -> manages MCPServer workloads and transport
+
+KServe
+  -> remains installed as the self-hosted model-serving control plane
+  -> used for lightweight experiments on local PCs and GitHub workspaces / Codespaces
+```
+
+## Key design decisions
+
+### kgateway
+
+`kgateway` is the public north-south entry point.
+
+### agentgateway
+
+`agentgateway` is the protocol-aware AI gateway in front of both:
+
+- OpenAI-compatible LLM traffic under `/v1`
+- MCP traffic under `/mcp`
+
+### kagent
+
+`kagent` is the agent runtime.
+
+### kmcp
+
+`kmcp` is not an agent runtime.
+It manages MCP servers and their lifecycle.
+
+### KServe
+
+KServe remains installed in this repository.
+It is not forced into the default LLM hot path yet, but it remains available for:
+
+- lightweight CPU experiments,
+- future self-hosted inference evolution,
+- runtime-specific test scenarios.
+
+## Supported topologies
+
 - `local`
 - `minipc`
 - `hybrid`
 - `hybrid-remote`
+- `github-workspace`
 
-These modes determine how Terraform/OpenTofu renders:
-- the Ansible inventory
-- the LM Studio endpoint values
-- the MetalLB address pool manifest
-- topology metadata under `flux/generated/<topology>/`
+### github-workspace topology
 
-## Layered design
+`github-workspace` is a Docker / `k3d` based developer topology for GitHub workspaces,
+Codespaces, and other ephemeral container-first environments.
 
-- **Bootstrap and infra artifacts**: OpenTofu/Terraform + Ansible
-- **Cluster**: k3s
-- **GitOps**: Flux
-- **Ingress and mesh**: kgateway + agentgateway + Istio Ambient
-- **Provider and backend abstraction**: LiteLLM
-- **Declarative agent runtime**: kagent + kmcp
-- **Model serving and runtimes**: KServe + TEI + Ollama + vLLM
-- **Context**: Qdrant + PostgreSQL + Redis
+Differences from `local`:
 
-## Current architecture diagram
+- no Terraform/OpenTofu host provisioning
+- no Ansible host bootstrap
+- no MetalLB dependency
+- use local port-forwarding for operator access
 
-This repository uses a layered north-south ingress path plus a separate agent-internal path. The diagram below reflects the manifests and ADRs currently committed in this repository.
+## MCP path in this repository
 
-![Current platform architecture](../.assets/architecture-current.svg)
-
-Text fallback:
+The repository intentionally uses the following MCP pattern:
 
 ```text
-Ingress: Internet -> LoadBalancer -> kgateway -> Istio Ambient -> agentgateway -> LiteLLM
-Agent path: kagent/kmcp -> agentgateway -> LiteLLM -> providers or optional local runtimes
-Agent services: kagent/kmcp -> TEI, Qdrant, PostgreSQL, Redis
-Control plane: KServe remains installed as the model-serving control plane and future evolution path
+kmcp-managed MCPServer
+  -> exposed as a Kubernetes Service
+  -> fronted by agentgateway
+  -> consumed by kagent through RemoteMCPServer
 ```
 
-## Canonical request flow
+That avoids direct service-to-service MCP wiring from `kagent` to raw MCP Services.
+
+## LLM path in this repository
+
+Default path:
 
 ```text
-kagent -> agentgateway -> LiteLLM -> providers/backends
+kagent -> agentgateway -> LiteLLM -> provider or optional local runtime
 ```
 
-This keeps agentgateway as the Kubernetes-native AI-aware gateway while LiteLLM remains the OpenAI-compatible normalization layer for both remote providers and optional local runtimes.
+That keeps model aliasing and provider normalization centralized.
 
-For operator traffic coming from outside the cluster, the ingress path is:
+## Validation strategy
 
-```text
-Internet -> LoadBalancer -> kgateway -> Istio Ambient -> agentgateway -> LiteLLM
-```
-
-## Runtime semantics
-
-- `LM Studio` stays **outside** Kubernetes and is exposed to the cluster through `Service + Endpoints`
-- `Ollama` is an **in-cluster** optional runtime
-- `vLLM` is an **in-cluster** optional runtime
-- `TEI` is the default in-cluster embedding runtime
-
-## Why KServe remains installed
-
-KServe is part of the platform architecture because it is the Kubernetes-native model serving control plane and future evolution path, even if the first practical self-hosted chat runtime may be Ollama.
+1. bootstrap the remote-provider path first,
+2. validate MCP using `echo-validation-agent`,
+3. validate KServe using `hf-tiny-inferenceservice.yaml`,
+4. only then test larger self-hosted model paths.

@@ -77,4 +77,4 @@ spec:
         apiKeySecretKey: OPENAI_API_KEY
         model: default-gemini
         config:
-          baseUrl: "http://agentgateway.agentgateway-system.svc.cluster.local:8080/v1"
+          baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"

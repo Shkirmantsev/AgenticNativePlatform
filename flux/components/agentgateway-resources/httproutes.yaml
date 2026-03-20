@@ -8,7 +8,11 @@ spec:
     - name: agentgateway-proxy
       namespace: agentgateway-system
   rules:
-    - backendRefs:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+      backendRefs:
         - group: agentgateway.dev
           kind: AgentgatewayBackend
           name: litellm-upstream

@@ -1,0 +1,20 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: flan-t5-small
+  namespace: ai-models
+  annotations:
+    serving.kserve.io/deploymentMode: "Standard"
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: huggingface
+      storageUri: hf://google/flan-t5-small
+      resources:
+        requests:
+          cpu: "1"
+          memory: "2Gi"
+        limits:
+          cpu: "2"
+          memory: "4Gi"

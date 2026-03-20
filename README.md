@@ -1,44 +1,102 @@
-# Agentic Kubernetes Native Platform
+# AgenticNativePlatform
 
-GitOps-first Kubernetes platform for agentic AI workloads. The default path is a single-node local `k3s` cluster managed through Make targets, Flux, HelmReleases, and generated Flux inputs committed to this repository.
+Cloud-native AI platform for Kubernetes-based agentic workloads.
 
-## What this repository manages
+The repository is GitOps-first. The active operating model is:
 
-- `k3s` cluster bootstrap through Ansible
-- Flux GitOps reconciliation from the remote Git branch
-- `agentgateway`, `LiteLLM`, `kagent`, `KServe`
-- optional local runtimes: `LM Studio`, `Ollama`, `vLLM`
-- context services: `Qdrant`, `Redis`, `PostgreSQL`
+- generate topology-specific Flux inputs under `flux/generated/...`
+- commit and push those generated manifests
+- let Flux reconcile the staged platform roots from the remote Git branch
 
-The canonical request path is:
+The canonical staged bootstrap path is:
 
-```text
-kagent -> agentgateway -> LiteLLM -> provider or local runtime
-```
+- `platform-bootstrap`
+- `platform-infrastructure`
+- `platform-applications`
+
+For deeper detail, see:
+
+- [Architecture document](./docs/architecture.md)
+- [Command reference](./docs/commands.md)
+- [Operations guide](./docs/OPERATIONS.md)
 
 ## Architecture
 
+Use the repository SVG as the primary architecture diagram:
+
 ![Current platform architecture](./.assets/architecture-current.svg)
+
+Why this format:
+
+- it renders reliably in GitHub and GitLab
+- it opens directly in VS Code and IntelliJ IDEA
+- it avoids Mermaid preview/plugin differences across IDEs
+
+Architecture summary:
+
+- `kgateway` is the north-south entry point.
+- `agentgateway` is the protocol-aware AI gateway.
+- `kagent` agents use:
+  - `/v1` through `agentgateway -> LiteLLM -> provider or optional runtime`
+  - `/mcp` through `agentgateway -> kmcp-managed MCP servers`
+- `kmcp` manages `MCPServer` workloads and transport.
+- `KServe` remains installed, but it is not forced into the default hot path yet.
 
 Text fallback:
 
 ```text
-Internet -> LoadBalancer -> kgateway -> Istio Ambient -> agentgateway -> LiteLLM
-kagent/kmcp -> agentgateway -> LiteLLM -> remote providers or optional local runtimes
-kagent/kmcp -> TEI, Qdrant, PostgreSQL, Redis
-KServe remains installed as the model-serving control plane and future evolution path
+External clients
+  -> kgateway
+  -> agentgateway
+
+kagent agents
+  -> agentgateway /v1/...  -> LiteLLM -> remote providers and optional local runtimes
+  -> agentgateway /mcp/... -> kmcp-managed MCP servers
+
+kmcp
+  -> manages MCPServer workloads and transport
+
+KServe
+  -> remains installed for lightweight experiments and future self-hosted serving
 ```
 
-The north-south path is `Internet -> LoadBalancer -> kgateway -> Istio -> agentgateway -> LiteLLM`. From there, traffic goes either to remote providers or to optional local runtimes depending on `RUNTIME` and `LMSTUDIO_ENABLED`.
+MCP in this repository is intentionally gatewayed:
+
+```text
+kagent -> RemoteMCPServer -> agentgateway -> kmcp-managed MCP server
+```
+
+The optional `echo-mcp` sample follows that pattern. It is a real `MCPServer`, discovery is disabled intentionally, and the validation agent is `echo-validation-agent`.
+
+## Assets
+
+Useful repository assets:
+
+- [Architecture SVG fallback](./.assets/architecture-current.svg)
+- [Tool installation screenshot 1](./.assets/make-tools-install-local1.png)
+- [Tool installation screenshot 2](./.assets/make-tools-install-local2.png)
+- [Bootstrap hosts screenshot](./.assets/bootstrap-hosts.png)
+- [Install k3s server screenshot](./.assets/install-k3s-server.png)
+- [Export kubeconfig screenshot](./.assets/export-kubeconfig.png)
 
 ## Supported topologies
 
-- `local`
-- `minipc`
-- `hybrid`
-- `hybrid-remote`
+| Topology | Cluster shape | Provisioning style | MetalLB | Typical use |
+| --- | --- | --- | --- | --- |
+| `local` | single-node local `k3s` | Terraform/OpenTofu + Ansible + host-level `k3s` | yes | default workstation path |
+| `github-workspace` | single-node `k3d` | Docker + `k3d` | no | Codespaces / ephemeral workspaces |
+| `minipc` | single-node remote `k3s` | Terraform/OpenTofu + Ansible | yes | dedicated home-lab node |
+| `hybrid` | miniPC control plane + local worker | Terraform/OpenTofu + Ansible | yes | mixed home-lab / workstation |
+| `hybrid-remote` | miniPC control plane + local and remote workers | Terraform/OpenTofu + Ansible | yes | larger mixed topology |
 
-The default first-run mode is:
+Topology notes:
+
+- `local` is the default first-run path.
+- `github-workspace` is the container-first developer topology.
+- `github-workspace` uses `k3d`, skips MetalLB, and expects operator access through port-forwarding.
+- `minipc`, `hybrid`, and `hybrid-remote` are intended for real multi-host environments.
+
+Recommended first-run defaults:
 
 ```env
 TOPOLOGY=local
@@ -49,42 +107,15 @@ LMSTUDIO_ENABLED=false
 IAC_TOOL=tofu
 ```
 
-That keeps the first bootstrap simple: remote Gemini only, no in-cluster local runtime yet.
+That keeps the initial bootstrap simple:
 
-## Repository rules
-
-Flux reads the remote Git repository, not your local working tree. Commit and push everything Flux needs before reconciling.
-
-Commit:
-
-- `charts/`
-- `flux/components/`
-- `flux/overlays/`
-- `flux/generated/<topology>/`
-- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`
-- `flux/secrets/<env>/` only in `SECRETS_MODE=sops`
-- `docs/`
-- `scripts/`
-- `mcp/`
-
-Do not commit:
-
-- `.env`
-- `.kube/generated/`
-- `.generated/`
-- `ansible/generated/`
-- local `terraform.auto.tfvars`
-- local SOPS private keys
-
-Generated local behavior:
-
-- `make kubeconfig` writes `.kube/generated/current.yaml`
-- common `make` targets in this repo bind `kubectl`, `flux`, and `k9s` to that kubeconfig automatically
-- `flux/generated/<topology>/topology-values.yaml` is operator metadata only and must not be applied
+- remote provider path enabled
+- no local model runtime required
+- plaintext bootstrap secrets instead of SOPS
 
 ## Quick start
 
-### Fastest path
+### Fastest start
 
 ```bash
 cp .env.example .env
@@ -92,36 +123,46 @@ cp .env.example .env
 make run-cluster-from-scratch
 ```
 
-`make run-cluster-from-scratch` is the preferred first-run command for the default workflow.
-It installs local operator tools, provisions the selected topology, installs Flux, applies the first-pass secrets, renders Flux inputs, bootstraps the Flux Git objects, reconciles the staged platform roots, and prints cluster status.
+This is the preferred first-run command.
 
-Important:
+What it does:
 
-- it uses the current `.env` values for `TOPOLOGY`, `ENV`, `RUNTIME`, `SECRETS_MODE`, and related inputs
-- it assumes Flux should read the generated manifests from the remote Git branch, not only from your local working tree
-- after `terraform-apply` materializes topology inputs, it renders `flux/generated/...` and stops before host bootstrap if those tracked manifests need commit and push
+1. installs local operator tools
+2. provisions the selected topology
+3. renders tracked Flux inputs
+4. installs Flux
+5. applies first-pass secrets
+6. bootstraps the Flux Git objects
+7. reconciles the staged platform roots
+8. prints cluster status
 
-Standard follow-up commands:
+### Fastest destroy
+
+For Terraform/OpenTofu-based topologies:
 
 ```bash
-make cluster-status
-make verify
-make k9s-local
+make environment-destroy TOPOLOGY=local TF_BIN=tofu
 ```
 
-### Manual bootstrap
+For the workspace topology:
 
-Use the manual path only when you want to inspect or change each stage separately.
+```bash
+make environment-destroy TOPOLOGY=github-workspace TF_BIN=tofu
+```
 
-## Install and bootstrap
+`github-workspace` uses the same target name, but the Makefile skips Terraform destroy for that topology and only removes the `k3d` cluster.
 
-### 1. Create `.env`
+## `.env` file
+
+Create your local copy:
 
 ```bash
 cp .env.example .env
 ```
 
-Minimum example:
+Do not commit `.env`.
+
+### Minimum practical `.env` for a first bootstrap
 
 ```env
 TOPOLOGY=local
@@ -135,232 +176,415 @@ LOCAL_HOST_IP=192.168.1.108
 LMSTUDIO_HOST_IP=192.168.1.108
 
 GIT_REPO_URL=https://github.com/<your-user>/<your-repo>.git
-GIT_BRANCH=dev
+GIT_BRANCH=main
 
 GOOGLE_API_KEY=your-real-key
 GEMINI_MODEL=gemini-3.1-flash-lite-preview
-LMSTUDIO_EMBEDDING_MODEL=text-embedding-qwen3-embedding-0.6b
+
 EMBEDDING_MODEL=onnx-models/all-MiniLM-L6-v2-onnx
 ```
 
-### 2. Install operator tools
+### Meaning of the main variables
+
+Bootstrap and topology:
+
+- `TOPOLOGY`: selects `local`, `github-workspace`, `minipc`, `hybrid`, or `hybrid-remote`
+- `ENV`: selects the overlay and secrets environment, usually `dev`
+- `RUNTIME`: selects the in-cluster chat runtime path
+  - `none`: remote providers only
+  - `ollama`: enable Ollama
+  - `vllm`: enable vLLM
+- `LMSTUDIO_ENABLED`: adds the external LM Studio integration path
+- `SECRETS_MODE`: use `external` for the first bootstrap, `sops` after the platform is working
+- `IAC_TOOL`: `tofu` or `terraform`
+
+Host and network:
+
+- `LOCAL_HOST_IP`: workstation IP used by the local topology
+- `MINIPC_IP`, `REMOTE_WORKER_IP`: remote hosts for multi-host topologies
+- `SSH_PRIVATE_KEY`: SSH key Ansible uses for remote nodes
+- `K3S_VERSION`: k3s version for host-level clusters
+- `CLUSTER_DOMAIN`: internal Kubernetes DNS suffix
+- `METALLB_START`, `METALLB_END`: MetalLB address pool for non-workspace topologies
+- `BASE_DOMAIN`: DNS suffix you want to use for LAN-facing URLs
+
+GitOps:
+
+- `GIT_REPO_URL`: remote repository that Flux reads from
+- `GIT_BRANCH`: branch Flux should reconcile
+
+Provider credentials:
+
+- `GOOGLE_API_KEY`: default Gemini path used by LiteLLM
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `AWS_*`, `VERTEX_*`: optional provider integrations
+
+Runtime/model values:
+
+- `LMSTUDIO_*`: external LM Studio endpoint and model names
+- `EMBEDDING_MODEL`: TEI embedding model
+- `OLLAMA_*`: Ollama version and default model
+- `VLLM_*`: vLLM image and CPU tuning values
+- `ECHO_MCP_IMAGE`: image tag for the optional sample MCP server
+
+Secrets and SOPS:
+
+- `SOPS_AGE_RECIPIENT`: optional age recipient for encrypted secrets
+
+## Repository rules
+
+Flux reads the remote Git repository, not your local working tree.
+If rendered manifests change, commit and push them before expecting Flux to apply them.
+
+Commit:
+
+- `charts/`
+- `flux/components/`
+- `flux/overlays/`
+- `flux/generated/<topology>/`
+- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`
+- `flux/secrets/<env>/` only when using `SECRETS_MODE=sops`
+- `docs/`
+- `scripts/`
+- `mcp/`
+
+Do not commit:
+
+- `.env`
+- `.kube/generated/`
+- `.generated/`
+- `ansible/generated/`
+- local `terraform.auto.tfvars`
+- local SOPS private keys
+
+Generated behavior:
+
+- `make kubeconfig` writes `.kube/generated/current.yaml`
+- repo Make targets bind `kubectl` and `flux` to that kubeconfig
+- `flux/generated/<topology>/topology-values.yaml` is operator metadata only and must not be applied to Kubernetes
+
+## Step-by-step install and bootstrap
+
+Use the one-command path first if you do not need to inspect each stage.
+Use this manual path when you want to understand or troubleshoot each step.
+
+### 1. Install operator tools
 
 ```bash
 make tools-install-local IAC_TOOL=tofu INSTALL_K9S=true
 ```
 
-This installs `kubectl`, `helm`, `flux`, `age`, `sops`, and optional `k9s`.
+This installs the repo operator toolchain such as `kubectl`, `helm`, `flux`, `age`, `sops`, and optional `k9s`.
 
-### 3. Render and apply infrastructure inputs
+### 2. Choose your topology
+
+Default local workstation:
+
+```bash
+export TOPOLOGY=local
+```
+
+Codespaces / workspace:
+
+```bash
+export TOPOLOGY=github-workspace
+```
+
+### 3. Bootstrap the cluster
+
+Single command:
+
+```bash
+make run-cluster-from-scratch TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+Manual equivalent for `local`:
 
 ```bash
 make terraform-init TOPOLOGY=local TF_BIN=tofu
 make terraform-apply TOPOLOGY=local TF_BIN=tofu
-```
-
-### 4. Bootstrap the host and install `k3s`
-
-```bash
 make bootstrap-hosts TOPOLOGY=local
 make install-k3s-server TOPOLOGY=local
 make kubeconfig TOPOLOGY=local
-```
-
-### 5. Install Flux controllers
-
-For the local topology:
-
-```bash
 make install-flux-local
+make apply-plaintext-secrets ENV=dev
+make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make reconcile
+make verify
 ```
 
-For a shared/non-local cluster:
+Workspace equivalent:
 
 ```bash
-make install-flux
-# or
-make install-flux KUBE_CONTEXT=dev-cluster
+make cluster-up-github-workspace ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make install-flux-local
+make apply-plaintext-secrets ENV=dev
+make bootstrap-flux-git TOPOLOGY=github-workspace ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make reconcile
+make verify
 ```
 
-### 6. Create secrets for the first bootstrap
+### 4. Check the cluster
 
-Use external secrets first:
+```bash
+make cluster-status
+make verify
+make k9s-local
+```
+
+### 5. Open the main local access paths
+
+```bash
+make open-research-access
+```
+
+Close them when finished:
+
+```bash
+make close-research-access
+```
+
+### 6. Quick end
+
+Pause platform workloads without deleting the cluster:
+
+```bash
+make cluster-pause
+```
+
+Resume:
+
+```bash
+make cluster-resume
+```
+
+Remove only the cluster:
+
+```bash
+make cluster-remove TOPOLOGY=$TOPOLOGY
+```
+
+Remove the cluster and topology infrastructure:
+
+```bash
+make environment-destroy TOPOLOGY=$TOPOLOGY TF_BIN=tofu
+```
+
+## Secrets: start without SOPS, then move to SOPS
+
+### First bootstrap: use plaintext external secrets
+
+For the initial platform bring-up, keep:
+
+```env
+SECRETS_MODE=external
+```
+
+Then apply the generated plaintext secrets directly:
 
 ```bash
 make apply-plaintext-secrets ENV=dev
 ```
 
-### 7. Render Flux inputs
+Why start this way:
+
+- fewer moving parts during the first bootstrap
+- no decryption dependency inside Flux yet
+- easier to debug provider keys and first reconciliation
+
+### Later: switch to SOPS
+
+After the basic platform is healthy, switch to encrypted secrets:
 
 ```bash
-make flux-values TOPOLOGY=local
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make sops-age-key
+make render-sops-secrets ENV=dev
+make encrypt-secrets ENV=dev
+make sops-bootstrap-cluster
 ```
 
-Optional local validation:
+Then change:
 
-```bash
-kubectl kustomize flux/generated/local
-kubectl kustomize flux/generated/clusters/local-dev-none-external
+```env
+SECRETS_MODE=sops
 ```
 
-### 8. Commit and push generated Flux inputs
-
-Flux cannot reconcile files that exist only locally.
+And regenerate the cluster root:
 
 ```bash
-git add charts flux docs scripts
-git commit -m "Bootstrap platform manifests"
-git push origin dev
+make render-cluster-root TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=none SECRETS_MODE=sops LMSTUDIO_ENABLED=false
 ```
 
-### 9. Bootstrap Flux Git objects
+SOPS flow summary:
+
+1. create a local age key
+2. render plaintext secret inputs under `.generated/secrets/<env>/`
+3. encrypt them into `flux/secrets/<env>/`
+4. bootstrap the decryption secret into `flux-system`
+5. switch the generated cluster root to `SECRETS_MODE=sops`
+
+## Runtime modes
+
+Remote provider only:
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-```
-
-### 10. Reconcile and verify
-
-```bash
-make reconcile
-make verify
-```
-
-The generated cluster root fans out into staged Flux Kustomizations:
-
-- `platform-bootstrap`
-- `platform-infrastructure`
-- `platform-applications`
-
-This ordering is intentional. CRD-providing charts reconcile before dependent custom resources.
-
-## Change the platform safely
-
-The intended lifecycle is:
-
-1. edit manifests, values, or charts in Git
-2. regenerate Flux inputs if topology/runtime inputs changed
-3. commit
-4. push
-5. let Flux reconcile, or run `make reconcile`
-
-Do not treat manual `helm install` or `helm upgrade` as the main operating model. Flux is the control plane here.
-
-## Switch runtime modes
-
-Remote-only:
-
-```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make bootstrap-flux-git TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 ```
 
-Remote Gemini + external LM Studio:
+Remote provider plus external LM Studio:
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=true
+make bootstrap-flux-git TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=true
 make reconcile
 ```
 
-Remote Gemini + Ollama:
+Remote provider plus Ollama:
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=ollama SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make bootstrap-flux-git TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=ollama SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 ```
 
-Remote Gemini + vLLM:
+Remote provider plus vLLM:
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=vllm SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make bootstrap-flux-git TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=vllm SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 ```
 
-## Optional echo MCP sample
+KServe remains installed across these modes.
+For lightweight KServe validation, apply the sample under `flux/components/kserve/samples/hf-tiny-inferenceservice.yaml`.
 
-`echo-mcp` is a sample MCP workload used by the `kmcp` / `RemoteMCPServer` examples. It is not required for the base platform bootstrap.
-The image packaging under `mcp/echo-server/` now wraps the official reference package `@modelcontextprotocol/server-everything` from `modelcontextprotocol/servers` and exposes its real MCP streamable HTTP endpoint at `/mcp`. That reference server includes an `echo` tool.
+## Access and endpoints
 
-Important:
+### Local operator access
 
-- if `platform-applications` is failing, do not assume `echo-mcp` is the first cause
-- fix Flux or CRD/schema reconciliation errors first
-- only treat `echo-mcp` as a blocker after the application stage is applying successfully
-
-The sample packaging lives in:
-
-- `mcp/echo-server/`
-
-To use it:
-
-1. Decide whether you want a registry-backed image or a local-only image import.
-
-Registry-backed flow:
+Open the common local access paths:
 
 ```bash
-docker build -t ghcr.io/<your-user>/echo-mcp:0.1.0 mcp/echo-server
-docker push ghcr.io/<your-user>/echo-mcp:0.1.0
+make open-research-access
 ```
 
-Local-only `k3s` flow without pushing:
+This exposes:
+
+- `http://localhost:8080` for the `kagent` UI
+- `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` for the sample A2A card
+- `http://localhost:15000/v1/models` for `agentgateway`
+- `http://localhost:4000/v1/models` for `LiteLLM`
+- `http://localhost:3000` for Grafana
+- `http://localhost:9090` for Prometheus
+- `http://localhost:6333/dashboard` for Qdrant
+
+Open a single endpoint when needed:
+
+```bash
+make open-kagent-ui
+make open-kagent-a2a
+make open-agentgateway
+make open-litellm
+make open-grafana
+make open-prometheus
+make open-qdrant
+```
+
+Foreground port-forward variants:
+
+```bash
+make port-forward-kagent-ui
+make port-forward-kagent
+make port-forward-agentgateway
+make port-forward-litellm
+```
+
+### What about `kmcp` and `kgateway` UIs?
+
+- `kmcp` does not provide a separate browser UI in this repository.
+- `kgateway` is part of the ingress path, not a user-facing UI service.
+- Use `kubectl`, Flux status, and the routed endpoints for those components.
+
+### Localhost testing
+
+Test LiteLLM:
+
+```bash
+make test-litellm
+```
+
+Test AgentGateway:
+
+```bash
+make test-agentgateway-openai
+```
+
+Manual curls:
+
+```bash
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
+```
+
+### Local network access
+
+On topologies with MetalLB, the canonical external service is `agentgateway-proxy`.
+When MetalLB assigns an IP, the external AgentGateway endpoint is:
+
+```text
+http://<metallb-ip>:8080/v1/models
+```
+
+For friendly names on your LAN:
+
+1. choose `BASE_DOMAIN`
+2. point local DNS or `/etc/hosts` entries at the MetalLB IP
+3. use `kgateway` / `agentgateway` through those addresses
+
+### Internet access
+
+This repository gives you the in-cluster ingress building blocks:
+
+- `kgateway`
+- `agentgateway`
+- Gateway API resources
+
+To expose them to the internet you still need:
+
+- public routing or port-forward from your environment
+- DNS that resolves to the reachable IP
+- firewall / router rules outside this repository
+
+The repo automates the cluster and GitOps side, not your public edge networking.
+
+## Working with the optional echo MCP sample
+
+The `echo-mcp` sample exists to validate the MCP path through:
+
+```text
+kagent -> RemoteMCPServer -> agentgateway -> kmcp-managed MCP server
+```
+
+Build and import a local image without pushing:
 
 ```bash
 make build-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
 make save-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
-make preimport-echo-mcp-image-tarball TOPOLOGY=local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make prepare-echo-mcp-image-local TOPOLOGY=$TOPOLOGY ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 ```
 
-Or run the combined shortcut:
+Then regenerate the Flux inputs with the same image tag:
 
 ```bash
-make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make flux-values TOPOLOGY=$TOPOLOGY ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make render-cluster-root TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
 ```
 
-This works because `k3s` imports tarballs from `/var/lib/rancher/k3s/agent/images/` into containerd, and the sample Deployment now uses `imagePullPolicy: IfNotPresent`.
-The image reference in the manifest must exactly match the imported tag.
-The import target creates that directory automatically if your node does not have it yet.
-The import target also runs `k3s ctr images import ...` immediately, so a new tag such as `0.2.0` is available to the kubelet right away instead of waiting for background processing.
-Run the `make` target directly. On a local workstation, the ad-hoc Ansible command will use `sudo` and prompt if needed. Do not wrap it in `sudo make ...`.
+Workspace note:
 
-2. Set `ECHO_MCP_IMAGE` in `.env` or pass it on the command line, then regenerate Flux inputs:
+- on `TOPOLOGY=github-workspace`, the image is imported into `k3d`
+- on host-level `k3s` topologies, the image is imported into `k3s` containerd
 
-```bash
-make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-```
+## Pause, resume, and safe restart behavior
 
-The source manifests no longer hard-code your concrete image tag. The real value is injected into the generated applications stage from `ECHO_MCP_IMAGE`.
-
-3. Commit and push:
-
-```bash
-git add .env.example scripts/render-flux-values.sh scripts/render-cluster-kustomization.sh \
-  flux/components/kmcp-resources/echo-mcpserver.yaml flux/components/kmcp/echo-mcpserver.yaml \
-  flux/generated/local flux/generated/clusters/local-dev-none-external
-git commit -m "Use real echo MCP sample image"
-git push origin dev
-```
-
-4. Reconcile:
-
-```bash
-make reconcile
-```
-
-`make reconcile` reconciles `platform-bootstrap` first, then force-reconciles Flux HelmReleases before waiting on `platform-infrastructure`, `platform-applications`, and `platform`.
-
-5. Verify:
-
-```bash
-kubectl -n kagent get deploy,svc,pods echo-mcp
-kubectl -n kagent get remotemcpserver echo-mcp -o yaml
-kubectl -n kagent logs deploy/echo-mcp
-```
-
-## Pause, resume, and remove the platform
-
-Pause workloads without uninstalling the cluster:
+Pause platform workloads without removing the cluster:
 
 ```bash
 make cluster-pause
@@ -370,229 +594,95 @@ Resume from Git desired state:
 
 ```bash
 make cluster-resume
-```
-
-What `cluster-pause` does:
-
-- suspends the staged Flux Kustomizations and HelmReleases
-- scales Deployments and StatefulSets down in the configured platform namespaces
-
-What `cluster-resume` does:
-
-- resumes the staged Flux objects in order
-- reconciles `platform-bootstrap` first
-- force-reconciles the existing HelmReleases
-- then waits on `platform-infrastructure`, `platform-applications`, and the top-level `platform` root
-
-That ordering keeps restart behavior aligned with Helm-managed workloads that were scaled to zero during `cluster-pause`.
-
-Important notes:
-
-- `metallb-system` is intentionally left running during `cluster-pause`; scaling the MetalLB controller to zero breaks its validating webhook and can block the next `platform-applications` reconcile on `IPAddressPool`
-- `cluster-pause` is a pause, not a full host shutdown; expect core/system pods and DaemonSets such as `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary to remain running
-- `cluster-stop` and `cluster-start` remain as compatibility aliases, but `cluster-pause` and `cluster-resume` are the preferred names
-- for the default CPU TEI path, keep `EMBEDDING_MODEL` on an ONNX-backed model such as `onnx-models/all-MiniLM-L6-v2-onnx`; models without `model.onnx` artifacts can leave `tei-embeddings` stuck even when Flux itself is healthy
-
-Use this built-in status check after a restart:
-
-```bash
 make cluster-status
 ```
 
-## Explore the cluster locally
+Important behavior:
 
-If `k9s` looks empty, it is usually using the wrong kubeconfig or a namespace filter.
+- `cluster-pause` suspends the staged Flux roots and HelmReleases
+- `cluster-pause` scales Deployments and StatefulSets in platform namespaces to zero
+- `cluster-resume` reconciles `platform-bootstrap` first, then force-reconciles HelmReleases, then waits on higher stages
+- `cluster-stop` and `cluster-start` remain compatibility aliases
 
-Use the bound repo target:
+Design detail:
 
-```bash
-make k9s-local
-```
+- `metallb-system` is intentionally not scaled to zero because its validating webhook is needed on the next reconcile
 
-Equivalent raw command:
+## Validate and troubleshoot
 
-```bash
-k9s --kubeconfig .kube/generated/current.yaml --all-namespaces
-```
-
-For workstation research and UI access, use localhost port-forwarding first. It is the default and most reliable path on the local topology.
-You do not need bare-metal exposure, MetalLB, or `kgateway` just to inspect the cluster from your own machine.
-
-Open the common local endpoints in the background:
-
-```bash
-make open-research-access
-```
-
-Close them again:
-
-```bash
-make close-research-access
-```
-
-Available localhost URLs after `make open-research-access`:
-
-- `http://localhost:8080` — kagent UI
-- `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` — sample kagent A2A card
-- `http://localhost:15000/v1/models` — AgentGateway OpenAI-compatible API
-- `http://localhost:4000/v1/models` — LiteLLM directly
-- `http://localhost:3000` — Grafana
-- `http://localhost:9090` — Prometheus
-- `http://localhost:6333/dashboard` — Qdrant UI
-
-If a target cannot be opened, `make` now fails with the real cause instead of silently leaving a dead localhost URL behind.
-Two common cases are:
-
-- the backing Service has no ready endpoints yet
-- the chosen localhost port is already used by another process
-
-If a local port is busy, override it on the command line. Example:
-
-```bash
-make open-litellm LITELLM_LOCAL_PORT=14000
-```
-
-Then use:
-
-```text
-http://localhost:14000/v1/models
-```
-
-LiteLLM is intentionally protected by a master key. Use:
-
-```bash
-curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
-```
-
-AgentGateway fronts the same OpenAI-style route, so the same header is the safe default there:
-
-```bash
-curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
-```
-
-You can also open or close each endpoint independently:
-
-```bash
-make open-kagent-ui
-make close-kagent-ui
-make open-kagent-a2a
-make close-kagent-a2a
-make open-agentgateway
-make close-agentgateway
-make open-litellm
-make close-litellm
-make open-grafana
-make close-grafana
-make open-prometheus
-make close-prometheus
-make open-qdrant
-make close-qdrant
-```
-
-If you prefer a foreground session instead of background helpers, use:
-
-```bash
-make port-forward-kagent-ui
-make port-forward-kagent
-make port-forward-agentgateway
-make port-forward-litellm
-make port-forward-grafana
-make port-forward-prometheus
-make port-forward-qdrant
-```
-
-Use bare-metal exposure through MetalLB and `kgateway` only when you need stable LAN-facing or externally reachable URLs.
-On the default local topology, the Gateway objects may exist before they have an external `ADDRESS`; until that is configured and programmed, localhost port-forwarding is the expected operator workflow.
-When MetalLB has assigned an IP to `service/agentgateway-proxy`, the external AgentGateway URL shape is:
-
-```text
-http://<metallb-ip>:8080/v1/models
-```
-
-On your current local cluster, the live external IP is `192.168.1.240`, so the current external endpoint is:
-
-```text
-http://192.168.1.240:8080/v1/models
-```
-
-## Move to SOPS later
-
-Once the basic platform works, switch from `SECRETS_MODE=external` to `SECRETS_MODE=sops`.
-
-```bash
-make sops-age-key
-make render-sops-secrets ENV=dev
-make encrypt-secrets ENV=dev
-make sops-bootstrap-cluster
-```
-
-Then switch `SECRETS_MODE=sops`, commit the encrypted manifests, push, and reconcile.
-
-## Verify and test
+Basic checks:
 
 ```bash
 make verify
-make open-research-access
-make test-a2a-agent
-make test-agentgateway-openai
-make test-litellm
-make close-research-access
+make cluster-status
 ```
 
-Remove only the cluster and keep infrastructure:
+Inspect the cluster:
 
 ```bash
-make cluster-remove TOPOLOGY=local
-```
-
-## Remove the environment
-
-Remove the cluster and Terraform/OpenTofu infrastructure together:
-
-```bash
-make environment-destroy TOPOLOGY=local TF_BIN=tofu
-```
-
-## Troubleshooting
-
-If a raw `kubectl` or `flux` command talks to `http://localhost:8080`, your shell is not using the repo kubeconfig.
-Repo `make` targets already bind the right kubeconfig explicitly.
-For raw commands, prefer the explicit flag:
-
-```bash
+make k9s-local
 kubectl --kubeconfig .kube/generated/current.yaml get pods -A
 flux --kubeconfig .kube/generated/current.yaml get kustomizations -A
+flux --kubeconfig .kube/generated/current.yaml get helmreleases -A
 ```
 
-If `make reconcile` or `make cluster-resume` appears stuck, inspect the staged objects directly:
+Validate the lightweight KServe sample:
 
 ```bash
-make cluster-status
-kubectl --kubeconfig .kube/generated/current.yaml get events -A --sort-by=.lastTimestamp | tail -n 100
+kubectl --kubeconfig .kube/generated/current.yaml apply -f flux/components/kserve/samples/hf-tiny-inferenceservice.yaml
+kubectl --kubeconfig .kube/generated/current.yaml -n ai-models get inferenceservice flan-t5-small -w
 ```
 
-If `istio-cni` is not ready on `k3s`, verify the chart is using the K3s-specific paths:
+Recommended validation order:
 
-- `cniConfDir=/var/lib/rancher/k3s/agent/etc/cni/net.d`
-- `cniBinDir=/var/lib/rancher/k3s/data/cni`
+1. bootstrap the remote-provider path first
+2. validate MCP through `echo-validation-agent`
+3. validate KServe through `hf-tiny-inferenceservice.yaml`
+4. only then move to larger self-hosted runtime experiments
 
-## Additional docs
+## Switching topologies
 
-- [Operations](docs/OPERATIONS.md)
-- [Commands](docs/commands.md)
-- [Flux bootstrap notes](docs/flux-bootstrap.md)
-- [Architecture](docs/architecture.md)
-- [ADR index](docs/adr/README.md)
+Each topology uses the same main bootstrap target with different parameters:
 
+Local workstation:
 
-## Installation result example
+```bash
+make run-cluster-from-scratch TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
 
-![Install_start_screenshot1](./.assets/make-tools-install-local1.png)
+GitHub workspace / Codespaces:
 
-![Install_start_screenshot2](./.assets/make-tools-install-local2.png)
+```bash
+make run-cluster-from-scratch TOPOLOGY=github-workspace ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
 
-![Bootstrap_hosts_screenshot](./.assets/bootstrap-hosts.png)
+miniPC:
 
-![Install_k3s_server_screenshot](./.assets/install-k3s-server.png)
+```bash
+make run-cluster-from-scratch TOPOLOGY=minipc ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
 
-![Kubeconfig_screenshot](./.assets/export-kubeconfig.png)
+Hybrid:
+
+```bash
+make run-cluster-from-scratch TOPOLOGY=hybrid ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+Hybrid remote:
+
+```bash
+make run-cluster-from-scratch TOPOLOGY=hybrid-remote ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+```
+
+## Safe change workflow
+
+When you change manifests, charts, or generated inputs:
+
+1. edit the repo files
+2. regenerate Flux inputs if topology/runtime inputs changed
+3. validate with `kubectl kustomize`
+4. commit and push
+5. run `make reconcile`
+
+Do not treat manual `helm install` or `helm upgrade` as the primary operating model.
+Flux is the control plane for this repository.

@@ -69,6 +69,11 @@ That target orchestrates the existing building blocks in order:
 
 It intentionally stops after the topology render step if tracked generated manifests under `flux/generated/...` changed locally, because Flux reads the remote Git branch rather than your local working tree.
 
+Topology distinction:
+
+- `local` uses host-level `k3s` with Terraform/OpenTofu + Ansible provisioning
+- `github-workspace` uses `k3d` and skips host provisioning
+
 If `k9s` looks empty, it is usually reading the wrong kubeconfig or a narrowed namespace view. Prefer:
 
 ```bash
@@ -88,6 +93,23 @@ Validate generated manifests with:
 kubectl kustomize flux/generated/local
 kubectl kustomize flux/generated/clusters/local-dev-none-external
 ```
+
+## GitHub workspace topology
+
+`github-workspace` is the Docker / `k3d` based developer topology.
+
+Use it for:
+
+- GitHub workspaces / Codespaces,
+- ephemeral development environments,
+- local testing where MetalLB is not needed.
+
+Behavior differences:
+
+- `cluster-up-github-workspace` uses `k3d`,
+- `cluster-remove` deletes the `k3d` cluster when `TOPOLOGY=github-workspace`,
+- `environment-destroy` skips Terraform destroy for this topology,
+- operator access should use port-forwarding instead of external LoadBalancer IPs.
 
 ## External secrets mode
 
@@ -248,6 +270,8 @@ The concrete sample image is injected through generated Flux inputs from `ECHO_M
 The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
 They also run `k3s ctr images import` immediately after copying the tarball so new image tags are available without waiting for a background import path.
 Use the `make` targets directly instead of `sudo make`; the embedded Ansible tasks already run with privilege escalation and will prompt through `sudo` on a local workstation when needed.
+
+On `TOPOLOGY=github-workspace`, `preimport-echo-mcp-image-tarball` loads the image into Docker first and then imports it into the `k3d` cluster instead of using the host `k3s` image directory.
 
 Remove k3s from the current topology:
 
