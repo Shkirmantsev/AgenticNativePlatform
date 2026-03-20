@@ -60,7 +60,7 @@ metadata:
   namespace: kagent
 type: Opaque
 stringData:
-  OPENAI_API_KEY: dummy
+  OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
 EOF
 cat > "${OUT_DIR}/kustomization.yaml" <<EOF
 apiVersion: kustomize.config.k8s.io/v1beta1
