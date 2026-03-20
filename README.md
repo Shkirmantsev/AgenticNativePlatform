@@ -727,9 +727,9 @@ call help documentation:
 
 qick start of the cluster:
 
-![make-cluster-from-scratch](.assets/make-cluster-from-scratch.png)
-![make-cluster-from-scratch2](.assets/make-cluster-from-scratch2.png)
-![make-cluster-from-scratch3](.assets/make-cluster-from-scratch3.png)
+![make-cluster-from-scratch](.assets/install-from-scratch.png)
+![make-cluster-from-scratch](.assets/install-from-scratch2.png)
+![make-cluster-from-scratch](.assets/install-from-scratch3.png)
 
 k9s monitoring (make k9s-local):
 
