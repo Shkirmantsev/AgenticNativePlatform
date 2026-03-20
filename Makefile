@@ -58,23 +58,35 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 
 define start_port_forward
 	@mkdir -p $(PORT_FORWARD_STATE_DIR)
-	@if [ -z "$$($(KUBECTL) -n $(3) get endpoints $(4) -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]; then \
+	@pid_file="$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	port_file="$(PORT_FORWARD_STATE_DIR)/$(1).port"; \
+	if [ -z "$$($(KUBECTL) -n $(3) get endpoints $(4) -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]; then \
 	  echo "$(1) cannot open because service $(3)/$(4) has no ready endpoints"; \
 	  exit 1; \
-	elif [ -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid" ] && kill -0 "$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")" 2>/dev/null; then \
+	fi; \
+	if [ -f "$$pid_file" ] && kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	  if [ -f "$$port_file" ] && [ "$$(cat "$$port_file")" = "$(5)" ]; then \
 	  echo "$(1) is already available at $(2)"; \
-	elif command -v ss >/dev/null 2>&1 && ss -ltn "( sport = :$(5) )" | tail -n +2 | grep -q .; then \
+	  exit 0; \
+	  fi; \
+	  kill "$$(cat "$$pid_file")" 2>/dev/null || true; \
+	  rm -f "$$pid_file" "$$port_file"; \
+	fi; \
+	if [ -f "$$pid_file" ] && ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	  rm -f "$$pid_file" "$$port_file"; \
+	fi; \
+	if command -v ss >/dev/null 2>&1 && ss -ltn "( sport = :$(5) )" | tail -n +2 | grep -q .; then \
 	  echo "$(1) cannot open because localhost:$(5) is already in use"; \
 	  exit 1; \
 	else \
-	  rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
-	  $(KUBECTL) -n $(3) port-forward svc/$(4) $(5):$(6) >"$(PORT_FORWARD_STATE_DIR)/$(1).log" 2>&1 & \
-	  echo $$! >"$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	  nohup $(KUBECTL) -n $(3) port-forward svc/$(4) $(5):$(6) >"$(PORT_FORWARD_STATE_DIR)/$(1).log" 2>&1 </dev/null & \
+	  echo $$! >"$$pid_file"; \
+	  echo "$(5)" >"$$port_file"; \
 	  sleep 2; \
-	  if ! kill -0 "$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")" 2>/dev/null; then \
+	  if ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
 	    echo "$(1) failed to open"; \
 	    sed -n '1,40p' "$(PORT_FORWARD_STATE_DIR)/$(1).log"; \
-	    rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	    rm -f "$$pid_file" "$$port_file"; \
 	    exit 1; \
 	  fi; \
 	  echo "$(1) available at $(2)"; \
@@ -85,7 +97,7 @@ define stop_port_forward
 	@if [ -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid" ]; then \
 	  pid="$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")"; \
 	  if kill -0 "$$pid" 2>/dev/null; then kill "$$pid" 2>/dev/null || true; fi; \
-	  rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
+	  rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid" "$(PORT_FORWARD_STATE_DIR)/$(1).port"; \
 	  echo "$(1) closed"; \
 	else \
 	  echo "$(1) is not running"; \
