@@ -63,6 +63,9 @@ define start_port_forward
 	  exit 1; \
 	elif [ -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid" ] && kill -0 "$$(cat "$(PORT_FORWARD_STATE_DIR)/$(1).pid")" 2>/dev/null; then \
 	  echo "$(1) is already available at $(2)"; \
+	elif command -v ss >/dev/null 2>&1 && ss -ltn "( sport = :$(5) )" | tail -n +2 | grep -q .; then \
+	  echo "$(1) cannot open because localhost:$(5) is already in use"; \
+	  exit 1; \
 	else \
 	  rm -f "$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
 	  $(KUBECTL) -n $(3) port-forward svc/$(4) $(5):$(6) >"$(PORT_FORWARD_STATE_DIR)/$(1).log" 2>&1 & \
