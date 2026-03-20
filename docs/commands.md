@@ -146,8 +146,13 @@ If one of those commands fails, the target now reports whether:
 Override a busy localhost port like this:
 
 ```bash
+make open-kagent-ui KAGENT_UI_LOCAL_PORT=18080
+make open-kagent-a2a KAGENT_A2A_LOCAL_PORT=18083
+make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16000
 make open-litellm LITELLM_LOCAL_PORT=14000
-make port-forward-agentgateway AGENTGATEWAY_LOCAL_PORT=16000
+make open-grafana GRAFANA_LOCAL_PORT=13000
+make open-prometheus PROMETHEUS_LOCAL_PORT=19090
+make open-qdrant QDRANT_LOCAL_PORT=16333
 ```
 
 LiteLLM requires the master-key header:
@@ -185,18 +190,6 @@ make open-prometheus
 make close-prometheus
 make open-qdrant
 make close-qdrant
-```
-
-Foreground alternatives:
-
-```bash
-make port-forward-kagent-ui
-make port-forward-kagent
-make port-forward-agentgateway
-make port-forward-litellm
-make port-forward-grafana
-make port-forward-prometheus
-make port-forward-qdrant
 ```
 
 ## vLLM image pre-import option B (tarball)

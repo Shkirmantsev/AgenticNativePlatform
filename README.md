@@ -749,3 +749,5 @@ And other steps:
 - [make-open-kagent-ui4](.assets/kagent-ui4.png)
 - [make-open-kagent-ui5](.assets/kagent-ui5.png)
 - [make-open-kagent-ui6](.assets/kagent-ui6.png)
+- [make-open-kagent-ui7](.assets/kagent-ui7.png)
+

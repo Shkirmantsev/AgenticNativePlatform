@@ -227,7 +227,13 @@ If a target still does not come up, check the actual failure mode:
 The access targets accept local port overrides, for example:
 
 ```bash
+make open-kagent-ui KAGENT_UI_LOCAL_PORT=18080
+make open-kagent-a2a KAGENT_A2A_LOCAL_PORT=18083
+make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16000
 make open-litellm LITELLM_LOCAL_PORT=14000
+make open-grafana GRAFANA_LOCAL_PORT=13000
+make open-prometheus PROMETHEUS_LOCAL_PORT=19090
+make open-qdrant QDRANT_LOCAL_PORT=16333
 ```
 
 LiteLLM itself requires `Authorization: Bearer <LITELLM_MASTER_KEY>`. If your `.env` has not overridden it yet, the first-bootstrap default is still `change-me`.
