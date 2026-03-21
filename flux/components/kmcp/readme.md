@@ -10,6 +10,9 @@ Because of that, the `kagent` Helm releases must keep:
 The sample `echo-mcp` workload in this repository is intentionally implemented as a real
 `MCPServer` resource managed by `kmcp`.
 
+It is exposed through the optional bundle under `flux/components/samples-echo-mcp/`,
+not through the default staged application path.
+
 The repository also disables direct kagent discovery for that sample with:
 
 ```yaml

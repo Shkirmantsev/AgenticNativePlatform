@@ -66,7 +66,7 @@ MCP in this repository is intentionally gatewayed:
 kagent -> RemoteMCPServer -> agentgateway -> kmcp-managed MCP server
 ```
 
-The repository also ships an optional `echo-mcp` sample as a real `MCPServer` manifest under `flux/components/kmcp-resources/`, with discovery disabled intentionally. It is not wired into the default end-to-end validation path yet, and there is no default `echo-validation-agent` manifest in the active platform path.
+The repository also ships an optional `echo-mcp` sample bundle under `flux/components/samples-echo-mcp/`. It deploys a real `MCPServer` with discovery disabled intentionally, but it is not wired into the default end-to-end validation path and there is no default `echo-validation-agent` manifest in the active platform path.
 
 ## Assets
 
@@ -604,18 +604,19 @@ The repo automates the cluster and GitOps side, not your public edge networking.
 
 ## Working with the optional echo MCP sample
 
-The repository keeps `echo-mcp` as an opt-in sample manifest, not as part of the default staged bootstrap path.
+The repository keeps `echo-mcp` as an opt-in sample bundle, not as part of the default staged bootstrap path.
 
 ```text
-flux/components/kmcp-resources/echo-mcpserver.yaml
+flux/components/samples-echo-mcp/
 ```
 
 Current status:
 
-- the sample server manifest exists
+- the optional bundle exists at `flux/components/samples-echo-mcp/`
+- the rendered opt-in path is `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/samples-echo-mcp`
 - the default MCP validation path is still the bundled `kagent-tool-server` route
 - the default applications stage does not create `/mcp/echo` or an `echo-validation-agent`
-- treat `echo-mcp` as a manual or future sample enablement path until a dedicated sample bundle exists
+- use the optional sample path only when you explicitly want to deploy the sample server
 
 ## Pause, resume, and safe restart behavior
 

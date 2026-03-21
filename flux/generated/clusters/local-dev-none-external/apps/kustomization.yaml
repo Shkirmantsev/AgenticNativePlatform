@@ -3,18 +3,4 @@ kind: Kustomization
 resources:
   - ../../../../components/platform-applications
   - generated-metallb-values.yaml
-  - generated-echo-mcp-values-configmap.yaml
   - ../../../../overlays/dev
-replacements:
-  - source:
-      kind: ConfigMap
-      name: echo-mcp-values
-      namespace: flux-system
-      fieldPath: data.image
-    targets:
-      - select:
-          kind: MCPServer
-          name: echo-mcp
-          namespace: kagent
-        fieldPaths:
-          - spec.deployment.image

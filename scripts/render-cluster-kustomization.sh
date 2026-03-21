@@ -40,11 +40,12 @@ case "${LMSTUDIO_ENABLED}" in
 esac
 
 mkdir -p "${OUT_DIR}"
-mkdir -p "${OUT_DIR}/bootstrap" "${OUT_DIR}/infrastructure" "${OUT_DIR}/apps"
-rm -f "${OUT_DIR}/bootstrap"/generated-*.yaml "${OUT_DIR}/apps"/generated-*.yaml
+mkdir -p "${OUT_DIR}/bootstrap" "${OUT_DIR}/infrastructure" "${OUT_DIR}/apps" "${OUT_DIR}/samples-echo-mcp"
+rm -f "${OUT_DIR}/bootstrap"/generated-*.yaml "${OUT_DIR}/apps"/generated-*.yaml "${OUT_DIR}/samples-echo-mcp"/generated-*.yaml
 
 bootstrap_generated=()
 apps_generated=()
+sample_generated=()
 if [[ -d "flux/generated/${TOPOLOGY}" ]]; then
   while IFS= read -r -d '' manifest; do
     name="$(basename "${manifest}")"
@@ -60,13 +61,19 @@ if [[ -d "flux/generated/${TOPOLOGY}" ]]; then
   done < <(find "flux/generated/${TOPOLOGY}" -maxdepth 1 -type f -name '*.yaml' -print0 | sort -z)
 fi
 
-for app_generated_name in metallb-values.yaml echo-mcp-values-configmap.yaml; do
+for app_generated_name in metallb-values.yaml; do
   app_generated_path="flux/generated/${TOPOLOGY}/${app_generated_name}"
   if [[ -f "${app_generated_path}" ]]; then
     cp "${app_generated_path}" "${OUT_DIR}/apps/generated-${app_generated_name}"
     apps_generated+=("generated-${app_generated_name}")
   fi
 done
+
+sample_generated_path="flux/generated/${TOPOLOGY}/echo-mcp-values-configmap.yaml"
+if [[ -f "${sample_generated_path}" ]]; then
+  cp "${sample_generated_path}" "${OUT_DIR}/samples-echo-mcp/generated-echo-mcp-values-configmap.yaml"
+  sample_generated+=("generated-echo-mcp-values-configmap.yaml")
+fi
 
 {
 cat <<EOF
@@ -184,6 +191,18 @@ for generated_file in "${apps_generated[@]}"; do
   echo "  - ${generated_file}"
 done
 echo '  - ../../../../overlays/'"${ENVIRONMENT}"
+} > "${OUT_DIR}/apps/kustomization.yaml"
+
+{
+cat <<EOF
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../../components/samples-echo-mcp
+EOF
+for generated_file in "${sample_generated[@]}"; do
+  echo "  - ${generated_file}"
+done
 cat <<'EOF'
 replacements:
   - source:
@@ -199,6 +218,6 @@ replacements:
         fieldPaths:
           - spec.deployment.image
 EOF
-} > "${OUT_DIR}/apps/kustomization.yaml"
+} > "${OUT_DIR}/samples-echo-mcp/kustomization.yaml"
 
 echo "Rendered ${OUT_DIR}/kustomization.yaml"

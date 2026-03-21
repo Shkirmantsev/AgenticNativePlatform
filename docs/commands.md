@@ -253,6 +253,16 @@ On `TOPOLOGY=github-workspace`, the same target imports into the `k3d` cluster i
 
 This only prepares the opt-in sample image. It does not create `/mcp/echo`, a default `RemoteMCPServer`, or an `echo-validation-agent` in the base platform profile.
 
+To deploy the sample server itself, render the generated optional bundle and apply it explicitly:
+
+```bash
+make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/samples-echo-mcp
+```
+
+That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
+
 These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is missing.
 They also import the tarball into `k3s` containerd immediately with `k3s ctr images import`.
 Run them as your normal user; `sudo make ...` is not required. On a local workstation, the ad-hoc Ansible command will prompt through `sudo` if it needs your password.

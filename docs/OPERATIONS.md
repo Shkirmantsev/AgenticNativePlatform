@@ -289,6 +289,16 @@ make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-us
 
 This only prepares the opt-in sample image. It does not add `/mcp/echo`, a default `RemoteMCPServer`, or an `echo-validation-agent` to the base platform path.
 
+To deploy the sample server itself, render the generated optional bundle and apply it explicitly:
+
+```bash
+make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/samples-echo-mcp
+```
+
+That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
+
 The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
 They also run `k3s ctr images import` immediately after copying the tarball so new image tags are available without waiting for a background import path.
 Use the `make` targets directly instead of `sudo make`; the embedded Ansible tasks already run with privilege escalation and will prompt through `sudo` on a local workstation when needed.

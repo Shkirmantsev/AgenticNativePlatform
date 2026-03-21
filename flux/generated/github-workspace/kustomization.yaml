@@ -5,4 +5,3 @@ resources:
   - tei-values-configmap.yaml
   - ollama-values-configmap.yaml
   - vllm-values-configmap.yaml
-  - echo-mcp-values-configmap.yaml

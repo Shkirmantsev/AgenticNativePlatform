@@ -141,7 +141,6 @@ for generated_file in \
   tei-values-configmap.yaml \
   ollama-values-configmap.yaml \
   vllm-values-configmap.yaml \
-  echo-mcp-values-configmap.yaml \
   lmstudio-values-configmap.yaml \
   metallb-values.yaml \
   lmstudio-endpoint.yaml; do
