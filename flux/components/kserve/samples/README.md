@@ -15,6 +15,6 @@ Available samples:
 Recommended order:
 
 1. validate the platform with the default remote-provider path,
-2. validate MCP through `echo-validation-agent`,
+2. validate MCP through the bundled `kagent-tool-server` route,
 3. then apply `hf-tiny-inferenceservice.yaml`,
 4. only after that move on to larger or custom runtimes such as vLLM.

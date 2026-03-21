@@ -66,7 +66,7 @@ MCP in this repository is intentionally gatewayed:
 kagent -> RemoteMCPServer -> agentgateway -> kmcp-managed MCP server
 ```
 
-The optional `echo-mcp` sample follows that pattern. It is a real `MCPServer`, discovery is disabled intentionally, and the validation agent is `echo-validation-agent`.
+The repository also ships an optional `echo-mcp` sample as a real `MCPServer` manifest under `flux/components/kmcp-resources/`, with discovery disabled intentionally. It is not wired into the default end-to-end validation path yet, and there is no default `echo-validation-agent` manifest in the active platform path.
 
 ## Assets
 
@@ -497,6 +497,8 @@ This exposes:
 - `http://localhost:8080` for the `kagent` UI
 - `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` for the sample A2A card
 - `http://localhost:15000/v1/models` for `agentgateway`
+- `http://localhost:15000/mcp/kagent-tools` for the bundled MCP API path through `agentgateway`
+- `http://localhost:4000/health/readiness` for LiteLLM readiness
 - `http://localhost:4000/v1/models` for `LiteLLM`
 - `http://localhost:3000` for Grafana
 - `http://localhost:9090` for Prometheus
@@ -534,15 +536,31 @@ make open-qdrant QDRANT_LOCAL_PORT=16333
 
 ### Localhost testing
 
+The `agentgateway` and LiteLLM port-forwards expose API endpoints, not a browser UI homepage. Use the API paths directly.
+
+Endpoint truth table:
+
+| URL | Expected behavior |
+| --- | --- |
+| `http://localhost:15000/` | no root route is expected |
+| `http://localhost:15000/v1/models` | AgentGateway OpenAI-compatible API |
+| `http://localhost:15000/mcp/kagent-tools` | bundled MCP route through AgentGateway |
+| `http://localhost:4000/health/readiness` | LiteLLM readiness endpoint |
+| `http://localhost:4000/v1/models` | LiteLLM API |
+
 Test LiteLLM:
 
 ```bash
+make open-litellm
+make check-litellm
 make test-litellm
 ```
 
 Test AgentGateway:
 
 ```bash
+make open-agentgateway
+make check-agentgateway
 make test-agentgateway-openai
 ```
 
@@ -586,31 +604,18 @@ The repo automates the cluster and GitOps side, not your public edge networking.
 
 ## Working with the optional echo MCP sample
 
-The `echo-mcp` sample exists to validate the MCP path through:
+The repository keeps `echo-mcp` as an opt-in sample manifest, not as part of the default staged bootstrap path.
 
 ```text
-kagent -> RemoteMCPServer -> agentgateway -> kmcp-managed MCP server
+flux/components/kmcp-resources/echo-mcpserver.yaml
 ```
 
-Build and import a local image without pushing:
+Current status:
 
-```bash
-make build-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make save-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
-make prepare-echo-mcp-image-local TOPOLOGY=$TOPOLOGY ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
-```
-
-Then regenerate the Flux inputs with the same image tag:
-
-```bash
-make flux-values TOPOLOGY=$TOPOLOGY ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make render-cluster-root TOPOLOGY=$TOPOLOGY ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-```
-
-Workspace note:
-
-- on `TOPOLOGY=github-workspace`, the image is imported into `k3d`
-- on host-level `k3s` topologies, the image is imported into `k3s` containerd
+- the sample server manifest exists
+- the default MCP validation path is still the bundled `kagent-tool-server` route
+- the default applications stage does not create `/mcp/echo` or an `echo-validation-agent`
+- treat `echo-mcp` as a manual or future sample enablement path until a dedicated sample bundle exists
 
 ## Pause, resume, and safe restart behavior
 
@@ -645,6 +650,9 @@ Basic checks:
 
 ```bash
 make verify
+make check-flux-stages
+make check-agentgateway
+make check-litellm
 make cluster-status
 ```
 
@@ -667,7 +675,7 @@ kubectl --kubeconfig .kube/generated/current.yaml -n ai-models get inferenceserv
 Recommended validation order:
 
 1. bootstrap the remote-provider path first
-2. validate MCP through `echo-validation-agent`
+2. validate MCP through the bundled `kagent-tool-server` route
 3. validate KServe through `hf-tiny-inferenceservice.yaml`
 4. only then move to larger self-hosted runtime experiments
 
@@ -750,4 +758,3 @@ And other steps:
 - [make-open-kagent-ui5](.assets/kagent-ui5.png)
 - [make-open-kagent-ui6](.assets/kagent-ui6.png)
 - [make-open-kagent-ui7](.assets/kagent-ui7.png)
-

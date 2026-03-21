@@ -9,12 +9,18 @@ Use one canonical LLM path:
 `kagent -> agentgateway -> LiteLLM -> providers/backends`
 
 ```text
-kagent / kmcp -> agentgateway -> LiteLLM -> Gemini
-kagent / kmcp -> agentgateway -> LiteLLM -> OpenAI
-kagent / kmcp -> agentgateway -> LiteLLM -> Bedrock
-kagent / kmcp -> agentgateway -> LiteLLM -> LM Studio
-kagent / kmcp -> agentgateway -> LiteLLM -> Ollama
-kagent / kmcp -> agentgateway -> LiteLLM -> vLLM
+kagent -> agentgateway -> LiteLLM -> Gemini
+kagent -> agentgateway -> LiteLLM -> OpenAI
+kagent -> agentgateway -> LiteLLM -> Bedrock
+kagent -> agentgateway -> LiteLLM -> LM Studio
+kagent -> agentgateway -> LiteLLM -> Ollama
+kagent -> agentgateway -> LiteLLM -> vLLM
+```
+
+The MCP path is separate:
+
+```text
+kagent -> agentgateway -> kmcp-managed MCP servers
 ```
 
 ## Rationale

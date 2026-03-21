@@ -36,6 +36,9 @@ PLATFORM_ROOT_TIMEOUT ?= 30m
 PLATFORM_BOOTSTRAP_TIMEOUT ?= 10m
 PLATFORM_INFRA_TIMEOUT ?= 15m
 PLATFORM_APPS_TIMEOUT ?= 20m
+HTTP_PROBE_TIMEOUT ?= 30
+HTTP_PROBE_INTERVAL ?= 1
+CURL ?= curl
 export KUBECONFIG
 KUBECTL ?= kubectl --kubeconfig "$(KUBECONFIG)"
 FLUX ?= flux --kubeconfig "$(KUBECONFIG)"
@@ -54,21 +57,44 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball prepare-echo-mcp-image-local \
 	k9s-local port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-research-access close-research-access \
+	check-kagent-ui check-agentgateway check-litellm check-flux-stages \
 	test-a2a-agent test-agentgateway-gemini test-agentgateway-openai test-litellm test-lmstudio test-ollama test-vllm
+
+define wait_for_http_status
+	@url="$(1)"; accepted_codes="$(2)"; header="$(3)"; deadline=$$(( $$(date +%s) + $(HTTP_PROBE_TIMEOUT) )); last_code="000"; \
+	while [ $$(date +%s) -le $$deadline ]; do \
+	  if [ -n "$$header" ]; then \
+	    last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' -H "$$header" "$$url" || true )"; \
+	  else \
+	    last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' "$$url" || true )"; \
+	  fi; \
+	  case " $$accepted_codes " in \
+	    *" $$last_code "*) echo "$$url -> $$last_code"; exit 0 ;; \
+	  esac; \
+	  sleep $(HTTP_PROBE_INTERVAL); \
+	done; \
+	echo "Probe failed for $$url; expected one of [$$accepted_codes], last status $$last_code" >&2; \
+	exit 1
+endef
 
 define start_port_forward
 	@mkdir -p $(PORT_FORWARD_STATE_DIR)
 	@pid_file="$(PORT_FORWARD_STATE_DIR)/$(1).pid"; \
 	port_file="$(PORT_FORWARD_STATE_DIR)/$(1).port"; \
-	if [ -z "$$($(KUBECTL) -n $(3) get endpoints $(4) -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]; then \
+	probe_url="$(7)"; \
+	accepted_codes="$(8)"; \
+	header="$(9)"; \
+	endpoint_query="$$( $(KUBECTL) -n $(3) get endpoints $(4) -o jsonpath='{.subsets[*].addresses[*].ip}' 2>&1 )"; \
+	endpoint_status=$$?; \
+	if [ "$$endpoint_status" -ne 0 ]; then \
+	  echo "$(1) cannot query service $(3)/$(4): $$endpoint_query"; \
+	  exit 1; \
+	fi; \
+	if [ -z "$$endpoint_query" ]; then \
 	  echo "$(1) cannot open because service $(3)/$(4) has no ready endpoints"; \
 	  exit 1; \
 	fi; \
 	if [ -f "$$pid_file" ] && kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
-	  if [ -f "$$port_file" ] && [ "$$(cat "$$port_file")" = "$(5)" ]; then \
-	  echo "$(1) is already available at $(2)"; \
-	  exit 0; \
-	  fi; \
 	  kill "$$(cat "$$pid_file")" 2>/dev/null || true; \
 	  rm -f "$$pid_file" "$$port_file"; \
 	fi; \
@@ -82,12 +108,40 @@ define start_port_forward
 	  nohup $(KUBECTL) -n $(3) port-forward svc/$(4) $(5):$(6) >"$(PORT_FORWARD_STATE_DIR)/$(1).log" 2>&1 </dev/null & \
 	  echo $$! >"$$pid_file"; \
 	  echo "$(5)" >"$$port_file"; \
-	  sleep 2; \
 	  if ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
 	    echo "$(1) failed to open"; \
 	    sed -n '1,40p' "$(PORT_FORWARD_STATE_DIR)/$(1).log"; \
 	    rm -f "$$pid_file" "$$port_file"; \
 	    exit 1; \
+	  fi; \
+	  if [ -n "$$probe_url" ]; then \
+	    deadline=$$(( $$(date +%s) + $(HTTP_PROBE_TIMEOUT) )); \
+	    ready=0; \
+	    last_code="000"; \
+	    while [ $$(date +%s) -le $$deadline ]; do \
+	      if [ -n "$$header" ]; then \
+	        last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' -H "$$header" "$$probe_url" || true )"; \
+	      else \
+	        last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' "$$probe_url" || true )"; \
+	      fi; \
+	      case " $$accepted_codes " in \
+	        *" $$last_code "*) ready=1; break ;; \
+	      esac; \
+	      if ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	        echo "$(1) failed while waiting for $$probe_url"; \
+	        sed -n '1,40p' "$(PORT_FORWARD_STATE_DIR)/$(1).log"; \
+	        rm -f "$$pid_file" "$$port_file"; \
+	        exit 1; \
+	      fi; \
+	      sleep $(HTTP_PROBE_INTERVAL); \
+	    done; \
+	    if [ "$$ready" -ne 1 ]; then \
+	      echo "$(1) failed readiness check for $$probe_url (last status $$last_code)"; \
+	      sed -n '1,40p' "$(PORT_FORWARD_STATE_DIR)/$(1).log"; \
+	      kill "$$(cat "$$pid_file")" 2>/dev/null || true; \
+	      rm -f "$$pid_file" "$$port_file"; \
+	      exit 1; \
+	    fi; \
 	  fi; \
 	  echo "$(1) available at $(2)"; \
 	fi
@@ -402,43 +456,80 @@ port-forward-qdrant: require-kubeconfig ## Port-forward Qdrant to localhost:6333
 	$(KUBECTL) -n context port-forward svc/context-qdrant $(QDRANT_LOCAL_PORT):6333
 
 open-kagent-ui: require-kubeconfig ## Open the kagent UI at http://localhost:8080
-	$(call start_port_forward,kagent-ui,http://localhost:$(KAGENT_UI_LOCAL_PORT),kagent,kagent-kagent-ui,$(KAGENT_UI_LOCAL_PORT),8080)
+	$(call start_port_forward,kagent-ui,http://localhost:$(KAGENT_UI_LOCAL_PORT),kagent,kagent-kagent-ui,$(KAGENT_UI_LOCAL_PORT),8080,http://localhost:$(KAGENT_UI_LOCAL_PORT)/,200 301 302 303 307 308,)
 
 close-kagent-ui: ## Close the kagent UI port-forward
 	$(call stop_port_forward,kagent-ui)
 
 open-kagent-a2a: require-kubeconfig ## Open the kagent controller API at http://localhost:8083
-	$(call start_port_forward,kagent-a2a,http://localhost:$(KAGENT_A2A_LOCAL_PORT),kagent,kagent-kagent-controller,$(KAGENT_A2A_LOCAL_PORT),8083)
+	$(call start_port_forward,kagent-a2a,http://localhost:$(KAGENT_A2A_LOCAL_PORT),kagent,kagent-kagent-controller,$(KAGENT_A2A_LOCAL_PORT),8083,http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json,200,)
 
 close-kagent-a2a: ## Close the kagent controller API port-forward
 	$(call stop_port_forward,kagent-a2a)
 
 open-agentgateway: require-kubeconfig ## Open AgentGateway at http://localhost:15000
-	$(call start_port_forward,agentgateway,http://localhost:$(AGENTGATEWAY_LOCAL_PORT),agentgateway-system,agentgateway-proxy,$(AGENTGATEWAY_LOCAL_PORT),8080)
+	$(call start_port_forward,agentgateway,http://localhost:$(AGENTGATEWAY_LOCAL_PORT),agentgateway-system,agentgateway-proxy,$(AGENTGATEWAY_LOCAL_PORT),8080,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
 
 close-agentgateway: ## Close the AgentGateway port-forward
 	$(call stop_port_forward,agentgateway)
 
 open-litellm: require-kubeconfig ## Open LiteLLM at http://localhost:4000
-	$(call start_port_forward,litellm,http://localhost:$(LITELLM_LOCAL_PORT),ai-gateway,litellm,$(LITELLM_LOCAL_PORT),4000)
+	$(call start_port_forward,litellm,http://localhost:$(LITELLM_LOCAL_PORT),ai-gateway,litellm,$(LITELLM_LOCAL_PORT),4000,http://localhost:$(LITELLM_LOCAL_PORT)/health/readiness,200,)
 
 close-litellm: ## Close the LiteLLM port-forward
 	$(call stop_port_forward,litellm)
 
 open-grafana: require-kubeconfig ## Open Grafana at http://localhost:3000
-	$(call start_port_forward,grafana,http://localhost:$(GRAFANA_LOCAL_PORT),observability,observability-kube-prometheus-stack-grafana,$(GRAFANA_LOCAL_PORT),80)
+	$(call start_port_forward,grafana,http://localhost:$(GRAFANA_LOCAL_PORT),observability,observability-kube-prometheus-stack-grafana,$(GRAFANA_LOCAL_PORT),80,http://localhost:$(GRAFANA_LOCAL_PORT)/login,200 302,)
 
 close-grafana: ## Close the Grafana port-forward
 	$(call stop_port_forward,grafana)
 
 open-prometheus: require-kubeconfig ## Open Prometheus at http://localhost:9090
-	$(call start_port_forward,prometheus,http://localhost:$(PROMETHEUS_LOCAL_PORT),observability,observability-kube-prometh-prometheus,$(PROMETHEUS_LOCAL_PORT),9090)
+	$(call start_port_forward,prometheus,http://localhost:$(PROMETHEUS_LOCAL_PORT),observability,observability-kube-prometh-prometheus,$(PROMETHEUS_LOCAL_PORT),9090,http://localhost:$(PROMETHEUS_LOCAL_PORT)/-/ready,200,)
 
 close-prometheus: ## Close the Prometheus port-forward
 	$(call stop_port_forward,prometheus)
 
 open-qdrant: require-kubeconfig ## Open Qdrant at http://localhost:6333
-	$(call start_port_forward,qdrant,http://localhost:$(QDRANT_LOCAL_PORT),context,context-qdrant,$(QDRANT_LOCAL_PORT),6333)
+	$(call start_port_forward,qdrant,http://localhost:$(QDRANT_LOCAL_PORT),context,context-qdrant,$(QDRANT_LOCAL_PORT),6333,http://localhost:$(QDRANT_LOCAL_PORT)/dashboard,200 301 302 303 307 308,)
+
+check-kagent-ui: ## Verify the local kagent UI endpoint
+	$(call wait_for_http_status,http://localhost:$(KAGENT_UI_LOCAL_PORT)/,200 301 302 303 307 308,)
+
+check-agentgateway: ## Verify the local AgentGateway OpenAI-compatible API endpoint
+	$(call wait_for_http_status,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
+
+check-litellm: ## Verify the local LiteLLM readiness and API endpoints
+	$(call wait_for_http_status,http://localhost:$(LITELLM_LOCAL_PORT)/health/readiness,200,)
+	$(call wait_for_http_status,http://localhost:$(LITELLM_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
+
+check-flux-stages: require-kubeconfig ## Show and validate readiness for the staged Flux Kustomizations
+	@failed=0; \
+	for stage in platform-bootstrap platform-infrastructure platform-applications; do \
+	  json="$$( $(KUBECTL) -n flux-system get kustomization $$stage -o json 2>&1 )"; \
+	  status=$$?; \
+	  if [ "$$status" -ne 0 ]; then \
+	    if printf '%s' "$$json" | grep -qi 'not found'; then \
+	      echo "$$stage	False	Missing	Kustomization not found"; \
+	    else \
+	      printf '%s\tFalse\tClusterUnreachable\t%s\n' "$$stage" "$$(printf '%s' "$$json" | head -n1)"; \
+	    fi; \
+	    failed=1; \
+	    continue; \
+	  fi; \
+	  ready="$$(printf '%s' "$$json" | jq -r '.status.conditions[]? | select(.type=="Ready") | .status' | tail -n1)"; \
+	  reason="$$(printf '%s' "$$json" | jq -r '.status.conditions[]? | select(.type=="Ready") | .reason' | tail -n1)"; \
+	  message="$$(printf '%s' "$$json" | jq -r '.status.conditions[]? | select(.type=="Ready") | .message' | tail -n1)"; \
+	  [ -n "$$ready" ] || ready="Unknown"; \
+	  [ -n "$$reason" ] || reason="-"; \
+	  [ -n "$$message" ] || message="-"; \
+	  printf '%s\t%s\t%s\t%s\n' "$$stage" "$$ready" "$$reason" "$$message"; \
+	  if [ "$$ready" != "True" ]; then \
+	    failed=1; \
+	  fi; \
+	done; \
+	exit $$failed
 
 close-qdrant: ## Close the Qdrant port-forward
 	$(call stop_port_forward,qdrant)
@@ -464,17 +555,14 @@ close-research-access: ## Close all background localhost research endpoints
 test-a2a-agent: ## Fetch the sample agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json | jq .
 
-test-agentgateway-gemini: ## Test the canonical OpenAI-compatible route through agentgateway -> LiteLLM -> Gemini
+test-agentgateway-gemini: require-kubeconfig open-agentgateway check-agentgateway ## Test the canonical OpenAI-compatible route through agentgateway -> LiteLLM -> Gemini
 	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .
 
-test-agentgateway-openai: ## Test the agentgateway OpenAI-compatible route without requiring provider-specific CLI tools
+test-agentgateway-openai: require-kubeconfig open-agentgateway check-agentgateway ## Test the agentgateway OpenAI-compatible route without requiring provider-specific CLI tools
 	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .
 
-test-litellm: require-kubeconfig ## List available models directly from the LiteLLM service
-	kubectl -n ai-gateway port-forward svc/litellm $(LITELLM_LOCAL_PORT):4000 >/tmp/litellm-pf.log 2>&1 & echo $$! > /tmp/litellm-pf.pid; \
-	sleep 3; \
-	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(LITELLM_LOCAL_PORT)/v1/models | jq .; \
-	kill $$(cat /tmp/litellm-pf.pid)
+test-litellm: require-kubeconfig open-litellm check-litellm ## List available models directly from the LiteLLM service
+	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(LITELLM_LOCAL_PORT)/v1/models | jq .
 
 test-lmstudio: require-kubeconfig ## Check connectivity from the cluster to the external LM Studio endpoint
 	kubectl -n ai-gateway run lmstudio-curl --rm -i --restart=Never --image=curlimages/curl:8.10.1 -- \

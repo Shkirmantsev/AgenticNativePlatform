@@ -99,9 +99,13 @@ make reconcile
 
 ```bash
 make verify
+make check-flux-stages
 make cluster-status
 make k9s-local
 make open-research-access
+make check-kagent-ui
+make check-agentgateway
+make check-litellm
 make test-a2a-agent
 make test-agentgateway-openai
 make test-litellm
@@ -133,10 +137,24 @@ URLs made available by `make open-research-access`:
 - `http://localhost:8080` kagent UI
 - `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` sample A2A card
 - `http://localhost:15000/v1/models` AgentGateway OpenAI-compatible API
+- `http://localhost:15000/mcp/kagent-tools` bundled MCP path through AgentGateway
+- `http://localhost:4000/health/readiness` LiteLLM readiness
 - `http://localhost:4000/v1/models` LiteLLM
 - `http://localhost:3000` Grafana
 - `http://localhost:9090` Prometheus
 - `http://localhost:6333/dashboard` Qdrant
+
+The AgentGateway and LiteLLM port-forwards expose API paths, not UI root pages.
+
+Endpoint truth table:
+
+| URL | Expected behavior |
+| --- | --- |
+| `http://localhost:15000/` | no root route is expected |
+| `http://localhost:15000/v1/models` | AgentGateway OpenAI-compatible API |
+| `http://localhost:15000/mcp/kagent-tools` | bundled MCP route through AgentGateway |
+| `http://localhost:4000/health/readiness` | LiteLLM readiness endpoint |
+| `http://localhost:4000/v1/models` | LiteLLM API |
 
 If one of those commands fails, the target now reports whether:
 
@@ -158,12 +176,14 @@ make open-qdrant QDRANT_LOCAL_PORT=16333
 LiteLLM requires the master-key header:
 
 ```bash
+make check-litellm
 curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
 ```
 
 AgentGateway can be tested the same way:
 
 ```bash
+make check-agentgateway
 curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
 ```
 
@@ -213,7 +233,7 @@ make preimport-vllm-image-tarball TOPOLOGY=local VLLM_IMAGE_TARBALL=/tmp/vllm-cp
 make preimport-vllm-image-online TOPOLOGY=local VLLM_IMAGE=public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
 ```
 
-## echo-mcp local image import without pushing
+## echo-mcp sample image import without pushing
 
 Build and import the optional sample MCP image into `k3s` containerd:
 
@@ -231,14 +251,7 @@ make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-us
 
 On `TOPOLOGY=github-workspace`, the same target imports into the `k3d` cluster instead of `k3s` host containerd.
 
-Then set the same image tag in:
-
-```bash
-make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-```
-
-The final image value is injected from `ECHO_MCP_IMAGE` into the generated applications stage, not hard-coded in the component YAML.
+This only prepares the opt-in sample image. It does not create `/mcp/echo`, a default `RemoteMCPServer`, or an `echo-validation-agent` in the base platform profile.
 
 These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is missing.
 They also import the tarball into `k3s` containerd immediately with `k3s ctr images import`.

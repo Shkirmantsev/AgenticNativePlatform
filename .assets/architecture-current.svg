@@ -26,7 +26,7 @@
   <rect class="bg" x="0" y="0" width="1200" height="980" />
 
   <text class="label" x="60" y="52">Agentic Kubernetes Native Platform: current architecture</text>
-  <text class="small" x="60" y="82">North-south ingress flows through kgateway and agentgateway. Agent traffic reaches providers and optional runtimes through LiteLLM.</text>
+  <text class="small" x="60" y="82">North-south ingress flows through kgateway and agentgateway. LLM traffic reaches providers through LiteLLM, while MCP traffic routes separately to kmcp-managed servers.</text>
 
   <rect class="lane" x="40" y="110" width="680" height="430" />
   <text class="label" x="60" y="145">Ingress and routing path</text>
@@ -87,10 +87,13 @@
   <path class="arrow" d="M720 538 L810 538 L810 633 L840 633" />
 
   <rect class="node-accent" x="110" y="670" width="220" height="56" />
-  <text class="text" x="220" y="705" text-anchor="middle">kagent / kmcp agents</text>
+  <text class="text" x="220" y="705" text-anchor="middle">kagent agents</text>
 
-  <rect class="node-runtime" x="420" y="670" width="180" height="56" />
-  <text class="text" x="510" y="705" text-anchor="middle">TEI embeddings</text>
+  <rect class="node-runtime" x="400" y="670" width="220" height="56" />
+  <text class="text" x="510" y="698" text-anchor="middle">
+    <tspan x="510" dy="0">kmcp-managed</tspan>
+    <tspan x="510" dy="20">MCP servers</tspan>
+  </text>
 
   <rect class="node" x="670" y="670" width="180" height="56" />
   <text class="text" x="760" y="705" text-anchor="middle">Qdrant</text>
@@ -104,7 +107,7 @@
   <rect class="node" x="670" y="790" width="180" height="56" />
   <text class="text" x="760" y="825" text-anchor="middle">KServe control plane</text>
 
-  <path class="arrow" d="M330 698 L420 698" />
+  <path class="arrow" d="M330 698 L400 698" />
   <path class="arrow" d="M330 698 L630 698 L630 560" />
   <path class="arrow-soft" d="M220 726 L220 818 L420 818" />
   <path class="arrow-soft" d="M330 698 L670 698" />

@@ -213,11 +213,25 @@ That exposes:
 
 - `http://localhost:8080` for the kagent UI
 - `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` for the sample A2A card
-- `http://localhost:15000/v1/models` for AgentGateway
-- `http://localhost:4000/v1/models` for LiteLLM
+- `http://localhost:15000/v1/models` for the AgentGateway OpenAI-compatible API
+- `http://localhost:15000/mcp/kagent-tools` for the bundled MCP route through AgentGateway
+- `http://localhost:4000/health/readiness` for LiteLLM readiness
+- `http://localhost:4000/v1/models` for the LiteLLM API
 - `http://localhost:3000` for Grafana
 - `http://localhost:9090` for Prometheus
 - `http://localhost:6333/dashboard` for Qdrant
+
+The AgentGateway and LiteLLM port-forwards expose API endpoints, not UI root pages.
+
+Endpoint truth table:
+
+| URL | Expected behavior |
+| --- | --- |
+| `http://localhost:15000/` | no root route is expected |
+| `http://localhost:15000/v1/models` | AgentGateway OpenAI-compatible API |
+| `http://localhost:15000/mcp/kagent-tools` | bundled MCP route through AgentGateway |
+| `http://localhost:4000/health/readiness` | LiteLLM readiness endpoint |
+| `http://localhost:4000/v1/models` | LiteLLM API |
 
 If a target still does not come up, check the actual failure mode:
 
@@ -237,6 +251,15 @@ make open-qdrant QDRANT_LOCAL_PORT=16333
 ```
 
 LiteLLM itself requires `Authorization: Bearer <LITELLM_MASTER_KEY>`. If your `.env` has not overridden it yet, the first-bootstrap default is still `change-me`.
+
+Use the explicit checks when validating local access:
+
+```bash
+make check-kagent-ui
+make check-agentgateway
+make check-litellm
+make check-flux-stages
+```
 
 Use `kgateway` plus MetalLB or another bare-metal exposure method only when you need stable LAN-facing or externally reachable URLs.
 On the default local topology, it is normal for Gateway resources to exist before they have an external `ADDRESS`; in that state, localhost port-forwarding remains the correct operator path.
@@ -264,14 +287,7 @@ Or use the shortcut:
 make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 ```
 
-After importing, keep the same image tag in:
-
-```bash
-make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-```
-
-The concrete sample image is injected through generated Flux inputs from `ECHO_MCP_IMAGE`. The component manifests keep a neutral placeholder image so the repo does not hard-code a user-specific tag.
+This only prepares the opt-in sample image. It does not add `/mcp/echo`, a default `RemoteMCPServer`, or an `echo-validation-agent` to the base platform path.
 
 The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
 They also run `k3s ctr images import` immediately after copying the tarball so new image tags are available without waiting for a background import path.

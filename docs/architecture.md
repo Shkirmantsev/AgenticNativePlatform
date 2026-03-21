@@ -113,6 +113,7 @@ That keeps model aliasing and provider normalization centralized.
 ## Validation strategy
 
 1. bootstrap the remote-provider path first,
-2. validate MCP using `echo-validation-agent`,
-3. validate KServe using `hf-tiny-inferenceservice.yaml`,
-4. only then test larger self-hosted model paths.
+2. validate MCP through the bundled `kagent-tool-server` route exposed by `agentgateway`,
+3. treat `echo-mcp` as an opt-in sample until a dedicated end-to-end validation path exists,
+4. validate KServe using `hf-tiny-inferenceservice.yaml`,
+5. only then test larger self-hosted model paths.
