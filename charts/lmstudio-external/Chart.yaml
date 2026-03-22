@@ -1,0 +1,6 @@
+apiVersion: v2
+name: lmstudio-external
+description: ExternalName-like Service+Endpoints for LM Studio
+type: application
+version: 0.1.0
+appVersion: "1"

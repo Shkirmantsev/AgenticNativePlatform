@@ -1,0 +1,13 @@
+# k3s server configuration.
+write-kubeconfig-mode: "0644"
+cluster-domain: "{{ lookup('env', 'CLUSTER_DOMAIN') | default('cluster.local', true) }}"
+disable:
+  - traefik
+  - servicelb
+cluster-init: true
+secrets-encryption: true
+flannel-backend: vxlan
+node-label:
+  - topology-role=control-plane
+kubelet-arg:
+  - eviction-hard=imagefs.available<5%,nodefs.available<5%

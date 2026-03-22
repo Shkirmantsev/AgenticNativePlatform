@@ -1,0 +1,28 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: ${cluster_name}
+servers: 1
+agents: 0
+image: ${k3s_image}
+options:
+  k3d:
+    wait: true
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:0
+      - arg: --disable=servicelb
+        nodeFilters:
+          - server:0
+      - arg: --cluster-domain=${cluster_domain}
+        nodeFilters:
+          - server:0
+      - arg: --secrets-encryption
+        nodeFilters:
+          - server:0
+nodeLabels:
+  - label: topology-role=control-plane
+    nodeFilters:
+      - server:0

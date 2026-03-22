@@ -1,0 +1,29 @@
+namespace: ai-models
+image:
+  repository: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo
+  tag: v0.18.0
+  pullPolicy: IfNotPresent
+service:
+  port: 8000
+serviceAccount:
+  create: true
+  name: vllm-openai
+  automountServiceAccountToken: false
+model: Qwen/Qwen2.5-0.5B-Instruct
+hfToken: ""
+resources:
+  requests:
+    cpu: "2000m"
+    memory: "4Gi"
+    ephemeral-storage: "4Gi"
+  limits:
+    cpu: "4000m"
+    memory: "8Gi"
+    ephemeral-storage: "10Gi"
+persistence:
+  enabled: true
+  size: 30Gi
+env:
+  VLLM_CPU_KVCACHE_SPACE: "2"
+  VLLM_CPU_NUM_OF_RESERVED_CPU: "1"
+  VLLM_LD_PRELOAD: ""

@@ -1,0 +1,66 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Values.namespace }}
+automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tei-embeddings
+  namespace: {{ .Values.namespace }}
+spec:
+  progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
+  replicas: 1
+  selector:
+    matchLabels: {app: tei-embeddings}
+  template:
+    metadata:
+      labels:
+        app: tei-embeddings
+{{ toYaml .Values.podLabels | indent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      containers:
+        - name: tei
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --model-id
+            - {{ .Values.model | quote }}
+            - --port
+            - "80"
+{{- range .Values.extraArgs }}
+            - {{ . | quote }}
+{{- end }}
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: model-cache
+              mountPath: {{ .Values.cache.mountPath }}
+      volumes:
+        - name: model-cache
+          emptyDir:
+            sizeLimit: {{ .Values.cache.sizeLimit }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tei-embeddings
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: {app: tei-embeddings}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: 80

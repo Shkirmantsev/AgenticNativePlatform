@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ai-runtimes
+description: Optional umbrella chart for LM Studio glue and self-hosted runtimes (demo/manual path)
+version: 0.1.0
+appVersion: "1.0"
+type: application

@@ -1,0 +1,44 @@
+{{- if .Values.tei.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tei-embeddings
+  namespace: {{ .Values.namespace }}
+automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tei-embeddings
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: tei-embeddings }
+  template:
+    metadata:
+      labels: { app: tei-embeddings }
+    spec:
+      serviceAccountName: tei-embeddings
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      containers:
+        - name: tei
+          image: {{ .Values.tei.image }}
+          args: ["--model-id", "{{ .Values.tei.modelId }}", "--port", "80"]
+          ports:
+            - containerPort: 80
+          resources:
+{{ toYaml .Values.tei.resources | indent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tei-embeddings
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: tei-embeddings }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+{{- end }}

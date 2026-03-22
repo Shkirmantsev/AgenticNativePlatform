@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ollama-runtime
+description: Ollama self-hosted runtime
+type: application
+version: 0.1.0
+appVersion: "0.18.0"

@@ -1,0 +1,16 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: litellm-upstream
+  namespace: agentgateway-system
+spec:
+  ai:
+    provider:
+      openai: {}
+      host: litellm.ai-gateway.svc.cluster.local
+      port: 4000
+  policies:
+    ai:
+      routes:
+        /v1/models: Passthrough
+        /v1/embeddings: Passthrough

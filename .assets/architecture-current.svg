@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1140" viewBox="0 0 1280 1140" role="img" aria-labelledby="title desc">
+  <title id="title">Current platform architecture</title>
+  <desc id="desc">Human-oriented overview of the current AgenticNativePlatform runtime flow, cluster services, and staged GitOps deployment model.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .lane { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 18; ry: 18; }
+      .node { fill: #ffffff; stroke: #0f172a; stroke-width: 2; rx: 12; ry: 12; }
+      .node-accent { fill: #ecfeff; stroke: #155e75; stroke-width: 2; rx: 12; ry: 12; }
+      .node-runtime { fill: #f0fdf4; stroke: #166534; stroke-width: 2; rx: 12; ry: 12; }
+      .node-provider { fill: #fff7ed; stroke: #9a3412; stroke-width: 2; rx: 12; ry: 12; }
+      .node-ops { fill: #f8fafc; stroke: #475569; stroke-width: 2; rx: 12; ry: 12; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; fill: #0f172a; }
+      .text { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #0f172a; }
+      .small { font-family: Arial, Helvetica, sans-serif; font-size: 15px; fill: #334155; }
+      .arrow { stroke: #0f172a; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+      .arrow-soft { stroke: #475569; stroke-width: 2.5; fill: none; stroke-dasharray: 9 7; marker-end: url(#arrowhead-soft); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#0f172a" />
+    </marker>
+    <marker id="arrowhead-soft" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#475569" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1280" height="1140" />
+
+  <text class="label" x="52" y="52">AgenticNativePlatform: current architecture overview</text>
+  <text class="small" x="52" y="82">This summary matches the current runtime path, installed cluster components, and staged Flux deployment model used by the repository.</text>
+
+  <rect class="lane" x="36" y="110" width="744" height="340" />
+  <text class="label" x="56" y="145">Runtime Traffic Path</text>
+
+  <rect class="lane" x="812" y="110" width="432" height="340" />
+  <text class="label" x="832" y="145">Providers And Serving</text>
+
+  <rect class="lane" x="36" y="488" width="1208" height="306" />
+  <text class="label" x="56" y="523">Cluster Components And Namespaces</text>
+
+  <rect class="lane" x="36" y="832" width="1208" height="268" />
+  <text class="label" x="56" y="867">GitOps Staging And Profile Composition</text>
+
+  <rect class="node" x="74" y="176" width="176" height="58" />
+  <text class="text" x="162" y="212" text-anchor="middle">External clients</text>
+
+  <rect class="node-accent" x="292" y="176" width="204" height="58" />
+  <text class="text" x="394" y="212" text-anchor="middle">kgateway public-gateway</text>
+
+  <rect class="node-accent" x="536" y="176" width="206" height="58" />
+  <text class="text" x="639" y="212" text-anchor="middle">agentgateway-proxy</text>
+
+  <rect class="node-accent" x="536" y="286" width="206" height="58" />
+  <text class="text" x="639" y="322" text-anchor="middle">LiteLLM</text>
+
+  <rect class="node" x="292" y="286" width="204" height="74" />
+  <text class="text" x="394" y="314" text-anchor="middle">
+    <tspan x="394" dy="0">kagent controller</tspan>
+    <tspan x="394" dy="20">and RemoteMCPServer</tspan>
+    <tspan x="394" dy="20">use agentgateway only</tspan>
+  </text>
+
+  <rect class="node-ops" x="74" y="286" width="176" height="74" />
+  <text class="text" x="162" y="314" text-anchor="middle">
+    <tspan x="162" dy="0">Istio ambient</tspan>
+    <tspan x="162" dy="20">istiod, cni, ztunnel</tspan>
+    <tspan x="162" dy="20">underpins the path</tspan>
+  </text>
+
+  <path class="arrow" d="M250 205 L292 205" />
+  <path class="arrow" d="M496 205 L536 205" />
+  <path class="arrow" d="M639 234 L639 286" />
+  <path class="arrow-soft" d="M496 322 L536 322" />
+
+  <text class="small" x="756" y="207">north-south entry</text>
+  <text class="small" x="757" y="318">/v1 route inside agentgateway</text>
+  <text class="small" x="430" y="378">/v1 and /mcp go to agentgateway-proxy first</text>
+
+  <rect class="node-provider" x="872" y="176" width="310" height="58" />
+  <text class="text" x="1027" y="205" text-anchor="middle">
+    <tspan x="1027" dy="0">Remote providers through LiteLLM</tspan>
+    <tspan x="1027" dy="20">Gemini, OpenAI, Anthropic, Bedrock, Vertex</tspan>
+  </text>
+
+  <rect class="node-runtime" x="872" y="264" width="310" height="58" />
+  <text class="text" x="1027" y="300" text-anchor="middle">External LM Studio endpoint</text>
+
+  <rect class="node-runtime" x="872" y="352" width="310" height="58" />
+  <text class="text" x="1027" y="381" text-anchor="middle">Optional runtime overlay: Ollama or vLLM</text>
+
+  <path class="arrow" d="M742 315 L796 315 L796 205 L872 205" />
+  <path class="arrow" d="M742 315 L820 315 L820 293 L872 293" />
+  <path class="arrow" d="M742 315 L796 315 L796 381 L872 381" />
+
+  <rect class="node-accent" x="76" y="566" width="244" height="72" />
+  <text class="text" x="198" y="595" text-anchor="middle">
+    <tspan x="198" dy="0">kagent namespace</tspan>
+    <tspan x="198" dy="20">controller, UI, kagent-tools,</tspan>
+    <tspan x="198" dy="20">A2A agent, RemoteMCPServer</tspan>
+  </text>
+
+  <rect class="node-accent" x="370" y="566" width="228" height="72" />
+  <text class="text" x="484" y="595" text-anchor="middle">
+    <tspan x="484" dy="0">agentgateway-system</tspan>
+    <tspan x="484" dy="20">agentgateway controller,</tspan>
+    <tspan x="484" dy="20">Gateway, backends, policy</tspan>
+  </text>
+
+  <rect class="node-runtime" x="648" y="566" width="228" height="72" />
+  <text class="text" x="762" y="595" text-anchor="middle">
+    <tspan x="762" dy="0">ai-models</tspan>
+    <tspan x="762" dy="20">KServe control plane,</tspan>
+    <tspan x="762" dy="20">tei-embeddings, runtime overlays</tspan>
+  </text>
+
+  <rect class="node" x="926" y="566" width="258" height="72" />
+  <text class="text" x="1055" y="595" text-anchor="middle">
+    <tspan x="1055" dy="0">context</tspan>
+    <tspan x="1055" dy="20">Qdrant, PostgreSQL, Redis</tspan>
+    <tspan x="1055" dy="20">used by the agent stack</tspan>
+  </text>
+
+  <rect class="node-ops" x="76" y="684" width="244" height="72" />
+  <text class="text" x="198" y="713" text-anchor="middle">
+    <tspan x="198" dy="0">istio-system</tspan>
+    <tspan x="198" dy="20">istiod, istio-cni, ztunnel</tspan>
+    <tspan x="198" dy="20">ambient data plane support</tspan>
+  </text>
+
+  <rect class="node-ops" x="370" y="684" width="228" height="72" />
+  <text class="text" x="484" y="713" text-anchor="middle">
+    <tspan x="484" dy="0">cert-manager</tspan>
+    <tspan x="484" dy="20">controller, webhook,</tspan>
+    <tspan x="484" dy="20">cainjector</tspan>
+  </text>
+
+  <rect class="node-ops" x="648" y="684" width="228" height="72" />
+  <text class="text" x="762" y="713" text-anchor="middle">
+    <tspan x="762" dy="0">observability</tspan>
+    <tspan x="762" dy="20">Prometheus, Grafana, Loki</tspan>
+    <tspan x="762" dy="20">full profile only</tspan>
+  </text>
+
+  <rect class="node-runtime" x="926" y="684" width="258" height="72" />
+  <text class="text" x="1055" y="713" text-anchor="middle">
+    <tspan x="1055" dy="0">optional sample path</tspan>
+    <tspan x="1055" dy="20">kmcp controller manages</tspan>
+    <tspan x="1055" dy="20">echo-mcp when enabled</tspan>
+  </text>
+
+  <path class="arrow-soft" d="M320 602 L370 602" />
+  <path class="arrow-soft" d="M598 602 L648 602" />
+  <path class="arrow-soft" d="M876 602 L926 602" />
+
+  <rect class="node" x="82" y="914" width="184" height="74" />
+  <text class="text" x="174" y="943" text-anchor="middle">
+    <tspan x="174" dy="0">Repo source</tspan>
+    <tspan x="174" dy="20">flux/components, charts,</tspan>
+    <tspan x="174" dy="20">overlays</tspan>
+  </text>
+
+  <rect class="node" x="316" y="914" width="206" height="74" />
+  <text class="text" x="419" y="943" text-anchor="middle">
+    <tspan x="419" dy="0">Generated inputs</tspan>
+    <tspan x="419" dy="20">flux/generated and</tspan>
+    <tspan x="419" dy="20">generated cluster roots</tspan>
+  </text>
+
+  <rect class="node-accent" x="572" y="914" width="200" height="74" />
+  <text class="text" x="672" y="943" text-anchor="middle">
+    <tspan x="672" dy="0">Flux GitRepository</tspan>
+    <tspan x="672" dy="20">remote Git is the</tspan>
+    <tspan x="672" dy="20">source of truth</tspan>
+  </text>
+
+  <rect class="node-accent" x="822" y="892" width="184" height="118" />
+  <text class="text" x="914" y="929" text-anchor="middle">
+    <tspan x="914" dy="0">Staged roots</tspan>
+    <tspan x="914" dy="22">platform-bootstrap</tspan>
+    <tspan x="914" dy="20">platform-infrastructure</tspan>
+    <tspan x="914" dy="20">platform-applications</tspan>
+  </text>
+
+  <rect class="node-runtime" x="1048" y="892" width="160" height="118" />
+  <text class="text" x="1128" y="929" text-anchor="middle">
+    <tspan x="1128" dy="0">Profiles and extras</tspan>
+    <tspan x="1128" dy="22">full, fast,</tspan>
+    <tspan x="1128" dy="20">fast-serving,</tspan>
+    <tspan x="1128" dy="20">fast-context, workspace</tspan>
+  </text>
+
+  <path class="arrow" d="M266 951 L316 951" />
+  <path class="arrow" d="M522 951 L572 951" />
+  <path class="arrow" d="M772 951 L822 951" />
+  <path class="arrow" d="M1006 951 L1048 951" />
+
+  <text class="small" x="78" y="1048">Optional Flux child roots: `platform-ops-ui` for Weave GitOps UI and `platform-samples` for the sample echo MCP bundle.</text>
+  <text class="small" x="78" y="1072">Current workspace default resolves to `platform-profile-workspace`, which currently aliases `platform-profile-fast-serving`.</text>
+</svg>

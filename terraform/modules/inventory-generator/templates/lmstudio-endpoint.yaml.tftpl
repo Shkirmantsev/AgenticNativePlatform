@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: lmstudio-external
+  namespace: ai-gateway
+subsets:
+  - addresses:
+      - ip: ${lmstudio_host_ip}
+    ports:
+      - port: ${lmstudio_port}

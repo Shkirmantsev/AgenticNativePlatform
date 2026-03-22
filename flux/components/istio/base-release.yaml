@@ -1,0 +1,110 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: istio-base
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 9m
+  targetNamespace: istio-system
+  chart:
+    spec:
+      chart: base
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+      version: 1.26.x
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: istiod
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 9m
+  dependsOn:
+    - name: istio-base
+  targetNamespace: istio-system
+  chart:
+    spec:
+      chart: istiod
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+      version: 1.26.x
+  values:
+    profile: ambient
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: istio-cni
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 9m
+  dependsOn:
+    - name: istiod
+  targetNamespace: istio-system
+  chart:
+    spec:
+      chart: cni
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+      version: 1.26.x
+  values:
+    # k3s uses its own agent-managed CNI config and plugin directories.
+    cniConfDir: /var/lib/rancher/k3s/agent/etc/cni/net.d
+    cniBinDir: /var/lib/rancher/k3s/data/cni
+    ambient:
+      enabled: true
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ztunnel
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 15m
+  dependsOn:
+    - name: istio-cni
+  targetNamespace: istio-system
+  chart:
+    spec:
+      chart: ztunnel
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+      version: 1.26.x
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3

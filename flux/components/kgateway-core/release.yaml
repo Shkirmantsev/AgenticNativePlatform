@@ -1,0 +1,29 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kgateway
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 9m
+  targetNamespace: kgateway-system
+  chartRef:
+    kind: OCIRepository
+    name: kgateway-chart
+    namespace: flux-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    controller:
+      image:
+        registry: cr.kgateway.dev/kgateway-dev
+        repository: kgateway
+        tag: v2.0.2
+    gateway:
+      service:
+        type: LoadBalancer

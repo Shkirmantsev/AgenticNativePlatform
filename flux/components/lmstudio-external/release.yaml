@@ -1,0 +1,23 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: lmstudio-external
+  namespace: flux-system
+spec:
+  interval: 30m
+  targetNamespace: ai-gateway
+  chart:
+    spec:
+      chart: ./charts/lmstudio-external
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: platform
+        namespace: flux-system
+      interval: 1m
+  install:
+    createNamespace: true
+  valuesFrom:
+    - kind: ConfigMap
+      name: lmstudio-values
+      valuesKey: values.yaml

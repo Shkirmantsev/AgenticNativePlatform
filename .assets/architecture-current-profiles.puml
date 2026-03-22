@@ -1,0 +1,126 @@
+@startuml
+!pragma layout smetana
+title AgenticNativePlatform - Current GitOps Staging And Profile Composition
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam wrapWidth 180
+hide stereotype
+
+actor "Operator" as Operator
+rectangle "Repository source of truth\nflux/components/*\ncharts/*\nflux/overlays/*" as RepoSources
+rectangle "Generated inputs\nflux/generated/<topology>/\nflux/generated/clusters/<cluster-id>/" as GeneratedInputs
+rectangle "Remote Git repository\nGIT_REPO_URL @ GIT_BRANCH" as RemoteRepo
+
+node "flux-system" {
+  component "GitRepository/platform" as GitRepository
+  component "platform-bootstrap" as PlatformBootstrap
+  component "platform-infrastructure" as PlatformInfrastructure
+  component "platform-applications" as PlatformApplications
+  component "platform-ops-ui\nsuspend=true until enabled" as PlatformOpsUI
+  component "platform-samples\nsuspend=true until enabled" as PlatformSamples
+}
+
+package "Bootstrap stage" {
+  component "base namespaces\nGateway API CRDs\nHelm/OCI sources\ngenerated ConfigMaps\nsecret references" as BootstrapContent
+}
+
+package "Infrastructure stage" {
+  component "selected profile\ninfrastructure path" as InfrastructureProfile
+  component "runtime overlay\nnone | ollama | vllm" as RuntimeChoice
+}
+
+package "Applications stage" {
+  component "profile applications\n+ env overlay" as ApplicationsProfile
+  component "generated MetalLB values\nwhen rendered for host-based paths" as MetalLBValues
+}
+
+package "Optional child roots" {
+  component "weave-gitops bundle" as WeaveBundle
+  component "samples-echo-mcp bundle" as SamplesBundle
+}
+
+package "Profiles" {
+  component "platform-profile-full\nbase + network + agent-runtime +\nserving + context + observability + metallb" as ProfileFull
+  component "platform-profile-fast\nbase + network + agent-runtime + metallb" as ProfileFast
+  component "platform-profile-fast-serving\nplatform-profile-fast + serving" as ProfileFastServing
+  component "platform-profile-fast-context\nplatform-profile-fast + context" as ProfileFastContext
+  component "platform-profile-workspace\ncurrently aliases platform-profile-fast-serving" as ProfileWorkspace
+}
+
+package "Bundles" {
+  component "platform-base" as BundleBase
+  component "platform-network" as BundleNetwork
+  component "platform-agent-runtime" as BundleAgentRuntime
+  component "platform-serving" as BundleServing
+  component "platform-context" as BundleContext
+  component "platform-observability" as BundleObservability
+  component "platform-apps" as BundleApps
+  component "platform-ops-ui" as BundleOpsUI
+  component "platform-samples" as BundleSamples
+}
+
+Operator --> RepoSources : edit manifests / charts
+RepoSources --> GeneratedInputs : make flux-values\nmake render-cluster-root
+Operator --> RemoteRepo : commit and push
+GeneratedInputs --> RemoteRepo : tracked generated files
+
+RemoteRepo --> GitRepository : Flux reads remote branch
+GitRepository --> PlatformBootstrap
+PlatformBootstrap --> BootstrapContent
+PlatformBootstrap --> PlatformInfrastructure : staged dependency
+PlatformInfrastructure --> InfrastructureProfile
+PlatformInfrastructure --> RuntimeChoice
+PlatformInfrastructure --> PlatformApplications : staged dependency
+PlatformApplications --> ApplicationsProfile
+PlatformApplications --> MetalLBValues
+PlatformInfrastructure --> PlatformOpsUI : optional dependency
+PlatformApplications --> PlatformSamples : optional dependency
+PlatformOpsUI --> WeaveBundle
+PlatformSamples --> SamplesBundle
+
+InfrastructureProfile --> ProfileFull : host-based default
+InfrastructureProfile --> ProfileWorkspace : github-workspace default
+InfrastructureProfile --> ProfileFast : explicit override
+InfrastructureProfile --> ProfileFastServing : explicit override
+InfrastructureProfile --> ProfileFastContext : explicit override
+
+ApplicationsProfile --> BundleApps
+ProfileFull --> BundleBase
+ProfileFull --> BundleNetwork
+ProfileFull --> BundleAgentRuntime
+ProfileFull --> BundleServing
+ProfileFull --> BundleContext
+ProfileFull --> BundleObservability
+ProfileFast --> BundleBase
+ProfileFast --> BundleNetwork
+ProfileFast --> BundleAgentRuntime
+ProfileFastServing --> ProfileFast
+ProfileFastServing --> BundleServing
+ProfileFastContext --> ProfileFast
+ProfileFastContext --> BundleContext
+ProfileWorkspace --> ProfileFastServing
+WeaveBundle --> BundleOpsUI
+SamplesBundle --> BundleSamples
+
+note bottom of PlatformBootstrap
+bootstrap-flux is rendered under
+flux/generated/clusters/<cluster-id>/bootstrap-flux/
+and the shell wrapper only applies that path.
+end note
+
+note bottom of GitRepository
+Flux reconciles the remote repository state,
+not the local working tree.
+Generated manifests must be committed and pushed.
+end note
+
+note bottom of ProfileWorkspace
+Current repository state:
+platform-profile-workspace
+aliases platform-profile-fast-serving.
+end note
+
+@enduml

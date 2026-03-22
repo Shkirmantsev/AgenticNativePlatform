@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: echo-mcp-values
+  namespace: flux-system
+data:
+  image: ${echo_mcp_image}

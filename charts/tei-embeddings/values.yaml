@@ -1,0 +1,30 @@
+namespace: ai-models
+deployment:
+  progressDeadlineSeconds: 1800
+image:
+  repository: ghcr.io/huggingface/text-embeddings-inference
+  tag: cpu-1.8
+  pullPolicy: IfNotPresent
+service:
+  port: 80
+serviceAccount:
+  create: true
+  name: tei-embeddings
+  automountServiceAccountToken: false
+podLabels:
+  istio.io/dataplane-mode: none
+cache:
+  mountPath: /data
+  sizeLimit: 2Gi
+model: onnx-models/all-MiniLM-L6-v2-onnx
+extraArgs:
+  - --auto-truncate
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+    ephemeral-storage: "1Gi"
+  limits:
+    cpu: "1000m"
+    memory: "2Gi"
+    ephemeral-storage: "4Gi"

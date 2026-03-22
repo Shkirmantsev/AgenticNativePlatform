@@ -1,0 +1,25 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ClusterServingRuntime
+metadata:
+  name: vllm-runtime
+spec:
+  supportedModelFormats:
+    - name: huggingface
+      version: "1"
+      autoSelect: true
+  containers:
+    - name: kserve-container
+      image: vllm/vllm-openai:v0.18.0
+      args:
+        - --host
+        - 0.0.0.0
+        - --port
+        - "8080"
+        - --model
+        - "{{.Name}}"
+      ports:
+        - containerPort: 8080
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8080

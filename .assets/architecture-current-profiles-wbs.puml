@@ -1,0 +1,106 @@
+@startwbs
+* AgenticNativePlatform - Current GitOps Staging And Profile Composition
+** 1. Source and generation flow
+*** Operator
+**** edits manifests and charts in repository source of truth
+***** flux/components/*
+***** charts/*
+***** flux/overlays/*
+**** commits and pushes to remote Git repository
+***** GIT_REPO_URL @ GIT_BRANCH
+*** Generated inputs
+**** flux/generated/<topology>/
+**** flux/generated/clusters/<cluster-id>/
+**** produced by
+***** make flux-values
+***** make render-cluster-root
+*** Effective flow
+**** Repository source of truth -> Generated inputs -> Remote Git repository
+
+** 2. Flux system reconciliation
+*** GitRepository/platform
+**** Flux reads the remote branch
+**** Flux reconciles remote repository state, not local working tree
+**** Generated manifests must be committed and pushed
+*** platform-bootstrap
+**** bootstrap content
+***** base namespaces
+***** Gateway API CRDs
+***** Helm/OCI sources
+***** generated ConfigMaps
+***** secret references
+**** staged dependency to platform-infrastructure
+**** bootstrap-flux is rendered under flux/generated/clusters/<cluster-id>/bootstrap-flux/
+**** the shell wrapper only applies that path
+*** platform-infrastructure
+**** selects infrastructure profile path
+**** selects runtime overlay
+***** none
+***** ollama
+***** vllm
+**** staged dependency to platform-applications
+**** optional dependency to platform-ops-ui
+*** platform-applications
+**** applies profile applications + env overlay
+**** may render MetalLB values for host-based paths
+**** optional dependency to platform-samples
+*** Optional child roots
+**** platform-ops-ui
+***** suspend=true until enabled
+***** deploys weave-gitops bundle
+**** platform-samples
+***** suspend=true until enabled
+***** deploys samples-echo-mcp bundle
+
+** 3. Profiles
+*** platform-profile-full
+**** base
+**** network
+**** agent-runtime
+**** serving
+**** context
+**** observability
+**** metallb
+**** host-based default
+*** platform-profile-fast
+**** base
+**** network
+**** agent-runtime
+**** metallb
+**** explicit override
+*** platform-profile-fast-serving
+**** platform-profile-fast + serving
+**** explicit override
+*** platform-profile-fast-context
+**** platform-profile-fast + context
+**** explicit override
+*** platform-profile-workspace
+**** currently aliases platform-profile-fast-serving
+**** github-workspace default
+
+** 4. Bundle mapping
+*** Applications profile
+**** platform-apps
+*** platform-profile-full -> bundles
+**** platform-base
+**** platform-network
+**** platform-agent-runtime
+**** platform-serving
+**** platform-context
+**** platform-observability
+*** platform-profile-fast -> bundles
+**** platform-base
+**** platform-network
+**** platform-agent-runtime
+*** platform-profile-fast-serving -> bundles
+**** inherits platform-profile-fast
+**** platform-serving
+*** platform-profile-fast-context -> bundles
+**** inherits platform-profile-fast
+**** platform-context
+*** platform-profile-workspace -> bundles
+**** aliases platform-profile-fast-serving
+*** Optional bundles
+**** weave-gitops bundle -> platform-ops-ui
+**** samples-echo-mcp bundle -> platform-samples
+@endwbs

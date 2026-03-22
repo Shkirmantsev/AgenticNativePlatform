@@ -1,0 +1,53 @@
+namespace: ai-models
+runtime:
+  type: none  # none | ollama | vllm
+lmstudio:
+  enabled: false
+  serviceNamespace: ai-gateway
+  serviceName: lmstudio-external
+  hostIP: 192.168.1.108
+  port: 1234
+tei:
+  enabled: true
+  image: ghcr.io/huggingface/text-embeddings-inference:1.8
+  modelId: onnx-models/all-MiniLM-L6-v2-onnx
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+      ephemeral-storage: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+      ephemeral-storage: "4Gi"
+ollama:
+  image: ollama/ollama:v0.18.0
+  defaultModel: qwen2.5:7b-instruct
+  storage: 30Gi
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+      ephemeral-storage: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+      ephemeral-storage: "10Gi"
+vllm:
+  image: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0
+  model: Qwen/Qwen2.5-0.5B-Instruct
+  storage: 30Gi
+  cpuKvCacheSpace: "2"
+  cpuReservedCpu: "1"
+  ldPreload: ""
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "4Gi"
+      ephemeral-storage: "4Gi"
+    limits:
+      cpu: "4000m"
+      memory: "8Gi"
+      ephemeral-storage: "10Gi"
+serviceAccount:
+  automountServiceAccountToken: false

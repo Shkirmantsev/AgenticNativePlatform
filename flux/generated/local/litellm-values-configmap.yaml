@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-values
+  namespace: flux-system
+data:
+  values.yaml: |
+    config: |
+      general_settings:
+        master_key: os.environ/LITELLM_MASTER_KEY
+        store_model_in_db: false
+        infer_model_from_keys: true
+      litellm_settings:
+        set_verbose: false
+      model_list:
+        - model_name: default-gemini
+          litellm_params:
+            model: gemini/gemini-3.1-flash-lite-preview
+            api_key: os.environ/GOOGLE_API_KEY
+        - model_name: openai-default
+          litellm_params:
+            model: openai/gpt-4o-mini
+            api_key: os.environ/OPENAI_API_KEY
+        - model_name: anthropic-default
+          litellm_params:
+            model: anthropic/claude-3-5-haiku-20241022
+            api_key: os.environ/ANTHROPIC_API_KEY
+        - model_name: vertex-gemini
+          litellm_params:
+            model: vertex_ai/gemini-2.5-flash
+            vertex_project: os.environ/VERTEX_PROJECT_ID
+            vertex_location: os.environ/VERTEX_LOCATION
+        - model_name: bedrock-claude
+          litellm_params:
+            model: bedrock/anthropic.claude-3-5-haiku-20241022-v1:0
+            aws_region_name: os.environ/AWS_REGION
+        - model_name: local-lmstudio
+          litellm_params:
+            model: openai/qwen/qwen3-4b
+            api_base: http://lmstudio-external.ai-gateway.svc.cluster.local:1234/v1
+            api_key: dummy
+        - model_name: local-lmstudio-embeddings
+          litellm_params:
+            model: openai/text-embedding-qwen3-embedding-0.6b
+            api_base: http://lmstudio-external.ai-gateway.svc.cluster.local:1234/v1
+            api_key: dummy
+        - model_name: local-ollama
+          litellm_params:
+            model: ollama/qwen2.5:7b-instruct
+            api_base: http://ollama.ai-models.svc.cluster.local:11434
+        - model_name: local-vllm
+          litellm_params:
+            model: openai/local-vllm
+            api_base: http://vllm-openai.ai-models.svc.cluster.local:8000/v1
+            api_key: dummy

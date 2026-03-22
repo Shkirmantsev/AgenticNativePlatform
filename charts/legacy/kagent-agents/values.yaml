@@ -1,0 +1,13 @@
+namespace: kagent
+existingSecretName: kagent-agentgateway
+apiKeySecretKey: OPENAI_API_KEY
+modelName: default-gemini
+openaiBaseUrl: http://agentgateway.agentgateway-system.svc.cluster.local:8080/v1
+sampleAgent:
+  enabled: true
+  name: k8s-a2a-agent
+  description: An example A2A agent that knows how to use Kubernetes tools.
+remoteMcp:
+  enabled: true
+  name: echo-mcp
+  url: http://echo-mcp.kagent.svc.cluster.local:3001/mcp

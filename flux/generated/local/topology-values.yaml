@@ -1,0 +1,14 @@
+topology:
+  name: local
+  controlPlane:
+    name: localhost
+    ansible_host: 127.0.0.1
+    ansible_user: dmytro
+    connection: local
+  workers: []
+  lmstudio:
+    host: 192.168.1.108
+    port: 1234
+  metallb:
+    start: 192.168.1.240
+    end: 192.168.1.250

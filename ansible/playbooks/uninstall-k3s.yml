@@ -1,0 +1,14 @@
+---
+- name: Uninstall k3s from all nodes
+  hosts: all
+  become: true
+  tasks:
+    - name: Uninstall k3s server if present
+      shell: /usr/local/bin/k3s-uninstall.sh || true
+      args:
+        executable: /bin/bash
+
+    - name: Uninstall k3s agent if present
+      shell: /usr/local/bin/k3s-agent-uninstall.sh || true
+      args:
+        executable: /bin/bash

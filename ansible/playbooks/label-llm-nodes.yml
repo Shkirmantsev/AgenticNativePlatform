@@ -1,0 +1,15 @@
+---
+- name: Label selected worker nodes for self-hosted runtime scheduling
+  hosts: k3s_server
+  become: true
+  tasks:
+    - name: Label all workers as llm runtime capable by default in the starter kit
+      shell: |
+        export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+        for n in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}'); do
+          if [ "$n" != "$(hostname)" ]; then
+            kubectl label node $n llm-runtime=true --overwrite
+          fi
+        done
+      args:
+        executable: /bin/bash

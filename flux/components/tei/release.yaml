@@ -1,0 +1,29 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tei-embeddings
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 20m
+  targetNamespace: ai-models
+  chart:
+    spec:
+      chart: ./charts/tei-embeddings
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: platform
+        namespace: flux-system
+      interval: 1m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: ConfigMap
+      name: tei-values
+      valuesKey: values.yaml

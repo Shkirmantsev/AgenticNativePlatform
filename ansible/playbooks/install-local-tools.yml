@@ -1,0 +1,229 @@
+---
+- name: Install local operator tools on the workstation
+  hosts: localhost
+  connection: local
+  become: true
+  vars:
+    install_k9s: "{{ install_k9s | default(true) | bool }}"
+    iac_tool: "{{ iac_tool | default('tofu') }}"
+    kube_version: "v1.34.0"
+    k9s_arch_map:
+      x86_64: amd64
+      aarch64: arm64
+  tasks:
+    - name: Show operator tool installation mode
+      ansible.builtin.debug:
+        msg:
+          - "OS family: {{ ansible_os_family }}"
+          - "System: {{ ansible_system }}"
+          - "Requested IaC tool mode: {{ iac_tool }}"
+          - "Install k9s: {{ install_k9s }}"
+
+    - name: Ensure base packages are present on Debian-family systems
+      ansible.builtin.apt:
+        update_cache: true
+        name:
+          - age
+          - jq
+          - curl
+          - git
+          - tar
+          - unzip
+          - ca-certificates
+          - gnupg
+          - apt-transport-https
+          - software-properties-common
+          - python3-pip
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Ensure local bin directory exists on Linux
+      ansible.builtin.file:
+        path: /usr/local/bin
+        state: directory
+        mode: '0755'
+      when: ansible_system == 'Linux'
+
+    - name: Install age on Linux from the official release when not already present
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v age >/dev/null 2>&1; then
+          arch="amd64"
+          if [ "$(uname -m)" = "aarch64" ]; then arch="arm64"; fi
+          version="$(curl -fsSL https://api.github.com/repos/FiloSottile/age/releases/latest | jq -r .tag_name | sed 's/^v//')"
+          tmpdir="$(mktemp -d)"
+          curl -fsSL -o "$tmpdir/age.tar.gz" "https://github.com/FiloSottile/age/releases/download/v${version}/age-v${version}-linux-${arch}.tar.gz"
+          tar -xzf "$tmpdir/age.tar.gz" -C "$tmpdir"
+          install -m 0755 "$tmpdir"/age/age "$tmpdir"/age/age-keygen /usr/local/bin/
+          rm -rf "$tmpdir"
+        fi
+      args:
+        executable: /bin/bash
+      when: ansible_system == 'Linux'
+
+    - name: Install kubectl on Linux
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v kubectl >/dev/null 2>&1; then
+          arch="amd64"
+          if [ "$(uname -m)" = "aarch64" ]; then arch="arm64"; fi
+          curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBE_VERSION}/bin/linux/${arch}/kubectl"
+          chmod 0755 /usr/local/bin/kubectl
+        fi
+      args:
+        executable: /bin/bash
+      environment:
+        KUBE_VERSION: "{{ kube_version }}"
+      when: ansible_system == 'Linux'
+
+    - name: Install Helm on Linux
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v helm >/dev/null 2>&1; then
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        fi
+      args:
+        executable: /bin/bash
+      when: ansible_system == 'Linux'
+
+    - name: Install Flux CLI on Linux
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v flux >/dev/null 2>&1; then
+          curl -fsSL https://fluxcd.io/install.sh | bash
+        fi
+      args:
+        executable: /bin/bash
+      when: ansible_system == 'Linux'
+
+    - name: Detect architecture for k9s
+      ansible.builtin.set_fact:
+        k9s_arch: "{{ k9s_arch_map.get(ansible_architecture, 'amd64') }}"
+      when:
+        - ansible_system == 'Linux'
+        - install_k9s
+
+    - name: Install k9s on Linux from the official release tarball
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v k9s >/dev/null 2>&1; then
+          tmpdir="$(mktemp -d)"
+          curl -fsSL "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_${K9S_ARCH}.tar.gz" -o "$tmpdir/k9s.tgz"
+          tar -xzf "$tmpdir/k9s.tgz" -C "$tmpdir"
+          install -m 0755 "$tmpdir/k9s" /usr/local/bin/k9s
+          rm -rf "$tmpdir"
+        fi
+      args:
+        executable: /bin/bash
+      environment:
+        K9S_ARCH: "{{ k9s_arch | default('amd64') }}"
+      when:
+        - ansible_system == 'Linux'
+        - install_k9s
+
+    - name: Explain why k9s was skipped on unsupported systems
+      ansible.builtin.debug:
+        msg: "Skipping k9s installation because install_k9s={{ install_k9s }} or ansible_system={{ ansible_system }} is not Linux."
+      when: not install_k9s or ansible_system != 'Linux'
+
+    - name: Install sops on Linux from the official release when not already present
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v sops >/dev/null 2>&1; then
+          arch="amd64"
+          if [ "$(uname -m)" = "aarch64" ]; then arch="arm64"; fi
+          version="$(curl -fsSL https://api.github.com/repos/getsops/sops/releases/latest | jq -r .tag_name | sed 's/^v//')"
+          curl -fsSL -o /usr/local/bin/sops "https://github.com/getsops/sops/releases/download/v${version}/sops-v${version}.linux.${arch}"
+          chmod 0755 /usr/local/bin/sops
+        fi
+      args:
+        executable: /bin/bash
+      when: ansible_system == 'Linux'
+
+    - name: Install OpenTofu on Linux when selected
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v tofu >/dev/null 2>&1; then
+          curl --proto '=https' --tlsv1.2 -fsSL https://get.opentofu.org/install-opentofu.sh | bash -s -- --install-method standalone
+        fi
+      args:
+        executable: /bin/bash
+      when:
+        - ansible_system == 'Linux'
+        - iac_tool in ['tofu', 'both']
+
+    - name: Install Terraform from the official HashiCorp APT repository on Debian family when selected
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if ! command -v terraform >/dev/null 2>&1; then
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" > /etc/apt/sources.list.d/hashicorp.list
+          apt-get update
+          apt-get install -y terraform
+        fi
+      args:
+        executable: /bin/bash
+      when:
+        - ansible_system == 'Linux'
+        - ansible_os_family == 'Debian'
+        - iac_tool in ['terraform', 'both']
+
+    - name: Warn when Terraform was requested on a non-Debian Linux workstation
+      ansible.builtin.debug:
+        msg: "Terraform auto-install is implemented for Debian-family Linux only in this playbook. Install Terraform manually or use OpenTofu on this host."
+      when:
+        - ansible_system == 'Linux'
+        - ansible_os_family != 'Debian'
+        - iac_tool in ['terraform', 'both']
+
+    - name: Warn on unsupported non-Linux workstation
+      ansible.builtin.debug:
+        msg: "This playbook currently installs workstation binaries automatically only on Linux. Install tools manually on this OS."
+      when: ansible_system != 'Linux'
+
+    - name: Verify age is installed when Linux
+      ansible.builtin.command: age-keygen -version
+      changed_when: false
+      when: ansible_system == 'Linux'
+
+    - name: Verify sops is installed when Linux
+      ansible.builtin.command: sops --version
+      changed_when: false
+      when: ansible_system == 'Linux'
+
+    - name: Verify kubectl is installed when Linux
+      ansible.builtin.command: kubectl version --client
+      changed_when: false
+      when: ansible_system == 'Linux'
+
+    - name: Verify helm is installed when Linux
+      ansible.builtin.command: helm version --short
+      changed_when: false
+      when: ansible_system == 'Linux'
+
+    - name: Verify flux is installed when Linux
+      ansible.builtin.command: flux --version
+      changed_when: false
+      when: ansible_system == 'Linux'
+
+    - name: Verify OpenTofu is installed when requested
+      ansible.builtin.command: tofu version
+      changed_when: false
+      when:
+        - ansible_system == 'Linux'
+        - iac_tool in ['tofu', 'both']
+
+    - name: Verify Terraform is installed when requested
+      ansible.builtin.command: terraform version
+      changed_when: false
+      when:
+        - ansible_system == 'Linux'
+        - iac_tool in ['terraform', 'both']
+
+    - name: Verify k9s is installed when requested on Linux
+      ansible.builtin.command: k9s version
+      changed_when: false
+      when:
+        - ansible_system == 'Linux'
+        - install_k9s
