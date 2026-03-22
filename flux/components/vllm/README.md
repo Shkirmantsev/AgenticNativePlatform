@@ -13,14 +13,14 @@ Important notes:
 On a machine that has Docker or Podman and internet access:
 
 ```bash
-docker pull public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
-docker save public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest -o /tmp/vllm-cpu-release-repo-latest.tar
+docker pull public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0
+docker save public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0 -o /tmp/vllm-cpu-release-repo-v0.18.0.tar
 ```
 
 Then copy that tarball into every k3s node image import directory:
 
 ```bash
-make preimport-vllm-image-tarball TOPOLOGY=local VLLM_IMAGE_TARBALL=/tmp/vllm-cpu-release-repo-latest.tar
+make preimport-vllm-image-tarball TOPOLOGY=local VLLM_IMAGE_TARBALL=/tmp/vllm-cpu-release-repo-v0.18.0.tar
 ```
 
 K3s will load tarballs placed under `/var/lib/rancher/k3s/agent/images/` into containerd.

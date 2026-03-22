@@ -20,13 +20,14 @@ The staged roots now render through explicit profile composition:
 - topology defaults:
   - `platform-profile-full` for host-based topologies
   - `platform-profile-workspace` for `github-workspace`
+    - this workspace-specific profile is now a thin alias of `platform-profile-fast-serving`
 - lighter opt-in profiles:
   - `platform-profile-fast`
   - `platform-profile-fast-serving`
   - `platform-profile-fast-context`
 
 The older monolithic `platform-core` / `platform` path and the static pre-rendered
-`flux/clusters/*` roots are legacy compatibility paths and are not the primary
+cluster roots have been archived under `flux/legacy/`. They are not the primary
 bootstrap model for new work.
 
 ## Runtime architecture

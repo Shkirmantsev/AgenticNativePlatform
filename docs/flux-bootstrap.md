@@ -25,6 +25,8 @@ make install-flux KUBE_CONTEXT=dev-cluster
 - `install-flux-local`: local bootstrap convenience target.
 - `install-flux`: topology-neutral target, with optional explicit context.
 
+`make bootstrap-flux-git` now applies generated manifests from `flux/generated/clusters/<cluster-id>/bootstrap-flux/`, so the GitRepository and root Flux Kustomization are rendered declaratively by OpenTofu before the thin shell wrapper applies them.
+
 After `make bootstrap-flux-git`, this repository reconciles through the staged root:
 
 - `platform-bootstrap`

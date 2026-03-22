@@ -29,8 +29,9 @@ Each topology generates:
 - `flux/generated/<topology>/vllm-values-configmap.yaml`
 - `flux/generated/<topology>/echo-mcp-values-configmap.yaml`
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/...`
-- optional apply paths under `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/samples-echo-mcp/`
-- optional apply paths under `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/weave-gitops/`
+- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/bootstrap-flux/`
+- optional Flux-managed child roots under `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/samples-echo-mcp/`
+- optional Flux-managed child roots under `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/weave-gitops/`
 
 Host-based topologies (`local`, `minipc`, `hybrid`, `hybrid-remote`) additionally generate:
 
@@ -54,6 +55,7 @@ The Flux manifest generator now renders staged roots through explicit profiles:
 - `platform-profile-fast-context`
 
 Leave `platform_profile` unset to use the topology default, or set it explicitly through `TF_VAR_platform_profile` or `PLATFORM_PROFILE` in the repo scripts and `make` targets.
+For `github-workspace`, the default `platform-profile-workspace` now composes the lighter `platform-profile-fast-serving` stack.
 
 ## Optional modules
 

@@ -66,6 +66,19 @@ locals {
 
   cluster_root_kustomization = templatefile("${path.module}/templates/cluster-root-kustomization.yaml.tftpl", {})
 
+  flux_bootstrap_kustomization = templatefile("${path.module}/templates/flux-bootstrap-kustomization.yaml.tftpl", {})
+
+  flux_bootstrap_gitrepository = templatefile("${path.module}/templates/flux-bootstrap-gitrepository.yaml.tftpl", {
+    git_repo_url = var.git_repo_url
+    git_branch   = var.git_branch
+  })
+
+  flux_bootstrap_platform = templatefile("${path.module}/templates/flux-bootstrap-platform.yaml.tftpl", {
+    cluster_path          = "./flux/generated/clusters/${local.cluster_id}"
+    platform_root_timeout = var.platform_root_timeout
+    secrets_mode          = var.secrets_mode
+  })
+
   platform_bootstrap = templatefile("${path.module}/templates/platform-bootstrap.yaml.tftpl", {
     cluster_path               = "./flux/generated/clusters/${local.cluster_id}/bootstrap"
     platform_bootstrap_timeout = var.platform_bootstrap_timeout
@@ -80,6 +93,18 @@ locals {
   platform_applications = templatefile("${path.module}/templates/platform-applications.yaml.tftpl", {
     cluster_path          = "./flux/generated/clusters/${local.cluster_id}/apps"
     platform_apps_timeout = var.platform_apps_timeout
+  })
+
+  platform_ops_ui = templatefile("${path.module}/templates/platform-ops-ui.yaml.tftpl", {
+    cluster_path    = "./flux/generated/clusters/${local.cluster_id}/weave-gitops"
+    enabled         = var.enable_weave_gitops_ui
+    depends_on_name = "platform-infrastructure"
+  })
+
+  platform_samples = templatefile("${path.module}/templates/platform-samples.yaml.tftpl", {
+    cluster_path    = "./flux/generated/clusters/${local.cluster_id}/samples-echo-mcp"
+    enabled         = var.enable_samples_echo_mcp
+    depends_on_name = "platform-applications"
   })
 
   bootstrap_kustomization = templatefile("${path.module}/templates/bootstrap-kustomization.yaml.tftpl", {
@@ -122,9 +147,14 @@ locals {
   cluster_files = merge(
     {
       "kustomization.yaml"                                        = local.cluster_root_kustomization
+      "platform-ops-ui.yaml"                                      = local.platform_ops_ui
+      "platform-samples.yaml"                                     = local.platform_samples
       "platform-bootstrap.yaml"                                   = local.platform_bootstrap
       "platform-infrastructure.yaml"                              = local.platform_infrastructure
       "platform-applications.yaml"                                = local.platform_applications
+      "bootstrap-flux/kustomization.yaml"                         = local.flux_bootstrap_kustomization
+      "bootstrap-flux/platform-gitrepository.yaml"                = local.flux_bootstrap_gitrepository
+      "bootstrap-flux/platform-root.yaml"                         = local.flux_bootstrap_platform
       "bootstrap/generated-litellm-values-configmap.yaml"         = local.litellm_values_configmap
       "bootstrap/generated-ollama-values-configmap.yaml"          = local.ollama_values_configmap
       "bootstrap/generated-tei-values-configmap.yaml"             = local.tei_values_configmap

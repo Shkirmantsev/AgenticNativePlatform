@@ -1,6 +1,6 @@
 FROM node:22-bookworm-slim
 
-ARG MCP_EVERYTHING_VERSION=latest
+ARG MCP_EVERYTHING_VERSION=2026.1.26
 ENV PORT=3001
 
 RUN npm install -g "@modelcontextprotocol/server-everything@${MCP_EVERYTHING_VERSION}" \

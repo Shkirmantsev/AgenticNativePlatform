@@ -18,7 +18,7 @@ Scripts are kept for local repository operations that are not natural Ansible ta
 - rendering Flux ConfigMaps and cluster roots
 - rendering external plaintext secrets
 - converting plaintext secrets into encrypted SOPS files
-- bootstrapping Flux Git sources and the Flux SOPS secret
+- applying generated Flux bootstrap manifests and bootstrapping the Flux SOPS secret
 
 ## What is committed to Git
 
@@ -87,7 +87,7 @@ make k9s-local
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml` is the generated cluster root used by bootstrap scripts
 - the generated cluster root fans out into staged Flux `Kustomization` resources so CRDs and charts install before dependent custom resources
 - the staged infra/apps roots render through `flux/components/profiles/`, which compose bundle Kustomizations under `flux/components/bundles/`
-- optional apply paths such as `samples-echo-mcp/` and `weave-gitops/` are generated alongside the staged roots without entering the default bootstrap path
+- optional Flux-managed child roots such as `platform-samples` and `platform-ops-ui` are generated alongside the staged roots and stay suspended until explicitly enabled
 - `flux/generated/<topology>/topology-values.yaml` is informational metadata for operators and is not applied to Kubernetes
 
 Validate generated manifests with:
@@ -107,6 +107,7 @@ Default profile mapping stays conservative:
 
 - host-based topologies default to `platform-profile-full`
 - `github-workspace` defaults to `platform-profile-workspace`
+  - this workspace-specific profile now composes the lighter `platform-profile-fast-serving` stack
 
 ## GitHub workspace topology
 
@@ -233,7 +234,7 @@ Open the common access paths in the background:
 make open-research-access
 ```
 
-`make open-research-access` is best-effort: it tries all standard port-forwards, prints a summary table, and reports failures only after attempting every endpoint.
+`make open-research-access` is profile-aware: it skips services that are not present in the current cluster, tries all remaining standard port-forwards, prints a summary table, and reports failures only after attempting every available endpoint.
 
 Close them:
 
@@ -283,7 +284,7 @@ make open-prometheus PROMETHEUS_LOCAL_PORT=19090
 make open-qdrant QDRANT_LOCAL_PORT=16333
 ```
 
-LiteLLM itself requires `Authorization: Bearer <LITELLM_MASTER_KEY>`. If your `.env` has not overridden it yet, the first-bootstrap default is still `change-me`.
+LiteLLM itself requires `Authorization: Bearer <LITELLM_MASTER_KEY>`. Set it explicitly in `.env` if you want stable local curl/test credentials; otherwise the external secret renderer generates a random key for the cluster-local secret.
 
 Use the explicit checks when validating local access:
 
@@ -310,38 +311,37 @@ Local Docker images are not automatically visible to `k3s`, because the cluster 
 For the optional `echo-mcp` sample, you can avoid pushing to a registry by importing the built image into all `k3s` nodes:
 
 ```bash
-make build-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make save-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make build-echo-mcp-image ECHO_MCP_IMAGE=echo-mcp:local
+make save-echo-mcp-image ECHO_MCP_IMAGE=echo-mcp:local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 make preimport-echo-mcp-image-tarball TOPOLOGY=local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 ```
 
 Or use the shortcut:
 
 ```bash
-make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=echo-mcp:local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 ```
 
 This only prepares the opt-in sample image. It does not add `/mcp/echo`, a default `RemoteMCPServer`, or an `echo-validation-agent` to the base platform path.
 
-To deploy the sample server itself, render the generated optional bundle and apply it explicitly:
+To deploy the sample server itself, enable the optional Flux-managed child root and reconcile:
 
 ```bash
-make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/samples-echo-mcp
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false ECHO_MCP_IMAGE=echo-mcp:local PLATFORM_ENABLE_SAMPLES_ECHO_MCP=true
+make reconcile
 ```
 
 That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
 
 ## Optional Weave GitOps UI
 
-The Weave GitOps dashboard is now a Flux-managed optional bundle.
+The Weave GitOps dashboard is now a Flux-managed optional child root.
 
-Render the staged roots, apply the optional path, and use localhost access:
+Render the staged roots with the optional child root enabled, provide a local-admin password or bcrypt hash, and use localhost access:
 
 ```bash
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/weave-gitops
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false PLATFORM_ENABLE_WEAVE_GITOPS_UI=true WEAVE_GITOPS_ADMIN_PASSWORD='<strong-password>'
+make reconcile
 kubectl --kubeconfig .kube/generated/current.yaml -n flux-system port-forward svc/weave-gitops 19001:9001
 ```
 
@@ -351,9 +351,9 @@ The bundle is configured explicitly for local operator use:
 
 - `ClusterIP` service only
 - ingress disabled
-- local admin user enabled
+- local admin user enabled only when `Secret/flux-system/cluster-user-auth` is rendered
 
-The bundled demo credentials are `admin` / `change-me`. Rotate the bcrypt hash in `flux/components/weave-gitops/release.yaml` before using anything except localhost-only access.
+The repository no longer ships a baked demo password. Set `WEAVE_GITOPS_ADMIN_PASSWORD` or `WEAVE_GITOPS_ADMIN_PASSWORD_HASH` before rendering the optional UI root.
 
 The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
 They also run `k3s ctr images import` immediately after copying the tarball so new image tags are available without waiting for a background import path.

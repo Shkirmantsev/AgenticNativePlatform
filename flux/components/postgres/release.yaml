@@ -22,8 +22,11 @@ spec:
       digest: "sha256:8e4be714e960f58917a7758a82563a72397835a5f448ae46ac6ac8061bc0a662"
     auth:
       username: platform
-      password: platform-change-me
       database: platform
+      existingSecret: platform-postgres-auth
+      secretKeys:
+        adminPasswordKey: postgres-password
+        userPasswordKey: password
     primary:
       persistence:
         size: 20Gi

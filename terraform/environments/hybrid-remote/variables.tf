@@ -52,6 +52,11 @@ variable "platform_bootstrap_timeout" {
   default = "10m"
 }
 
+variable "platform_root_timeout" {
+  type    = string
+  default = "30m"
+}
+
 variable "platform_infra_timeout" {
   type    = string
   default = "15m"
@@ -60,6 +65,26 @@ variable "platform_infra_timeout" {
 variable "platform_apps_timeout" {
   type    = string
   default = "20m"
+}
+
+variable "git_repo_url" {
+  type    = string
+  default = ""
+}
+
+variable "git_branch" {
+  type    = string
+  default = "main"
+}
+
+variable "enable_weave_gitops_ui" {
+  type    = bool
+  default = false
+}
+
+variable "enable_samples_echo_mcp" {
+  type    = bool
+  default = false
 }
 
 variable "platform_profile" {
@@ -109,7 +134,7 @@ variable "vllm_image_repository" {
 
 variable "vllm_image_tag" {
   type    = string
-  default = "latest"
+  default = "v0.18.0"
 }
 
 variable "vllm_cpu_kvcache_space" {
@@ -129,5 +154,5 @@ variable "vllm_ld_preload" {
 
 variable "echo_mcp_image" {
   type    = string
-  default = "ghcr.io/example/echo-mcp:0.1.0"
+  default = "echo-mcp:local"
 }

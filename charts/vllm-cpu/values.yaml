@@ -1,7 +1,7 @@
 namespace: ai-models
 image:
   repository: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo
-  tag: latest
+  tag: v0.18.0
   pullPolicy: IfNotPresent
 service:
   port: 8000

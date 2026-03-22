@@ -24,7 +24,16 @@ The staged roots now point at explicit Flux profiles:
 
 - host-based topologies default to `platform-profile-full`
 - `github-workspace` defaults to `platform-profile-workspace`
+  - this workspace profile now tracks the lighter `platform-profile-fast-serving` composition
 - lighter opt-in profiles are `platform-profile-fast`, `platform-profile-fast-serving`, and `platform-profile-fast-context`
+
+Convenience targets for profile switching:
+
+```bash
+make profile-fast
+make profile-fast-serving
+make profile-full
+```
 
 Useful follow-up commands:
 
@@ -64,6 +73,7 @@ make verify
 ```
 
 `make install-flux-local`, `make reconcile`, `make verify`, `make cluster-status`, and `make sops-bootstrap-cluster` use `.kube/generated/current.yaml` through explicit `kubectl` / `flux` binding in the `Makefile`.
+`make bootstrap-flux-git` applies generated manifests from `flux/generated/clusters/<cluster-id>/bootstrap-flux/`, so the GitRepository and root Flux Kustomization are rendered declaratively before the thin shell wrapper applies them.
 
 ## Validate generated manifests locally
 
@@ -134,7 +144,7 @@ Open all common localhost access paths in the background:
 make open-research-access
 ```
 
-`make open-research-access` is best-effort: it tries every standard port-forward, prints a summary table, and only fails after attempting the full set.
+`make open-research-access` is profile-aware: it skips services that are not present in the current cluster, tries every remaining standard port-forward, prints a summary table, and only fails after attempting the available set.
 
 Close them:
 
@@ -188,7 +198,7 @@ LiteLLM requires the master-key header:
 
 ```bash
 make check-litellm
-curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY}" http://localhost:4000/v1/models
 ```
 
 AgentGateway can be tested the same way:
@@ -196,7 +206,7 @@ AgentGateway can be tested the same way:
 ```bash
 make check-agentgateway
 make check-agentgateway-openai
-curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY}" http://localhost:15000/v1/models
 ```
 
 If LiteLLM, PostgreSQL, Qdrant, Redis, or TEI appear to be missing after a pause/resume cycle, diagnose runtime state before editing manifests:
@@ -238,20 +248,20 @@ make close-qdrant
 On a connected machine:
 
 ```bash
-docker pull public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
-docker save public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest -o /tmp/vllm-cpu-release-repo-latest.tar
+docker pull public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0
+docker save public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0 -o /tmp/vllm-cpu-release-repo-v0.18.0.tar
 ```
 
 Then import to k3s nodes:
 
 ```bash
-make preimport-vllm-image-tarball TOPOLOGY=local VLLM_IMAGE_TARBALL=/tmp/vllm-cpu-release-repo-latest.tar
+make preimport-vllm-image-tarball TOPOLOGY=local VLLM_IMAGE_TARBALL=/tmp/vllm-cpu-release-repo-v0.18.0.tar
 ```
 
 ## vLLM image pre-import option A (online pre-pull)
 
 ```bash
-make preimport-vllm-image-online TOPOLOGY=local VLLM_IMAGE=public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
+make preimport-vllm-image-online TOPOLOGY=local VLLM_IMAGE=public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0
 ```
 
 ## echo-mcp sample image import without pushing
@@ -259,38 +269,37 @@ make preimport-vllm-image-online TOPOLOGY=local VLLM_IMAGE=public.ecr.aws/q9t5s3
 Build and import the optional sample MCP image into `k3s` containerd:
 
 ```bash
-make build-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make save-echo-mcp-image ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make build-echo-mcp-image ECHO_MCP_IMAGE=echo-mcp:local
+make save-echo-mcp-image ECHO_MCP_IMAGE=echo-mcp:local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 make preimport-echo-mcp-image-tarball TOPOLOGY=local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 ```
 
 Or use the shortcut:
 
 ```bash
-make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0 ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
+make prepare-echo-mcp-image-local TOPOLOGY=local ECHO_MCP_IMAGE=echo-mcp:local ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar
 ```
 
 On `TOPOLOGY=github-workspace`, the same target imports into the `k3d` cluster instead of `k3s` host containerd.
 
 This only prepares the opt-in sample image. It does not create `/mcp/echo`, a default `RemoteMCPServer`, or an `echo-validation-agent` in the base platform profile.
 
-To deploy the sample server itself, render the generated optional bundle and apply it explicitly:
+To deploy the sample server itself, enable the optional Flux-managed child root and reconcile:
 
 ```bash
-make flux-values TOPOLOGY=local ECHO_MCP_IMAGE=ghcr.io/<your-user>/echo-mcp:0.1.0
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/samples-echo-mcp
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false ECHO_MCP_IMAGE=echo-mcp:local PLATFORM_ENABLE_SAMPLES_ECHO_MCP=true
+make reconcile
 ```
 
 That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
 
 ## Optional Weave GitOps UI
 
-Render the staged roots, then apply the opt-in UI bundle:
+Render the staged roots with the optional child root enabled, provide a local-admin password or bcrypt hash, and reconcile:
 
 ```bash
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
-kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/weave-gitops
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false PLATFORM_ENABLE_WEAVE_GITOPS_UI=true WEAVE_GITOPS_ADMIN_PASSWORD='<strong-password>'
+make reconcile
 kubectl --kubeconfig .kube/generated/current.yaml -n flux-system port-forward svc/weave-gitops 19001:9001
 ```
 
@@ -300,9 +309,9 @@ The optional bundle keeps the dashboard out of the default bootstrap path:
 
 - service type is `ClusterIP`
 - ingress is disabled
-- the chart creates a local admin user for localhost operator access
+- the chart reads the local admin credential from `Secret/flux-system/cluster-user-auth`
 
-The bundled demo credentials are `admin` / `change-me`. Rotate the bcrypt hash in `flux/components/weave-gitops/release.yaml` before exposing the dashboard beyond localhost.
+The repository no longer ships a baked demo password. Set `WEAVE_GITOPS_ADMIN_PASSWORD` or `WEAVE_GITOPS_ADMIN_PASSWORD_HASH` before rendering the optional UI root.
 
 These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is missing.
 They also import the tarball into `k3s` containerd immediately with `k3s ctr images import`.

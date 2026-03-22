@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INPUT_TOPOLOGY="${1:-}"
 ENV_TOPOLOGY="${TOPOLOGY-}"
+VLLM_IMAGE_INPUT="${VLLM_IMAGE-}"
+ECHO_MCP_IMAGE_INPUT="${ECHO_MCP_IMAGE-}"
 
 if [[ -f "${ROOT_DIR}/.env" ]]; then
   # shellcheck disable=SC1091
@@ -13,7 +15,7 @@ fi
 TOPOLOGY="${INPUT_TOPOLOGY:-${ENV_TOPOLOGY:-${TOPOLOGY:-local}}}"
 TF_BIN="${TF_BIN:-tofu}"
 TF_DIR="${ROOT_DIR}/terraform/environments/${TOPOLOGY}"
-VLLM_IMAGE="${VLLM_IMAGE:-public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest}"
+VLLM_IMAGE="${VLLM_IMAGE_INPUT:-${VLLM_IMAGE:-public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0}}"
 VLLM_IMAGE_REPOSITORY="${VLLM_IMAGE%:*}"
 VLLM_IMAGE_TAG="${VLLM_IMAGE##*:}"
 
@@ -31,7 +33,7 @@ TF_VAR_vllm_image_tag="${VLLM_IMAGE_TAG}" \
 TF_VAR_vllm_cpu_kvcache_space="${VLLM_CPU_KVCACHE_SPACE:-2}" \
 TF_VAR_vllm_cpu_num_of_reserved_cpu="${VLLM_CPU_NUM_OF_RESERVED_CPU:-1}" \
 TF_VAR_vllm_ld_preload="${VLLM_LD_PRELOAD:-}" \
-TF_VAR_echo_mcp_image="${ECHO_MCP_IMAGE:-ghcr.io/example/echo-mcp:0.1.0}" \
+TF_VAR_echo_mcp_image="${ECHO_MCP_IMAGE_INPUT:-${ECHO_MCP_IMAGE:-echo-mcp:local}}" \
 TF_VAR_lmstudio_port="${LMSTUDIO_PORT:-1234}" \
 "${TF_BIN}" -chdir="${TF_DIR}" apply -auto-approve -input=false -lock-timeout=60s
 

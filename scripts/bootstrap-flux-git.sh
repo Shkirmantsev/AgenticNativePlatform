@@ -14,47 +14,19 @@ if [[ -z "${GIT_REPO_URL}" && -f .env ]]; then
   source .env
 fi
 : "${GIT_REPO_URL:?Set GIT_REPO_URL in the environment or .env}"
-TOPOLOGY="$TOPOLOGY" ENV="$ENVIRONMENT" RUNTIME="$RUNTIME" SECRETS_MODE="$SECRETS_MODE" PLATFORM_PROFILE="$PLATFORM_PROFILE" LMSTUDIO_ENABLED="$LMSTUDIO_ENABLED" ./scripts/render-cluster-kustomization.sh
-./scripts/render-flux-values.sh "$TOPOLOGY"
+TOPOLOGY="$TOPOLOGY" \
+ENV="$ENVIRONMENT" \
+RUNTIME="$RUNTIME" \
+SECRETS_MODE="$SECRETS_MODE" \
+PLATFORM_PROFILE="$PLATFORM_PROFILE" \
+LMSTUDIO_ENABLED="$LMSTUDIO_ENABLED" \
+PLATFORM_ROOT_TIMEOUT="$PLATFORM_ROOT_TIMEOUT" \
+GIT_REPO_URL="$GIT_REPO_URL" \
+GIT_BRANCH="$GIT_BRANCH" \
+./scripts/render-cluster-kustomization.sh
 CLUSTER_PATH="./flux/generated/clusters/${TOPOLOGY}-${ENVIRONMENT}-${RUNTIME}-${SECRETS_MODE}"
-DECRYPTION_BLOCK=""
-if [[ "${SECRETS_MODE}" == "sops" ]]; then
-  DECRYPTION_BLOCK=$(cat <<'EOF'
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age
-EOF
-)
-fi
-cat <<EOF | kubectl apply -f -
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: platform
-  namespace: flux-system
-spec:
-  interval: 1m
-  url: ${GIT_REPO_URL}
-  ref:
-    branch: ${GIT_BRANCH}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: platform
-  namespace: flux-system
-spec:
-  interval: 10m
-  prune: true
-  wait: true
-  timeout: ${PLATFORM_ROOT_TIMEOUT}
-  sourceRef:
-    kind: GitRepository
-    name: platform
-  path: ${CLUSTER_PATH}
-${DECRYPTION_BLOCK}
-EOF
+BOOTSTRAP_PATH="${CLUSTER_PATH}/bootstrap-flux"
+kubectl apply -k "${BOOTSTRAP_PATH}"
 remote_line="$(git ls-remote --exit-code "${GIT_REPO_URL}" "refs/heads/${GIT_BRANCH}")"
 remote_head="${remote_line%%$'\t'*}"
-echo "Flux Git source bootstrapped for ${CLUSTER_PATH} from ${GIT_REPO_URL}@${GIT_BRANCH} (${remote_head}) (PLATFORM_PROFILE=${PLATFORM_PROFILE:-auto}, LMSTUDIO_ENABLED=${LMSTUDIO_ENABLED}, SECRETS_MODE=${SECRETS_MODE})"
+echo "Flux Git source bootstrapped from ${BOOTSTRAP_PATH} for ${CLUSTER_PATH} from ${GIT_REPO_URL}@${GIT_BRANCH} (${remote_head}) (PLATFORM_PROFILE=${PLATFORM_PROFILE:-auto}, LMSTUDIO_ENABLED=${LMSTUDIO_ENABLED}, SECRETS_MODE=${SECRETS_MODE})"

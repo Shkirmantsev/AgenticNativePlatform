@@ -4,4 +4,4 @@ metadata:
   name: echo-mcp-values
   namespace: flux-system
 data:
-  image: ghcr.io/example/echo-mcp:0.1.0
+  image: echo-mcp:local

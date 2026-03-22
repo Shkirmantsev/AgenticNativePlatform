@@ -8,11 +8,12 @@ These charts are part of the intended production-style path and are installed th
 - `charts/ollama-runtime`
 - `charts/vllm-cpu`
 - `charts/tei-embeddings`
-- `charts/kagent-agents`
 
 ## Demo / packaging chart
 
 `charts/ai-runtimes` is kept as a compact demo/manual packaging chart. It is useful for learning and templating, but it is not the default production path in this repository.
+
+Archived legacy charts live under `charts/legacy/` and are not part of the canonical generated-cluster flow.
 
 ## Chart quality notes
 

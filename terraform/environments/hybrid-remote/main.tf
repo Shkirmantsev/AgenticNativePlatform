@@ -36,9 +36,14 @@ module "flux_manifests" {
   platform_profile                  = var.platform_profile
   include_local_bootstrap_artifacts = true
   lmstudio_enabled                  = var.lmstudio_enabled
+  platform_root_timeout             = var.platform_root_timeout
   platform_bootstrap_timeout        = var.platform_bootstrap_timeout
   platform_infra_timeout            = var.platform_infra_timeout
   platform_apps_timeout             = var.platform_apps_timeout
+  git_repo_url                      = var.git_repo_url
+  git_branch                        = var.git_branch
+  enable_weave_gitops_ui            = var.enable_weave_gitops_ui
+  enable_samples_echo_mcp           = var.enable_samples_echo_mcp
   gemini_model                      = var.gemini_model
   lmstudio_chat_model               = var.lmstudio_chat_model
   lmstudio_embedding_model          = var.lmstudio_embedding_model

@@ -34,7 +34,7 @@ ollama:
       memory: "4Gi"
       ephemeral-storage: "10Gi"
 vllm:
-  image: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:latest
+  image: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.18.0
   model: Qwen/Qwen2.5-0.5B-Instruct
   storage: 30Gi
   cpuKvCacheSpace: "2"

@@ -24,8 +24,8 @@ spec:
       enabled: false
     adminUser:
       create: true
+      createSecret: false
       username: admin
-      passwordHash: $2y$10$/fKgRdIol./2hC.U9vnZMeVlrC6XOhUtSsoqHd97k8SG1DRINzvCK
     rbac:
       impersonationResourceNames:
         - admin

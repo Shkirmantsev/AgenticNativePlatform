@@ -22,4 +22,7 @@ spec:
       retries: 3
   values:
     grafana:
-      adminPassword: admin-change-me
+      admin:
+        existingSecret: observability-grafana-admin
+        userKey: admin-user
+        passwordKey: admin-password
