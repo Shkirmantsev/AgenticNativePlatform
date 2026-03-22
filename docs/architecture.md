@@ -1,5 +1,18 @@
 # Architecture
 
+## Visual overview
+
+![Current platform architecture](../.assets/architecture-current.svg)
+
+Detailed rendered views:
+
+- [Runtime SVG](../.assets/architecture-current-runtime.svg)
+- [GitOps/profile SVG](../.assets/architecture-current-profiles.svg)
+- [Runtime WBS SVG](../.assets/architecture-current-runtime-wbs.svg)
+- [Profiles WBS SVG](../.assets/architecture-current-profiles-wbs.svg)
+- [Runtime PlantUML source](../.assets/architecture-current-runtime.puml)
+- [GitOps/profile PlantUML source](../.assets/architecture-current-profiles.puml)
+
 ## Canonical deployment model
 
 The canonical bootstrap path in this repository is the staged generated Flux root:

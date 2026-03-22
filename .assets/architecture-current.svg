@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="980" viewBox="0 0 1200 980" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1140" viewBox="0 0 1280 1140" role="img" aria-labelledby="title desc">
   <title id="title">Current platform architecture</title>
-  <desc id="desc">Current request flow and component relationships for the Agentic Kubernetes Native Platform.</desc>
+  <desc id="desc">Human-oriented overview of the current AgenticNativePlatform runtime flow, cluster services, and staged GitOps deployment model.</desc>
   <defs>
     <style>
       .bg { fill: #f8fafc; }
@@ -9,9 +9,10 @@
       .node-accent { fill: #ecfeff; stroke: #155e75; stroke-width: 2; rx: 12; ry: 12; }
       .node-runtime { fill: #f0fdf4; stroke: #166534; stroke-width: 2; rx: 12; ry: 12; }
       .node-provider { fill: #fff7ed; stroke: #9a3412; stroke-width: 2; rx: 12; ry: 12; }
-      .label { font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: 700; fill: #0f172a; }
+      .node-ops { fill: #f8fafc; stroke: #475569; stroke-width: 2; rx: 12; ry: 12; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; fill: #0f172a; }
       .text { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #0f172a; }
-      .small { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #334155; }
+      .small { font-family: Arial, Helvetica, sans-serif; font-size: 15px; fill: #334155; }
       .arrow { stroke: #0f172a; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
       .arrow-soft { stroke: #475569; stroke-width: 2.5; fill: none; stroke-dasharray: 9 7; marker-end: url(#arrowhead-soft); }
     </style>
@@ -23,97 +24,176 @@
     </marker>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="1200" height="980" />
+  <rect class="bg" x="0" y="0" width="1280" height="1140" />
 
-  <text class="label" x="60" y="52">Agentic Kubernetes Native Platform: current architecture</text>
-  <text class="small" x="60" y="82">North-south ingress flows through kgateway and agentgateway. LLM traffic reaches providers through LiteLLM, while MCP traffic routes separately to kmcp-managed servers.</text>
+  <text class="label" x="52" y="52">AgenticNativePlatform: current architecture overview</text>
+  <text class="small" x="52" y="82">This summary matches the current runtime path, installed cluster components, and staged Flux deployment model used by the repository.</text>
 
-  <rect class="lane" x="40" y="110" width="680" height="430" />
-  <text class="label" x="60" y="145">Ingress and routing path</text>
+  <rect class="lane" x="36" y="110" width="744" height="340" />
+  <text class="label" x="56" y="145">Runtime Traffic Path</text>
 
-  <rect class="lane" x="760" y="110" width="400" height="430" />
-  <text class="label" x="780" y="145">Providers and runtimes</text>
+  <rect class="lane" x="812" y="110" width="432" height="340" />
+  <text class="label" x="832" y="145">Providers And Serving</text>
 
-  <rect class="lane" x="40" y="580" width="1120" height="330" />
-  <text class="label" x="60" y="615">Agent and platform services</text>
+  <rect class="lane" x="36" y="488" width="1208" height="306" />
+  <text class="label" x="56" y="523">Cluster Components And Namespaces</text>
 
-  <rect class="node" x="290" y="170" width="180" height="56" />
-  <text class="text" x="360" y="205" text-anchor="middle">Internet / clients</text>
+  <rect class="lane" x="36" y="832" width="1208" height="268" />
+  <text class="label" x="56" y="867">GitOps Staging And Profile Composition</text>
 
-  <rect class="node" x="290" y="255" width="180" height="56" />
-  <text class="text" x="360" y="290" text-anchor="middle">LoadBalancer Service</text>
+  <rect class="node" x="74" y="176" width="176" height="58" />
+  <text class="text" x="162" y="212" text-anchor="middle">External clients</text>
 
-  <rect class="node-accent" x="290" y="340" width="180" height="56" />
-  <text class="text" x="360" y="375" text-anchor="middle">kgateway</text>
+  <rect class="node-accent" x="292" y="176" width="204" height="58" />
+  <text class="text" x="394" y="212" text-anchor="middle">kgateway public-gateway</text>
 
-  <rect class="node" x="290" y="425" width="180" height="56" />
-  <text class="text" x="360" y="460" text-anchor="middle">Istio Ambient mesh</text>
+  <rect class="node-accent" x="536" y="176" width="206" height="58" />
+  <text class="text" x="639" y="212" text-anchor="middle">agentgateway-proxy</text>
 
-  <rect class="node-accent" x="290" y="510" width="180" height="56" />
-  <text class="text" x="360" y="545" text-anchor="middle">agentgateway</text>
+  <rect class="node-accent" x="536" y="286" width="206" height="58" />
+  <text class="text" x="639" y="322" text-anchor="middle">LiteLLM</text>
 
-  <rect class="node-accent" x="540" y="510" width="180" height="56" />
-  <text class="text" x="630" y="545" text-anchor="middle">LiteLLM</text>
-
-  <path class="arrow" d="M360 226 L360 255" />
-  <path class="arrow" d="M360 311 L360 340" />
-  <path class="arrow" d="M360 396 L360 425" />
-  <path class="arrow" d="M360 481 L360 510" />
-  <path class="arrow" d="M470 538 L540 538" />
-
-  <rect class="node-provider" x="840" y="180" width="220" height="56" />
-  <text class="text" x="950" y="215" text-anchor="middle">Gemini</text>
-
-  <rect class="node-provider" x="840" y="265" width="220" height="56" />
-  <text class="text" x="950" y="300" text-anchor="middle">OpenAI</text>
-
-  <rect class="node-provider" x="840" y="350" width="220" height="56" />
-  <text class="text" x="950" y="385" text-anchor="middle">Bedrock</text>
-
-  <rect class="node-runtime" x="840" y="435" width="220" height="56" />
-  <text class="text" x="950" y="470" text-anchor="middle">LM Studio external endpoint</text>
-
-  <rect class="node-runtime" x="840" y="520" width="220" height="56" />
-  <text class="text" x="950" y="555" text-anchor="middle">Ollama runtime</text>
-
-  <rect class="node-runtime" x="840" y="605" width="220" height="56" />
-  <text class="text" x="950" y="640" text-anchor="middle">vLLM runtime</text>
-
-  <path class="arrow" d="M720 538 L780 538 L780 208 L840 208" />
-  <path class="arrow" d="M720 538 L795 538 L795 293 L840 293" />
-  <path class="arrow" d="M720 538 L810 538 L810 378 L840 378" />
-  <path class="arrow" d="M720 538 L825 538 L825 463 L840 463" />
-  <path class="arrow" d="M720 538 L840 538" />
-  <path class="arrow" d="M720 538 L810 538 L810 633 L840 633" />
-
-  <rect class="node-accent" x="110" y="670" width="220" height="56" />
-  <text class="text" x="220" y="705" text-anchor="middle">kagent agents</text>
-
-  <rect class="node-runtime" x="400" y="670" width="220" height="56" />
-  <text class="text" x="510" y="698" text-anchor="middle">
-    <tspan x="510" dy="0">kmcp-managed</tspan>
-    <tspan x="510" dy="20">MCP servers</tspan>
+  <rect class="node" x="292" y="286" width="204" height="74" />
+  <text class="text" x="394" y="314" text-anchor="middle">
+    <tspan x="394" dy="0">kagent controller</tspan>
+    <tspan x="394" dy="20">and RemoteMCPServer</tspan>
+    <tspan x="394" dy="20">use agentgateway only</tspan>
   </text>
 
-  <rect class="node" x="670" y="670" width="180" height="56" />
-  <text class="text" x="760" y="705" text-anchor="middle">Qdrant</text>
+  <rect class="node-ops" x="74" y="286" width="176" height="74" />
+  <text class="text" x="162" y="314" text-anchor="middle">
+    <tspan x="162" dy="0">Istio ambient</tspan>
+    <tspan x="162" dy="20">istiod, cni, ztunnel</tspan>
+    <tspan x="162" dy="20">underpins the path</tspan>
+  </text>
 
-  <rect class="node" x="920" y="670" width="180" height="56" />
-  <text class="text" x="1010" y="705" text-anchor="middle">PostgreSQL</text>
+  <path class="arrow" d="M250 205 L292 205" />
+  <path class="arrow" d="M496 205 L536 205" />
+  <path class="arrow" d="M639 234 L639 286" />
+  <path class="arrow-soft" d="M496 322 L536 322" />
 
-  <rect class="node" x="420" y="790" width="180" height="56" />
-  <text class="text" x="510" y="825" text-anchor="middle">Redis</text>
+  <text class="small" x="756" y="207">north-south entry</text>
+  <text class="small" x="757" y="318">/v1 route inside agentgateway</text>
+  <text class="small" x="430" y="378">/v1 and /mcp go to agentgateway-proxy first</text>
 
-  <rect class="node" x="670" y="790" width="180" height="56" />
-  <text class="text" x="760" y="825" text-anchor="middle">KServe control plane</text>
+  <rect class="node-provider" x="872" y="176" width="310" height="58" />
+  <text class="text" x="1027" y="205" text-anchor="middle">
+    <tspan x="1027" dy="0">Remote providers through LiteLLM</tspan>
+    <tspan x="1027" dy="20">Gemini, OpenAI, Anthropic, Bedrock, Vertex</tspan>
+  </text>
 
-  <path class="arrow" d="M330 698 L400 698" />
-  <path class="arrow" d="M330 698 L630 698 L630 560" />
-  <path class="arrow-soft" d="M220 726 L220 818 L420 818" />
-  <path class="arrow-soft" d="M330 698 L670 698" />
-  <path class="arrow-soft" d="M330 698 L920 698" />
-  <path class="arrow-soft" d="M850 818 L950 818 L950 661" />
+  <rect class="node-runtime" x="872" y="264" width="310" height="58" />
+  <text class="text" x="1027" y="300" text-anchor="middle">External LM Studio endpoint</text>
 
-  <text class="small" x="60" y="940">Canonical LLM path: kagent -&gt; agentgateway -&gt; LiteLLM -&gt; providers or optional local runtimes.</text>
-  <text class="small" x="60" y="962">KServe is shown as the installed model-serving control plane and future evolution path, not as the only active runtime hop today.</text>
+  <rect class="node-runtime" x="872" y="352" width="310" height="58" />
+  <text class="text" x="1027" y="381" text-anchor="middle">Optional runtime overlay: Ollama or vLLM</text>
+
+  <path class="arrow" d="M742 315 L796 315 L796 205 L872 205" />
+  <path class="arrow" d="M742 315 L820 315 L820 293 L872 293" />
+  <path class="arrow" d="M742 315 L796 315 L796 381 L872 381" />
+
+  <rect class="node-accent" x="76" y="566" width="244" height="72" />
+  <text class="text" x="198" y="595" text-anchor="middle">
+    <tspan x="198" dy="0">kagent namespace</tspan>
+    <tspan x="198" dy="20">controller, UI, kagent-tools,</tspan>
+    <tspan x="198" dy="20">A2A agent, RemoteMCPServer</tspan>
+  </text>
+
+  <rect class="node-accent" x="370" y="566" width="228" height="72" />
+  <text class="text" x="484" y="595" text-anchor="middle">
+    <tspan x="484" dy="0">agentgateway-system</tspan>
+    <tspan x="484" dy="20">agentgateway controller,</tspan>
+    <tspan x="484" dy="20">Gateway, backends, policy</tspan>
+  </text>
+
+  <rect class="node-runtime" x="648" y="566" width="228" height="72" />
+  <text class="text" x="762" y="595" text-anchor="middle">
+    <tspan x="762" dy="0">ai-models</tspan>
+    <tspan x="762" dy="20">KServe control plane,</tspan>
+    <tspan x="762" dy="20">tei-embeddings, runtime overlays</tspan>
+  </text>
+
+  <rect class="node" x="926" y="566" width="258" height="72" />
+  <text class="text" x="1055" y="595" text-anchor="middle">
+    <tspan x="1055" dy="0">context</tspan>
+    <tspan x="1055" dy="20">Qdrant, PostgreSQL, Redis</tspan>
+    <tspan x="1055" dy="20">used by the agent stack</tspan>
+  </text>
+
+  <rect class="node-ops" x="76" y="684" width="244" height="72" />
+  <text class="text" x="198" y="713" text-anchor="middle">
+    <tspan x="198" dy="0">istio-system</tspan>
+    <tspan x="198" dy="20">istiod, istio-cni, ztunnel</tspan>
+    <tspan x="198" dy="20">ambient data plane support</tspan>
+  </text>
+
+  <rect class="node-ops" x="370" y="684" width="228" height="72" />
+  <text class="text" x="484" y="713" text-anchor="middle">
+    <tspan x="484" dy="0">cert-manager</tspan>
+    <tspan x="484" dy="20">controller, webhook,</tspan>
+    <tspan x="484" dy="20">cainjector</tspan>
+  </text>
+
+  <rect class="node-ops" x="648" y="684" width="228" height="72" />
+  <text class="text" x="762" y="713" text-anchor="middle">
+    <tspan x="762" dy="0">observability</tspan>
+    <tspan x="762" dy="20">Prometheus, Grafana, Loki</tspan>
+    <tspan x="762" dy="20">full profile only</tspan>
+  </text>
+
+  <rect class="node-runtime" x="926" y="684" width="258" height="72" />
+  <text class="text" x="1055" y="713" text-anchor="middle">
+    <tspan x="1055" dy="0">optional sample path</tspan>
+    <tspan x="1055" dy="20">kmcp controller manages</tspan>
+    <tspan x="1055" dy="20">echo-mcp when enabled</tspan>
+  </text>
+
+  <path class="arrow-soft" d="M320 602 L370 602" />
+  <path class="arrow-soft" d="M598 602 L648 602" />
+  <path class="arrow-soft" d="M876 602 L926 602" />
+
+  <rect class="node" x="82" y="914" width="184" height="74" />
+  <text class="text" x="174" y="943" text-anchor="middle">
+    <tspan x="174" dy="0">Repo source</tspan>
+    <tspan x="174" dy="20">flux/components, charts,</tspan>
+    <tspan x="174" dy="20">overlays</tspan>
+  </text>
+
+  <rect class="node" x="316" y="914" width="206" height="74" />
+  <text class="text" x="419" y="943" text-anchor="middle">
+    <tspan x="419" dy="0">Generated inputs</tspan>
+    <tspan x="419" dy="20">flux/generated and</tspan>
+    <tspan x="419" dy="20">generated cluster roots</tspan>
+  </text>
+
+  <rect class="node-accent" x="572" y="914" width="200" height="74" />
+  <text class="text" x="672" y="943" text-anchor="middle">
+    <tspan x="672" dy="0">Flux GitRepository</tspan>
+    <tspan x="672" dy="20">remote Git is the</tspan>
+    <tspan x="672" dy="20">source of truth</tspan>
+  </text>
+
+  <rect class="node-accent" x="822" y="892" width="184" height="118" />
+  <text class="text" x="914" y="929" text-anchor="middle">
+    <tspan x="914" dy="0">Staged roots</tspan>
+    <tspan x="914" dy="22">platform-bootstrap</tspan>
+    <tspan x="914" dy="20">platform-infrastructure</tspan>
+    <tspan x="914" dy="20">platform-applications</tspan>
+  </text>
+
+  <rect class="node-runtime" x="1048" y="892" width="160" height="118" />
+  <text class="text" x="1128" y="929" text-anchor="middle">
+    <tspan x="1128" dy="0">Profiles and extras</tspan>
+    <tspan x="1128" dy="22">full, fast,</tspan>
+    <tspan x="1128" dy="20">fast-serving,</tspan>
+    <tspan x="1128" dy="20">fast-context, workspace</tspan>
+  </text>
+
+  <path class="arrow" d="M266 951 L316 951" />
+  <path class="arrow" d="M522 951 L572 951" />
+  <path class="arrow" d="M772 951 L822 951" />
+  <path class="arrow" d="M1006 951 L1048 951" />
+
+  <text class="small" x="78" y="1048">Optional Flux child roots: `platform-ops-ui` for Weave GitOps UI and `platform-samples` for the sample echo MCP bundle.</text>
+  <text class="small" x="78" y="1072">Current workspace default resolves to `platform-profile-workspace`, which currently aliases `platform-profile-fast-serving`.</text>
 </svg>

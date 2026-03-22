@@ -1,0 +1,99 @@
+@startwbs
+* AgenticNativePlatform - Current Runtime Architecture
+** 1. North-south entry flow
+*** External client
+**** sends HTTP /v1 and /mcp
+*** public-gateway
+**** package: kgateway-system
+**** Envoy data plane
+**** kgateway is the north-south entry point
+**** routed traffic goes to agentgateway-proxy
+*** agentgateway-proxy
+**** package: agentgateway-system
+**** Gateway + Service :8080
+**** agentgateway is the protocol-aware AI gateway
+**** /v1 route -> litellm-upstream backend
+**** /mcp route -> kagent-tools-mcp-backend
+**** backend policy requestTimeout=300s applies to litellm-upstream
+
+** 2. Cluster control-plane components
+*** kgateway-system
+**** kgateway controller
+**** public-gateway
+*** agentgateway-system
+**** agentgateway controller
+**** agentgateway-proxy
+**** AgentgatewayBackend: litellm-upstream
+**** AgentgatewayBackend: kagent-tools-mcp-backend
+**** AgentgatewayPolicy: requestTimeout=300s
+*** kagent
+**** kagent-controller, Deployment + Service :8083
+**** kagent-ui, Deployment + Service :8080
+**** kagent-tools, Deployment + Service :8084
+**** Agent: k8s-a2a-agent
+**** RemoteMCPServer: kagent-tool-server
+*** kmcp-system
+**** kmcp-controller-manager
+*** ai-models
+**** tei-embeddings, Deployment + Service
+**** KServe controller + webhook
+**** optional runtime overlay
+***** Ollama
+***** vLLM
+*** context
+**** Qdrant
+**** PostgreSQL
+**** Redis
+*** observability
+**** Prometheus operator + Prometheus
+**** Grafana
+**** Loki
+*** istio-system
+**** istiod
+**** istio-cni
+**** ztunnel
+*** cert-manager
+**** cert-manager
+**** cert-manager-webhook
+**** cert-manager-cainjector
+*** metallb-system
+**** only for host-based profiles
+**** metallb controller + speaker
+*** optional sample path
+**** MCPServer echo-mcp
+
+** 3. Runtime request and data paths
+*** Kagent UI / API flow
+**** kagent-ui -> kagent-controller
+**** k8s-a2a-agent -> kagent-controller
+**** kagent-controller -> agentgateway-proxy via /v1
+*** MCP flow
+**** RemoteMCPServer kagent-tool-server -> agentgateway-proxy via /mcp/kagent-tools
+**** agentgateway-proxy -> kagent-tools-mcp-backend -> kagent-tools
+*** LLM flow
+**** agentgateway-proxy -> litellm-upstream -> litellm
+**** litellm -> remote LLM providers
+***** Gemini
+***** OpenAI
+***** Anthropic
+***** Bedrock
+***** Vertex
+***** others
+**** litellm -> optional external LM Studio when LMSTUDIO_ENABLED=true
+**** litellm -> runtime overlay when RUNTIME=ollama or vllm
+**** KServe is installed in the serving stack but is not in the default /v1 hot path
+*** Context and state flow
+**** kagent-controller -> tei-embeddings for embeddings
+**** kagent-controller -> Qdrant for vector context
+**** kagent-controller -> PostgreSQL for structured state
+**** kagent-controller -> Redis for cache / queue
+*** Sample path
+**** kmcp-controller-manager -> MCPServer echo-mcp
+
+** 4. Profile presence notes
+*** Context services are present in
+**** platform-profile-full
+**** platform-profile-fast-context
+*** Observability is present in
+**** platform-profile-full
+@endwbs
