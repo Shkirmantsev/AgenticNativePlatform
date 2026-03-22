@@ -19,6 +19,11 @@ spec:
     remediation:
       retries: 3
   values:
+    controller:
+      image:
+        registry: cr.kgateway.dev/kgateway-dev
+        repository: kgateway
+        tag: v2.0.2
     gateway:
       service:
         type: LoadBalancer

@@ -3,6 +3,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENT="${ENV:-dev}"
 OUT_DIR="${ROOT_DIR}/.generated/secrets/${ENVIRONMENT}"
+NAMESPACE_SOURCE="${ROOT_DIR}/flux/components/base/plaintext-secret-namespaces.yaml"
 mkdir -p "${OUT_DIR}"
 
 generate_secret() {
@@ -36,17 +37,7 @@ if [[ -n "${WEAVE_GITOPS_ADMIN_PASSWORD}" && -z "${WEAVE_GITOPS_ADMIN_PASSWORD_H
   WEAVE_GITOPS_ADMIN_PASSWORD_HASH="$(htpasswd -bnBC 10 "" "${WEAVE_GITOPS_ADMIN_PASSWORD}" | tr -d ':\n')"
 fi
 
-cat > "${OUT_DIR}/namespaces.yaml" <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ai-gateway
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kagent
-EOF
+cp "${NAMESPACE_SOURCE}" "${OUT_DIR}/namespaces.yaml"
 cat > "${OUT_DIR}/litellm-provider-secrets.yaml" <<EOF
 apiVersion: v1
 kind: Secret

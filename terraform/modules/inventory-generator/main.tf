@@ -51,26 +51,36 @@ locals {
 }
 
 resource "local_file" "inventory" {
-  filename = "${path.root}/../../../ansible/generated/${var.topology}.ini"
-  content  = local.inventory
+  filename             = "${path.root}/../../../ansible/generated/${var.topology}.ini"
+  content              = local.inventory
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "metallb_resources" {
-  filename = "${path.root}/../../../flux/generated/${var.topology}/metallb-values.yaml"
-  content  = local.metallb_resources
+  filename             = "${path.root}/../../../flux/generated/${var.topology}/metallb-values.yaml"
+  content              = local.metallb_resources
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "lmstudio_endpoint" {
-  filename = "${path.root}/../../../flux/generated/${var.topology}/lmstudio-endpoint.yaml"
-  content  = local.lmstudio_endpoint
+  filename             = "${path.root}/../../../flux/generated/${var.topology}/lmstudio-endpoint.yaml"
+  content              = local.lmstudio_endpoint
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "topology_values" {
-  filename = "${path.root}/../../../flux/generated/${var.topology}/topology-values.yaml"
-  content  = local.topology_values
+  filename             = "${path.root}/../../../flux/generated/${var.topology}/topology-values.yaml"
+  content              = local.topology_values
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "lmstudio_values_configmap" {
-  filename = "${path.root}/../../../flux/generated/${var.topology}/lmstudio-values-configmap.yaml"
-  content  = local.lmstudio_values_configmap
+  filename             = "${path.root}/../../../flux/generated/${var.topology}/lmstudio-values-configmap.yaml"
+  content              = local.lmstudio_values_configmap
+  directory_permission = "0755"
+  file_permission      = "0644"
 }

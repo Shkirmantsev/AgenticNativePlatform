@@ -310,7 +310,19 @@ bootstrap-flux-git: require-kubeconfig render-cluster-root ## Apply Flux GitRepo
 	  echo "Refusing Flux bootstrap with a dirty worktree. Commit or stash changes first." >&2; \
 	  exit 1; \
 	fi
-	@remote_name="$$(git remote -v | awk -v url="$(GIT_REPO_URL)" '$$2 == url { print $$1; exit }')"; \
+	@normalize_git_url() { \
+	  printf '%s' "$$1" | sed -E 's#^[[:alpha:]][[:alnum:]+.-]*://##; s#^git@([^:]+):#\1/#; s#^[^@]+@##; s#\.git$$##'; \
+	}; \
+	target_repo="$$(normalize_git_url "$(GIT_REPO_URL)")"; \
+	remote_name="$$(for remote in $$(git remote); do \
+	  remote_url="$$(git remote get-url "$$remote" 2>/dev/null || true)"; \
+	  [ -n "$$remote_url" ] || continue; \
+	  remote_repo="$$(normalize_git_url "$$remote_url")"; \
+	  if [ "$$remote_repo" = "$$target_repo" ]; then \
+	    echo "$$remote"; \
+	    break; \
+	  fi; \
+	done)"; \
 	if [ -z "$$remote_name" ]; then \
 	  echo "No configured Git remote matches GIT_REPO_URL=$(GIT_REPO_URL)" >&2; \
 	  exit 1; \

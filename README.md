@@ -161,6 +161,39 @@ make run-cluster-from-scratch TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=e
 
 That is the preferred path for a first real bootstrap.
 
+### First-run note: why bootstrap may stop on generated Flux diffs
+
+During `make run-cluster-from-scratch`, the repository regenerates tracked files under:
+
+- `flux/generated/<topology>/`
+- `flux/generated/clusters/<cluster-id>/`
+
+If the render changes tracked files, bootstrap stops before Flux Git bootstrap continues. A typical example looks like:
+
+```text
+Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
+Regenerated declarative cluster root for local-dev-none-external (PLATFORM_PROFILE=auto)
+Generated Flux manifests changed locally. Commit and push them before continuing:
+ M flux/generated/local/topology-values.yaml
+make[2]: *** [Makefile:285: ensure-generated-flux-clean] Error 1
+```
+
+This is intentional.
+
+- Flux reads the remote `GIT_REPO_URL` and `GIT_BRANCH`, not your unpublished local worktree.
+- The generated files are part of the GitOps input set for the cluster.
+- `flux/generated/local/topology-values.yaml` is operator metadata and is not applied to Kubernetes, but it is still tracked so the repo records the exact generated state that belongs to a given topology.
+
+What this means for a first-time user:
+
+- If you want to use this repository exactly as committed by the author, keep `.env` aligned with the committed generated inputs and rerun the bootstrap.
+- If you intentionally changed inputs such as topology, branch, profile, image tags, LM Studio endpoint, MetalLB range, or other generation-affecting settings, regenerate the files, commit them, push them to the branch Flux will read, and then continue.
+
+Practical rule:
+
+- no local-only generated diffs: bootstrap continues
+- generated diffs present: commit and push first, then run `make bootstrap-flux-git ...` or rerun `make run-cluster-from-scratch`
+
 ## Secrets Mode: Start Without SOPS, Then Migrate
 
 **Recommended first bootstrap:** start with `SECRETS_MODE=external`, get the platform healthy, and only then migrate to `SECRETS_MODE=sops`.
