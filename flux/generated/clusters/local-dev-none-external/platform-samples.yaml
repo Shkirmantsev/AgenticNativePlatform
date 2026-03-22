@@ -1,0 +1,17 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: platform-samples
+  namespace: flux-system
+spec:
+  interval: 10m
+  prune: true
+  wait: true
+  timeout: 10m
+  suspend: true
+  dependsOn:
+    - name: platform-applications
+  sourceRef:
+    kind: GitRepository
+    name: platform
+  path: ./flux/generated/clusters/local-dev-none-external/samples-echo-mcp

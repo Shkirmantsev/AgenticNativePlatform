@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentgateway-notes
+  namespace: agentgateway-system
+data:
+  README: |
+    Extend this namespace with authn/authz, rate limiting, prompt enrichment,
+    and content safety policies once the base LLM route is working.
