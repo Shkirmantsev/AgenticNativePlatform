@@ -7,6 +7,7 @@ export
 endif
 
 TOPOLOGY ?= local
+override TOPOLOGY := $(if $(strip $(TOPOLOGY)),$(strip $(TOPOLOGY)),local)
 ENV ?= dev
 RUNTIME ?= none
 SECRETS_MODE ?= external
