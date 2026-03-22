@@ -5,6 +5,6 @@ metadata:
   namespace: ai-gateway
 subsets:
   - addresses:
-      - ip: 192.168.1.108
+      - ip: ${lmstudio_host_ip}
     ports:
-      - port: 1234
+      - port: ${lmstudio_port}

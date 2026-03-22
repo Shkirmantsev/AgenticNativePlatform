@@ -14,7 +14,7 @@ LMSTUDIO_ENABLED ?= false
 INSTALL_K9S ?= true
 IAC_TOOL ?= tofu
 TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
-TF_DIR ?= terraform/environments/$(TOPOLOGY)
+TF_DIR = terraform/environments/$(TOPOLOGY)
 ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/inventory.ini.example)
 ANSIBLE_BECOME_FLAGS ?=
 KUBECONFIG_DIR ?= .kube/generated
@@ -236,8 +236,10 @@ cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation a
 	$(MAKE) kubeconfig TOPOLOGY=hybrid-remote
 
 cluster-up-github-workspace: ## Bootstrap a GitHub workspace / Codespaces topology with k3d
+	$(MAKE) terraform-init TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
+	$(MAKE) terraform-apply TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
 	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-workspace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
-	WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" ./scripts/cluster-up-github-workspace.sh
+	WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" TF_BIN="$(TF_BIN)" ./scripts/cluster-up-github-workspace.sh
 
 run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, and reconcile from the current repo state
 	@$(MAKE) tools-install-local IAC_TOOL=$(IAC_TOOL) INSTALL_K9S=$(INSTALL_K9S)

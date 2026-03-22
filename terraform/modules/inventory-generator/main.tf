@@ -12,48 +12,41 @@ locals {
     workers       = var.workers
   })
 
-  lmstudio_endpoint = yamlencode({
-    apiVersion = "v1"
-    kind       = "Endpoints"
-    metadata   = { name = "lmstudio-external", namespace = "ai-gateway" }
-    subsets    = [{ addresses = [{ ip = var.lmstudio_host_ip }], ports = [{ port = var.lmstudio_port }] }]
+  control_plane_metadata = merge(var.control_plane, {
+    connection  = lookup(var.control_plane, "connection", "")
+    private_key = lookup(var.control_plane, "private_key", "")
   })
 
-  lmstudio_values = <<-EOT
-hostIP: ${var.lmstudio_host_ip}
-port: ${var.lmstudio_port}
-EOT
-
-  lmstudio_values_configmap = yamlencode({
-    apiVersion = "v1"
-    kind       = "ConfigMap"
-    metadata   = { name = "lmstudio-values", namespace = "flux-system" }
-    data       = { "values.yaml" = local.lmstudio_values }
-  })
-
-  metallb_resources = join("\n---\n", [
-    yamlencode({
-      apiVersion = "metallb.io/v1beta1"
-      kind       = "IPAddressPool"
-      metadata   = { name = "primary-pool", namespace = "metallb-system" }
-      spec       = { addresses = ["${var.metallb_start}-${var.metallb_end}"] }
-    }),
-    yamlencode({
-      apiVersion = "metallb.io/v1beta1"
-      kind       = "L2Advertisement"
-      metadata   = { name = "primary-pool", namespace = "metallb-system" }
-      spec       = { ipAddressPools = ["primary-pool"] }
+  worker_metadata = [
+    for worker in var.workers : merge(worker, {
+      connection  = lookup(worker, "connection", "")
+      private_key = lookup(worker, "private_key", "")
     })
-  ])
+  ]
 
-  topology_values = yamlencode({
-    topology = {
-      name         = var.topology
-      controlPlane = var.control_plane
-      workers      = var.workers
-      lmstudio     = { host = var.lmstudio_host_ip, port = var.lmstudio_port }
-      metallb      = { start = var.metallb_start, end = var.metallb_end }
-    }
+  lmstudio_endpoint = templatefile("${path.module}/templates/lmstudio-endpoint.yaml.tftpl", {
+    lmstudio_host_ip = var.lmstudio_host_ip
+    lmstudio_port    = var.lmstudio_port
+  })
+
+  lmstudio_values_configmap = templatefile("${path.module}/templates/lmstudio-values-configmap.yaml.tftpl", {
+    lmstudio_host_ip = var.lmstudio_host_ip
+    lmstudio_port    = var.lmstudio_port
+  })
+
+  metallb_resources = templatefile("${path.module}/templates/metallb-values.yaml.tftpl", {
+    metallb_start = var.metallb_start
+    metallb_end   = var.metallb_end
+  })
+
+  topology_values = templatefile("${path.module}/templates/topology-values.yaml.tftpl", {
+    topology      = var.topology
+    control_plane = local.control_plane_metadata
+    workers       = local.worker_metadata
+    lmstudio_host = var.lmstudio_host_ip
+    lmstudio_port = var.lmstudio_port
+    metallb_start = var.metallb_start
+    metallb_end   = var.metallb_end
   })
 }
 
@@ -80,16 +73,4 @@ resource "local_file" "topology_values" {
 resource "local_file" "lmstudio_values_configmap" {
   filename = "${path.root}/../../../flux/generated/${var.topology}/lmstudio-values-configmap.yaml"
   content  = local.lmstudio_values_configmap
-}
-
-resource "local_file" "generated_kustomization" {
-  filename = "${path.root}/../../../flux/generated/${var.topology}/kustomization.yaml"
-  content  = <<-EOT
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - metallb-values.yaml
-  - lmstudio-endpoint.yaml
-  - lmstudio-values-configmap.yaml
-EOT
 }

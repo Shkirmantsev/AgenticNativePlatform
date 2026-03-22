@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ollama-values
+  namespace: flux-system
+data:
+  values.yaml: |
+    image:
+      tag: ${ollama_version}
+    modelPull:
+      model: ${ollama_default_model}

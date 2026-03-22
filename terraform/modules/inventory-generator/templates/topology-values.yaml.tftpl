@@ -1,0 +1,34 @@
+topology:
+  name: ${topology}
+  controlPlane:
+    name: ${control_plane.name}
+    ansible_host: ${control_plane.ansible_host}
+    ansible_user: ${control_plane.ansible_user}
+%{ if control_plane.connection != "" ~}
+    connection: ${control_plane.connection}
+%{ endif ~}
+%{ if control_plane.private_key != "" ~}
+    private_key: ${control_plane.private_key}
+%{ endif ~}
+%{ if length(workers) == 0 ~}
+  workers: []
+%{ else ~}
+  workers:
+%{ for worker in workers ~}
+    - name: ${worker.name}
+      ansible_host: ${worker.ansible_host}
+      ansible_user: ${worker.ansible_user}
+%{ if worker.connection != "" ~}
+      connection: ${worker.connection}
+%{ endif ~}
+%{ if worker.private_key != "" ~}
+      private_key: ${worker.private_key}
+%{ endif ~}
+%{ endfor ~}
+%{ endif ~}
+  lmstudio:
+    host: ${lmstudio_host}
+    port: ${lmstudio_port}
+  metallb:
+    start: ${metallb_start}
+    end: ${metallb_end}

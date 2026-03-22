@@ -107,6 +107,7 @@ Use it for:
 Behavior differences:
 
 - `cluster-up-github-workspace` uses `k3d`,
+- the `k3d` cluster shape is rendered into `.generated/k3d/github-workspace.yaml` before creation,
 - `cluster-remove` deletes the `k3d` cluster when `TOPOLOGY=github-workspace`,
 - `environment-destroy` skips Terraform destroy for this topology,
 - operator access should use port-forwarding instead of external LoadBalancer IPs.

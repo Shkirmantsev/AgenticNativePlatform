@@ -1,25 +1,21 @@
-variable "metallb_start" { type = string }
-variable "metallb_end" { type = string }
-variable "lmstudio_host_ip" { type = string }
+variable "workspace_cluster_name" {
+  type    = string
+  default = "agentic-native-platform"
+}
+
+variable "k3s_version" {
+  type    = string
+  default = "v1.34.5+k3s1"
+}
+
+variable "cluster_domain" {
+  type    = string
+  default = "cluster.local"
+}
+
 variable "lmstudio_port" {
   type    = number
   default = 1234
-}
-
-variable "control_plane_ip" { type = string }
-variable "control_plane_user" {
-  type    = string
-  default = "ubuntu"
-}
-variable "worker_ip" { type = string }
-variable "worker_user" {
-  type    = string
-  default = "ubuntu"
-}
-
-variable "ssh_private_key" {
-  type    = string
-  default = "~/.ssh/id_ed25519"
 }
 
 variable "environment" {

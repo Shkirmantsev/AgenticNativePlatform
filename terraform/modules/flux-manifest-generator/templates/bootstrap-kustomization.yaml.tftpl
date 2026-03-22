@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../../components/base
+  - ../../../../components/sources
+  - generated-litellm-values-configmap.yaml
+%{ if include_local_bootstrap_artifacts ~}
+  - generated-lmstudio-endpoint.yaml
+  - generated-lmstudio-values-configmap.yaml
+%{ endif ~}
+  - generated-ollama-values-configmap.yaml
+  - generated-tei-values-configmap.yaml
+  - generated-vllm-values-configmap.yaml
+%{ if secrets_mode == "sops" ~}
+  - ../../../../secrets/${environment}
+%{ endif ~}

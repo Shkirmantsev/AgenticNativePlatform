@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vllm-values
+  namespace: flux-system
+data:
+  values.yaml: |
+    image:
+      repository: ${vllm_image_repository}
+      tag: ${vllm_image_tag}
+    model: ${vllm_model}
+    env:
+      VLLM_CPU_KVCACHE_SPACE: "${vllm_cpu_kvcache_space}"
+      VLLM_CPU_NUM_OF_RESERVED_CPU: "${vllm_cpu_num_of_reserved_cpu}"
+      VLLM_LD_PRELOAD: "${vllm_ld_preload}"

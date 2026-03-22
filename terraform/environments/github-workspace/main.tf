@@ -1,39 +1,22 @@
-module "inventory" {
-  source   = "../../modules/inventory-generator"
-  topology = "hybrid-remote"
-  control_plane = {
-    name         = "minipc"
-    ansible_host = var.control_plane_ip
-    ansible_user = var.control_plane_user
-    private_key  = var.ssh_private_key
-  }
-  workers = [
-    {
-      name         = "workstation"
-      ansible_host = var.worker_ip
-      ansible_user = var.worker_user
-      private_key  = var.ssh_private_key
-    },
-    {
-      name         = "remote-worker"
-      ansible_host = var.remote_worker_ip
-      ansible_user = var.remote_worker_user
-      private_key  = var.ssh_private_key
-    }
-  ]
-  metallb_start    = var.metallb_start
-  metallb_end      = var.metallb_end
-  lmstudio_host_ip = var.lmstudio_host_ip
-  lmstudio_port    = var.lmstudio_port
+locals {
+  k3s_image = "rancher/k3s:${replace(var.k3s_version, "+", "-")}"
+}
+
+module "k3d_config" {
+  source         = "../../modules/k3d-config-generator"
+  topology       = "github-workspace"
+  cluster_name   = var.workspace_cluster_name
+  k3s_image      = local.k3s_image
+  cluster_domain = var.cluster_domain
 }
 
 module "flux_manifests" {
   source                            = "../../modules/flux-manifest-generator"
-  topology                          = "hybrid-remote"
+  topology                          = "github-workspace"
   environment                       = var.environment
   runtime                           = var.runtime
   secrets_mode                      = var.secrets_mode
-  include_local_bootstrap_artifacts = true
+  include_local_bootstrap_artifacts = false
   lmstudio_enabled                  = var.lmstudio_enabled
   platform_bootstrap_timeout        = var.platform_bootstrap_timeout
   platform_infra_timeout            = var.platform_infra_timeout
@@ -51,8 +34,5 @@ module "flux_manifests" {
   vllm_cpu_num_of_reserved_cpu      = var.vllm_cpu_num_of_reserved_cpu
   vllm_ld_preload                   = var.vllm_ld_preload
   echo_mcp_image                    = var.echo_mcp_image
-  lmstudio_host_ip                  = var.lmstudio_host_ip
   lmstudio_port                     = var.lmstudio_port
-  metallb_start                     = var.metallb_start
-  metallb_end                       = var.metallb_end
 }

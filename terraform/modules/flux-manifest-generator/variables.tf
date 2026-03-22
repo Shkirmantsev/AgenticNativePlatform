@@ -1,25 +1,5 @@
-variable "metallb_start" { type = string }
-variable "metallb_end" { type = string }
-variable "lmstudio_host_ip" { type = string }
-variable "lmstudio_port" {
-  type    = number
-  default = 1234
-}
-
-variable "control_plane_ip" { type = string }
-variable "control_plane_user" {
-  type    = string
-  default = "ubuntu"
-}
-variable "worker_ip" { type = string }
-variable "worker_user" {
-  type    = string
-  default = "ubuntu"
-}
-
-variable "ssh_private_key" {
-  type    = string
-  default = "~/.ssh/id_ed25519"
+variable "topology" {
+  type = string
 }
 
 variable "environment" {
@@ -30,11 +10,26 @@ variable "environment" {
 variable "runtime" {
   type    = string
   default = "none"
+
+  validation {
+    condition     = contains(["none", "ollama", "vllm"], var.runtime)
+    error_message = "runtime must be one of: none, ollama, vllm."
+  }
 }
 
 variable "secrets_mode" {
   type    = string
   default = "external"
+
+  validation {
+    condition     = contains(["external", "sops"], var.secrets_mode)
+    error_message = "secrets_mode must be one of: external, sops."
+  }
+}
+
+variable "include_local_bootstrap_artifacts" {
+  type    = bool
+  default = true
 }
 
 variable "lmstudio_enabled" {
@@ -120,4 +115,24 @@ variable "vllm_ld_preload" {
 variable "echo_mcp_image" {
   type    = string
   default = "ghcr.io/example/echo-mcp:0.1.0"
+}
+
+variable "lmstudio_port" {
+  type    = number
+  default = 1234
+}
+
+variable "lmstudio_host_ip" {
+  type    = string
+  default = "127.0.0.1"
+}
+
+variable "metallb_start" {
+  type    = string
+  default = ""
+}
+
+variable "metallb_end" {
+  type    = string
+  default = ""
 }

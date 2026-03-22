@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TOPOLOGY="${1:-${TOPOLOGY:-local}}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TF_DIR="${ROOT_DIR}/terraform/environments/${TOPOLOGY}"
-TF_VARS_FILE="${TF_DIR}/terraform.auto.tfvars"
+INPUT_TOPOLOGY="${1:-}"
+ENV_TOPOLOGY="${TOPOLOGY-}"
 
 if [[ -f "${ROOT_DIR}/.env" ]]; then
   # shellcheck disable=SC1091
   source "${ROOT_DIR}/.env"
 fi
+
+TOPOLOGY="${INPUT_TOPOLOGY:-${ENV_TOPOLOGY:-${TOPOLOGY:-local}}}"
+TF_DIR="${ROOT_DIR}/terraform/environments/${TOPOLOGY}"
+TF_VARS_FILE="${TF_DIR}/terraform.auto.tfvars"
 
 LOCAL_HOST_IP="${LOCAL_HOST_IP:-192.168.1.108}"
 LOCAL_SSH_USER="${LOCAL_SSH_USER:-dmytro}"
@@ -22,6 +25,9 @@ METALLB_START="${METALLB_START:-192.168.1.240}"
 METALLB_END="${METALLB_END:-192.168.1.250}"
 LMSTUDIO_HOST_IP="${LMSTUDIO_HOST_IP:-$LOCAL_HOST_IP}"
 LMSTUDIO_PORT="${LMSTUDIO_PORT:-1234}"
+WORKSPACE_CLUSTER_NAME="${WORKSPACE_CLUSTER_NAME:-agentic-native-platform}"
+K3S_VERSION="${K3S_VERSION:-v1.34.5+k3s1}"
+CLUSTER_DOMAIN="${CLUSTER_DOMAIN:-cluster.local}"
 
 mkdir -p "${TF_DIR}"
 
@@ -73,6 +79,14 @@ metallb_start      = "${METALLB_START}"
 metallb_end        = "${METALLB_END}"
 lmstudio_host_ip   = "${LMSTUDIO_HOST_IP}"
 lmstudio_port      = ${LMSTUDIO_PORT}
+EOT
+    ;;
+  github-workspace)
+    mkdir -p "${ROOT_DIR}/.generated/k3d"
+    cat > "${TF_VARS_FILE}" <<EOT
+workspace_cluster_name = "${WORKSPACE_CLUSTER_NAME}"
+k3s_version            = "${K3S_VERSION}"
+cluster_domain         = "${CLUSTER_DOMAIN}"
 EOT
     ;;
   *)

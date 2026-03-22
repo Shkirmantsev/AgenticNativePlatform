@@ -38,6 +38,7 @@ make run-cluster-from-scratch TOPOLOGY=github-workspace ENV=dev RUNTIME=none SEC
 
 This topology uses `k3d` instead of Terraform + Ansible host provisioning.
 It also skips MetalLB and expects operator access through port-forwarding.
+The cluster shape is rendered first into `.generated/k3d/github-workspace.yaml`, and `cluster-up-github-workspace` consumes that generated config.
 
 ## Default local remote-only startup
 

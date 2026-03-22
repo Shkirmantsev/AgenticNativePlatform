@@ -12,6 +12,7 @@ That remains the responsibility of Ansible.
 ## Topologies
 
 - `local`
+- `github-workspace`
 - `minipc`
 - `hybrid`
 - `hybrid-remote`
@@ -21,10 +22,27 @@ That remains the responsibility of Ansible.
 Each topology generates:
 
 - `ansible/generated/<topology>.ini`
+- `flux/generated/<topology>/kustomization.yaml`
+- `flux/generated/<topology>/litellm-values-configmap.yaml`
+- `flux/generated/<topology>/tei-values-configmap.yaml`
+- `flux/generated/<topology>/ollama-values-configmap.yaml`
+- `flux/generated/<topology>/vllm-values-configmap.yaml`
+- `flux/generated/<topology>/echo-mcp-values-configmap.yaml`
+- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/...`
+
+Host-based topologies (`local`, `minipc`, `hybrid`, `hybrid-remote`) additionally generate:
+
 - `flux/generated/<topology>/metallb-values.yaml`
-- `flux/generated/<topology>/node-labels.env`
+- `flux/generated/<topology>/topology-values.yaml`
+- `flux/generated/<topology>/lmstudio-endpoint.yaml`
+- `flux/generated/<topology>/lmstudio-values-configmap.yaml`
+
+`github-workspace` additionally generates:
+
+- `.generated/k3d/github-workspace.yaml`
 
 ## Optional modules
 
 - `modules/cloudflare-dns`
+- `modules/flux-manifest-generator`
 - `modules/inventory-generator`
