@@ -189,6 +189,7 @@ make diagnose-runtime-state
 
 `cluster-resume` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, restores the saved replica targets from `ConfigMap/flux-system/cluster-pause-state`, fans out HelmRelease reconcile annotations, and then waits on `platform-infrastructure`, `platform-applications`, and `platform`.
 That ordering avoids a common failure mode after `cluster-pause`: direct `kubectl scale` changes `spec.replicas` field ownership and can leave HPA-managed Deployments such as `istiod` stuck at `ScalingDisabled` when replicas stay at `0`.
+While the platform is paused, `cluster-status` now detects the suspended state and prints a paused summary instead of treating the last pre-pause Flux `READY=False` values as live failures.
 `cluster-stop` and `cluster-start` remain as compatibility aliases for the previous names.
 
 If LiteLLM, PostgreSQL, Qdrant, Redis, or TEI appear to be missing after a pause or restart, treat that as a runtime-state problem first:

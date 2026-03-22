@@ -5,6 +5,8 @@ STATE_NAMESPACE="${STATE_NAMESPACE:-flux-system}"
 STATE_CONFIGMAP="${PAUSE_STATE_CONFIGMAP:-cluster-pause-state}"
 PAUSE_NAMESPACES="${PAUSE_NAMESPACES:-${STOP_NAMESPACES:-}}"
 
+./scripts/require-kube-apiserver.sh "saving paused workload state"
+
 if [[ -z "${PAUSE_NAMESPACES}" ]]; then
   echo "PAUSE_NAMESPACES is empty; nothing to snapshot." >&2
   exit 0
@@ -17,13 +19,35 @@ cleanup() {
 trap cleanup EXIT
 
 for namespace in ${PAUSE_NAMESPACES}; do
-  kubectl get namespace "${namespace}" >/dev/null 2>&1 || continue
-  kubectl -n "${namespace}" get deployment \
+  if ! namespace_check="$(
+    kubectl get namespace "${namespace}" -o name 2>&1
+  )"; then
+    if grep -qi 'not found' <<<"${namespace_check}"; then
+      continue
+    fi
+    echo "Failed to query namespace/${namespace}: ${namespace_check}" >&2
+    exit 1
+  fi
+
+  if ! deployment_rows="$(
+    kubectl -n "${namespace}" get deployment \
     -o jsonpath='{range .items[*]}deployment{"\t"}{.metadata.namespace}{"\t"}{.metadata.name}{"\t"}{.spec.replicas}{"\n"}{end}' \
-    2>/dev/null >>"${tmp_file}" || true
-  kubectl -n "${namespace}" get statefulset \
+    2>&1
+  )"; then
+    echo "Failed to list deployments in namespace/${namespace}: ${deployment_rows}" >&2
+    exit 1
+  fi
+  printf '%s' "${deployment_rows}" >>"${tmp_file}"
+
+  if ! statefulset_rows="$(
+    kubectl -n "${namespace}" get statefulset \
     -o jsonpath='{range .items[*]}statefulset{"\t"}{.metadata.namespace}{"\t"}{.metadata.name}{"\t"}{.spec.replicas}{"\n"}{end}' \
-    2>/dev/null >>"${tmp_file}" || true
+    2>&1
+  )"; then
+    echo "Failed to list statefulsets in namespace/${namespace}: ${statefulset_rows}" >&2
+    exit 1
+  fi
+  printf '%s' "${statefulset_rows}" >>"${tmp_file}"
 done
 
 sort -u "${tmp_file}" -o "${tmp_file}"

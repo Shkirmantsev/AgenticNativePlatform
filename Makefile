@@ -58,7 +58,7 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	flux-values render-cluster-root ensure-generated-flux-clean install-flux-local bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
-	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy diagnose-runtime-state recover-paused-workloads preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
+	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy diagnose-runtime-state recover-paused-workloads preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig require-cluster-api \
 	build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball prepare-echo-mcp-image-local \
 	k9s-local port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-research-access close-research-access \
@@ -217,6 +217,9 @@ kubeconfig: ## Export kubeconfig from the control-plane host to .kube/generated
 require-kubeconfig:
 	@test -f "$(KUBECONFIG)" || (echo "Missing kubeconfig: $(KUBECONFIG). Run 'make kubeconfig TOPOLOGY=$(TOPOLOGY)' first." >&2; exit 1)
 
+require-cluster-api: require-kubeconfig
+	@./scripts/require-kube-apiserver.sh "$@"
+
 uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventory
 	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/uninstall-k3s.yml
 
@@ -305,10 +308,10 @@ ensure-generated-flux-clean: flux-values render-cluster-root ## Render tracked F
 	  exit 1; \
 	fi
 
-install-flux-local: require-kubeconfig ## Install Flux controllers into the current cluster
+install-flux-local: require-cluster-api ## Install Flux controllers into the current cluster
 	$(FLUX) install
 
-install-flux: require-kubeconfig ## Install Flux controllers into the selected/current cluster
+install-flux: require-cluster-api ## Install Flux controllers into the selected/current cluster
 	@if [ -n "$(KUBE_CONTEXT)" ]; then \
 		echo "Installing Flux into context $(KUBE_CONTEXT)"; \
 		flux --kubeconfig "$(KUBECONFIG)" --context "$(KUBE_CONTEXT)" install; \
@@ -384,9 +387,7 @@ verify: require-kubeconfig ## Basic local verification of cluster and Flux state
 	$(KUBECTL) get helmreleases -A || true
 
 cluster-status: require-kubeconfig ## Show staged Flux, HelmRelease, and pod readiness state
-	$(FLUX) get kustomizations -A || true
-	$(FLUX) get helmreleases -A || true
-	$(KUBECTL) get pods -A || true
+	@KUBECTL_BIN=kubectl FLUX_BIN=flux KUBECONFIG_PATH='$(KUBECONFIG)' STATE_NAMESPACE=flux-system PAUSE_STATE_CONFIGMAP='$(PAUSE_STATE_CONFIGMAP)' PAUSE_NAMESPACES='$(PAUSE_NAMESPACES)' PLATFORM_KUSTOMIZATIONS='$(PLATFORM_KUSTOMIZATIONS)' ./scripts/cluster-status.sh
 
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
 	@echo "== Flux Kustomizations =="; \
@@ -473,7 +474,7 @@ decrypt-secrets: ## Decrypt committed SOPS secrets into .generated/decrypted/<en
 sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key into flux-system for SOPS decryption
 	./scripts/bootstrap-sops-secret.sh
 
-cluster-pause: require-kubeconfig ## Pause platform workloads without uninstalling the cluster
+cluster-pause: require-cluster-api ## Pause platform workloads without uninstalling the cluster
 	@PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/save-paused-workloads.sh
 	@for k in $(PLATFORM_KUSTOMIZATIONS); do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
@@ -491,7 +492,7 @@ cluster-pause: require-kubeconfig ## Pause platform workloads without uninstalli
 	@echo "cluster-pause completed: Flux roots and HelmReleases are suspended, selected app/data replica targets were snapshotted, and pausable workloads were scaled to 0."
 	@echo "Infrastructure namespaces remain running by design so ambient, gateways, controllers, and cached images stay warm for fast resume."
 
-cluster-resume: require-kubeconfig ## Resume platform workloads from Git desired state
+cluster-resume: require-cluster-api ## Resume platform workloads from Git desired state
 	@$(FLUX) resume source git platform -n flux-system || true
 	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
 	  $(FLUX) resume helmrelease $$hr -n flux-system || true; \

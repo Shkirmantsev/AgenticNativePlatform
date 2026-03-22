@@ -348,6 +348,7 @@ make recover-paused-workloads
 
 These targets now operate on the staged Flux objects as well as the top-level `platform` object. If startup still looks slow, inspect the staged status directly:
 `cluster-pause` pauses platform workloads and snapshots the current Deployment and StatefulSet replica targets before scaling `ai-gateway`, `ai-models`, and `context` to zero; it does not stop system namespaces or DaemonSets, so `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will still be present afterwards.
+`cluster-status` stays pause-aware: when the platform Git source, staged Kustomizations, and HelmReleases are all suspended and the pause-state ConfigMap exists, it prints a paused summary instead of replaying stale historical Flux `READY=False` values from before suspension.
 `diagnose-runtime-state` prints staged Flux readiness, the pause-state ConfigMap, paused-namespace workloads, zero-replica objects, and key service endpoint counts.
 `recover-paused-workloads` restores the saved pause snapshot when it exists, falls back to scaling zero-replica workloads in the paused namespaces back to `1` when the snapshot is missing or stale, and then forces a fresh reconcile.
 `cluster-stop` and `cluster-start` remain as compatibility aliases.
