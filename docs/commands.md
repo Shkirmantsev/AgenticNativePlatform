@@ -112,6 +112,7 @@ make k9s-local
 make open-research-access
 make check-kagent-ui
 make check-agentgateway
+make check-agentgateway-openai
 make check-litellm
 make test-a2a-agent
 make test-agentgateway-openai
@@ -133,6 +134,8 @@ Open all common localhost access paths in the background:
 make open-research-access
 ```
 
+`make open-research-access` is best-effort: it tries every standard port-forward, prints a summary table, and only fails after attempting the full set.
+
 Close them:
 
 ```bash
@@ -152,6 +155,7 @@ URLs made available by `make open-research-access`:
 - `http://localhost:6333/dashboard` Qdrant
 
 The AgentGateway and LiteLLM port-forwards expose API paths, not UI root pages.
+`make open-agentgateway` now checks only that the tunnel is up and AgentGateway answers HTTP at all; it does not require LiteLLM to be healthy.
 
 Endpoint truth table:
 
@@ -191,8 +195,18 @@ AgentGateway can be tested the same way:
 
 ```bash
 make check-agentgateway
+make check-agentgateway-openai
 curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
 ```
+
+If LiteLLM, PostgreSQL, Qdrant, Redis, or TEI appear to be missing after a pause/resume cycle, diagnose runtime state before editing manifests:
+
+```bash
+make diagnose-runtime-state
+make recover-paused-workloads
+```
+
+Those workloads live in the pause-sensitive namespaces `ai-gateway`, `ai-models`, and `context`, so a `0` replica runtime state can hide them even when the manifests are still present.
 
 If MetalLB has assigned an external IP to `agentgateway-proxy`, the external URL is:
 
@@ -319,10 +333,14 @@ make cluster-up-github-workspace TOPOLOGY=github-workspace
 ```bash
 make cluster-pause
 make cluster-resume
+make diagnose-runtime-state
+make recover-paused-workloads
 ```
 
 These targets now operate on the staged Flux objects as well as the top-level `platform` object. If startup still looks slow, inspect the staged status directly:
-`cluster-pause` pauses platform workloads and snapshots the current Deployment and StatefulSet replica targets before scaling them to zero; it does not stop system namespaces or DaemonSets, so `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will still be present afterwards.
+`cluster-pause` pauses platform workloads and snapshots the current Deployment and StatefulSet replica targets before scaling `ai-gateway`, `ai-models`, and `context` to zero; it does not stop system namespaces or DaemonSets, so `flux-system`, `kube-system`, `cert-manager`, `metallb-system`, `istio-cni`, `ztunnel`, Prometheus node-exporter, and Loki canary will still be present afterwards.
+`diagnose-runtime-state` prints staged Flux readiness, the pause-state ConfigMap, paused-namespace workloads, zero-replica objects, and key service endpoint counts.
+`recover-paused-workloads` restores the saved pause snapshot when it exists, falls back to scaling zero-replica workloads in the paused namespaces back to `1` when the snapshot is missing or stale, and then forces a fresh reconcile.
 `cluster-stop` and `cluster-start` remain as compatibility aliases.
 
 ```bash

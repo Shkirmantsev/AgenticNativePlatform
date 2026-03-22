@@ -503,6 +503,8 @@ Open the common local access paths:
 make open-research-access
 ```
 
+`make open-research-access` is best-effort: it tries every standard port-forward, prints a summary table, and only fails after attempting the whole set.
+
 This exposes:
 
 - `http://localhost:8080` for the `kagent` UI
@@ -548,6 +550,7 @@ make open-qdrant QDRANT_LOCAL_PORT=16333
 ### Localhost testing
 
 The `agentgateway` and LiteLLM port-forwards expose API endpoints, not a browser UI homepage. Use the API paths directly.
+`make open-agentgateway` now verifies only that the tunnel is up and the gateway answers HTTP. It does not require LiteLLM to be healthy.
 
 Endpoint truth table:
 
@@ -572,6 +575,7 @@ Test AgentGateway:
 ```bash
 make open-agentgateway
 make check-agentgateway
+make check-agentgateway-openai
 make test-agentgateway-openai
 ```
 
@@ -642,19 +646,31 @@ Resume from Git desired state:
 ```bash
 make cluster-resume
 make cluster-status
+make diagnose-runtime-state
+make recover-paused-workloads
 ```
 
 Important behavior:
 
 - `cluster-pause` suspends the staged Flux roots and HelmReleases
-- `cluster-pause` snapshots Deployment and StatefulSet replica targets in `ConfigMap/flux-system/cluster-pause-state` before scaling platform namespaces to zero
+- `cluster-pause` snapshots Deployment and StatefulSet replica targets in `ConfigMap/flux-system/cluster-pause-state` before scaling `ai-gateway`, `ai-models`, and `context` to zero
 - `cluster-resume` reconciles `platform-bootstrap`, restores the saved replica targets, fans out HelmRelease reconcile annotations, then waits on higher stages
+- `diagnose-runtime-state` shows staged Flux readiness, paused-namespace workloads, zero-replica objects, and key service endpoints
+- `recover-paused-workloads` restores the saved pause snapshot or falls back to scaling zero-replica workloads in the paused namespaces back to `1` when that snapshot is missing or stale
 - `cluster-stop` and `cluster-start` remain compatibility aliases
 
 Design detail:
 
 - `metallb-system` is intentionally not scaled to zero because its validating webhook is needed on the next reconcile
 - the staged Flux health budgets are longer than the per-stage defaults because some HelmReleases in this repo have 15-30 minute cold-start timeouts
+
+If LiteLLM, PostgreSQL, Qdrant, Redis, or TEI appear to be missing, treat it as a runtime-state problem first:
+
+```bash
+make diagnose-runtime-state
+```
+
+Those workloads are still part of the active full profile. The usual failure mode is that `ai-gateway`, `ai-models`, or `context` remained scaled down after a pause/resume cycle.
 
 ## Validate and troubleshoot
 

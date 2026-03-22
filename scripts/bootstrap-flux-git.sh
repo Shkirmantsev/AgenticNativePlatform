@@ -55,4 +55,6 @@ spec:
   path: ${CLUSTER_PATH}
 ${DECRYPTION_BLOCK}
 EOF
-echo "Flux Git source bootstrapped for ${CLUSTER_PATH} (PLATFORM_PROFILE=${PLATFORM_PROFILE:-auto}, LMSTUDIO_ENABLED=${LMSTUDIO_ENABLED}, SECRETS_MODE=${SECRETS_MODE})"
+remote_line="$(git ls-remote --exit-code "${GIT_REPO_URL}" "refs/heads/${GIT_BRANCH}")"
+remote_head="${remote_line%%$'\t'*}"
+echo "Flux Git source bootstrapped for ${CLUSTER_PATH} from ${GIT_REPO_URL}@${GIT_BRANCH} (${remote_head}) (PLATFORM_PROFILE=${PLATFORM_PROFILE:-auto}, LMSTUDIO_ENABLED=${LMSTUDIO_ENABLED}, SECRETS_MODE=${SECRETS_MODE})"

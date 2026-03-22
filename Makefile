@@ -54,20 +54,20 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	flux-values render-cluster-root ensure-generated-flux-clean install-flux-local bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
-	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
+	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy diagnose-runtime-state recover-paused-workloads preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig \
 	build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball prepare-echo-mcp-image-local \
 	k9s-local port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-research-access close-research-access \
-	check-kagent-ui check-agentgateway check-litellm check-flux-stages \
+	check-kagent-ui check-agentgateway check-agentgateway-openai check-litellm check-flux-stages \
 	test-a2a-agent test-agentgateway-gemini test-agentgateway-openai test-litellm test-lmstudio test-ollama test-vllm
 
 define wait_for_http_status
 	@url="$(1)"; accepted_codes="$(2)"; header="$(3)"; deadline=$$(( $$(date +%s) + $(HTTP_PROBE_TIMEOUT) )); last_code="000"; \
 	while [ $$(date +%s) -le $$deadline ]; do \
 	  if [ -n "$$header" ]; then \
-	    last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' -H "$$header" "$$url" || true )"; \
+	    last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' -H "$$header" "$$url" 2>/dev/null || true )"; \
 	  else \
-	    last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' "$$url" || true )"; \
+	    last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' "$$url" 2>/dev/null || true )"; \
 	  fi; \
 	  case " $$accepted_codes " in \
 	    *" $$last_code "*) echo "$$url -> $$last_code"; exit 0 ;; \
@@ -121,9 +121,9 @@ define start_port_forward
 	    last_code="000"; \
 	    while [ $$(date +%s) -le $$deadline ]; do \
 	      if [ -n "$$header" ]; then \
-	        last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' -H "$$header" "$$probe_url" || true )"; \
+	        last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' -H "$$header" "$$probe_url" 2>/dev/null || true )"; \
 	      else \
-	        last_code="$$( $(CURL) -sS -o /dev/null -w '%{http_code}' "$$probe_url" || true )"; \
+	        last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' "$$probe_url" 2>/dev/null || true )"; \
 	      fi; \
 	      case " $$accepted_codes " in \
 	        *" $$last_code "*) ready=1; break ;; \
@@ -286,6 +286,33 @@ install-flux: require-kubeconfig ## Install Flux controllers into the selected/c
 	fi
 
 bootstrap-flux-git: require-kubeconfig flux-values render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
+	@if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+	  echo "bootstrap-flux-git requires a Git worktree." >&2; \
+	  exit 1; \
+	fi
+	@if ! git diff --quiet --ignore-submodules HEAD -- || ! git diff --cached --quiet --ignore-submodules --; then \
+	  echo "Refusing Flux bootstrap with a dirty worktree. Commit or stash changes first." >&2; \
+	  exit 1; \
+	fi
+	@remote_name="$$(git remote -v | awk -v url="$(GIT_REPO_URL)" '$$2 == url { print $$1; exit }')"; \
+	if [ -z "$$remote_name" ]; then \
+	  echo "No configured Git remote matches GIT_REPO_URL=$(GIT_REPO_URL)" >&2; \
+	  exit 1; \
+	fi; \
+	local_head="$$(git rev-parse HEAD)"; \
+	remote_line="$$(git ls-remote --exit-code "$(GIT_REPO_URL)" "refs/heads/$(GIT_BRANCH)")"; \
+	remote_head="$${remote_line%%$$(printf '\t')*}"; \
+	echo "Flux bootstrap preflight:"; \
+	echo "  remote=$$remote_name"; \
+	echo "  repo=$(GIT_REPO_URL)"; \
+	echo "  branch=$(GIT_BRANCH)"; \
+	echo "  local_head=$$local_head"; \
+	echo "  remote_head=$$remote_head"; \
+	if [ "$$local_head" != "$$remote_head" ]; then \
+	  echo "Refusing Flux bootstrap because local HEAD is not the same commit as $(GIT_REPO_URL)@$(GIT_BRANCH)." >&2; \
+	  echo "Push the current commit first or change GIT_BRANCH/GIT_REPO_URL intentionally." >&2; \
+	  exit 1; \
+	fi
 	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ROOT_TIMEOUT=$(PLATFORM_ROOT_TIMEOUT) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) ./scripts/bootstrap-flux-git.sh
 
 reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
@@ -316,6 +343,67 @@ cluster-status: require-kubeconfig ## Show staged Flux, HelmRelease, and pod rea
 	$(FLUX) get kustomizations -A || true
 	$(FLUX) get helmreleases -A || true
 	$(KUBECTL) get pods -A || true
+
+diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
+	@echo "== Flux Kustomizations =="; \
+	$(FLUX) get kustomizations -A || true
+	@echo
+	@echo "== Flux HelmReleases =="; \
+	$(FLUX) get helmreleases -A || true
+	@echo
+	@echo "== Pause State ConfigMap =="; \
+	if $(KUBECTL) -n flux-system get configmap "$(PAUSE_STATE_CONFIGMAP)" >/dev/null 2>&1; then \
+	  $(KUBECTL) -n flux-system get configmap "$(PAUSE_STATE_CONFIGMAP)" -o jsonpath='{.metadata.name}{" savedAt="}{.data.savedAt}{" namespaces="}{.data.namespaces}{"\n"}'; \
+	else \
+	  echo "ConfigMap/flux-system/$(PAUSE_STATE_CONFIGMAP) is missing"; \
+	fi
+	@echo
+	@echo "== ai-gateway / ai-models / context Deployments and StatefulSets =="; \
+	$(KUBECTL) get deploy,statefulset -A -o custom-columns='KIND:.kind,NAMESPACE:.metadata.namespace,NAME:.metadata.name,DESIRED:.spec.replicas,READY:.status.readyReplicas' | awk 'NR==1 || $$2=="ai-gateway" || $$2=="ai-models" || $$2=="context"'
+	@echo
+	@echo "== Zero-replica workloads across the cluster =="; \
+	zero_list="$$( $(KUBECTL) get deploy,statefulset -A -o custom-columns='KIND:.kind,NAMESPACE:.metadata.namespace,NAME:.metadata.name,DESIRED:.spec.replicas,READY:.status.readyReplicas' | awk 'NR==1 || $$4==0' )"; \
+	echo "$$zero_list"
+	@echo
+	@echo "== Key Service endpoint counts =="; \
+	for pair in "agentgateway-system agentgateway-proxy" "ai-gateway litellm" "context context-qdrant" "context context-postgres-postgresql"; do \
+	  set -- $$pair; \
+	  addresses="$$( $(KUBECTL) -n $$1 get endpoints $$2 -o jsonpath='{range .subsets[*].addresses[*]}{.ip}{" "}{end}' 2>/dev/null || true )"; \
+	  count="$$(printf '%s\n' "$$addresses" | wc -w | tr -d ' ')"; \
+	  echo "$$1/$$2 endpoints=$$count"; \
+	done
+
+recover-paused-workloads: require-kubeconfig ## Restore paused workloads, force a fresh reconcile, and print runtime status
+	@if $(KUBECTL) -n flux-system get configmap "$(PAUSE_STATE_CONFIGMAP)" >/dev/null 2>&1; then \
+	  echo "Restoring saved replica targets from ConfigMap/flux-system/$(PAUSE_STATE_CONFIGMAP)"; \
+	  PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh; \
+	fi
+	@fallback_needed=0; \
+	for ns in $(PAUSE_NAMESPACES); do \
+	  $(KUBECTL) get ns $$ns >/dev/null 2>&1 || continue; \
+	  for kind in deployment statefulset; do \
+	    zero_names="$$( $(KUBECTL) -n $$ns get $$kind -o jsonpath='{range .items[?(@.spec.replicas==0)]}{.metadata.name}{"\n"}{end}' 2>/dev/null )"; \
+	    if [ -n "$$zero_names" ]; then \
+	      fallback_needed=1; \
+	    fi; \
+	  done; \
+	done; \
+	if [ "$$fallback_needed" -eq 1 ]; then \
+	  echo "Saved pause state left workloads at 0 replicas; scaling zero-replica workloads in $(PAUSE_NAMESPACES) back to 1 as a fallback."; \
+	  for ns in $(PAUSE_NAMESPACES); do \
+	    $(KUBECTL) get ns $$ns >/dev/null 2>&1 || continue; \
+	    for kind in deployment statefulset; do \
+	      zero_names="$$( $(KUBECTL) -n $$ns get $$kind -o jsonpath='{range .items[?(@.spec.replicas==0)]}{.metadata.name}{"\n"}{end}' 2>/dev/null )"; \
+	      [ -n "$$zero_names" ] || continue; \
+	      for name in $$zero_names; do \
+	        echo "Scaling $$kind/$$ns/$$name -> 1"; \
+	        $(KUBECTL) -n $$ns scale $$kind/$$name --replicas=1; \
+	      done; \
+	    done; \
+	  done; \
+	fi
+	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) diagnose-runtime-state TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 
 render-plaintext-secrets: ## Render local plaintext Kubernetes Secrets from .env into .generated/secrets/<env>
 	ENV=$(ENV) ./scripts/render-plaintext-secrets.sh
@@ -471,7 +559,7 @@ close-kagent-a2a: ## Close the kagent controller API port-forward
 	$(call stop_port_forward,kagent-a2a)
 
 open-agentgateway: require-kubeconfig ## Open AgentGateway at http://localhost:15000
-	$(call start_port_forward,agentgateway,http://localhost:$(AGENTGATEWAY_LOCAL_PORT),agentgateway-system,agentgateway-proxy,$(AGENTGATEWAY_LOCAL_PORT),8080,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
+	$(call start_port_forward,agentgateway,http://localhost:$(AGENTGATEWAY_LOCAL_PORT),agentgateway-system,agentgateway-proxy,$(AGENTGATEWAY_LOCAL_PORT),8080,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/,200 301 302 303 307 308 401 403 404 405,)
 
 close-agentgateway: ## Close the AgentGateway port-forward
 	$(call stop_port_forward,agentgateway)
@@ -500,7 +588,10 @@ open-qdrant: require-kubeconfig ## Open Qdrant at http://localhost:6333
 check-kagent-ui: ## Verify the local kagent UI endpoint
 	$(call wait_for_http_status,http://localhost:$(KAGENT_UI_LOCAL_PORT)/,200 301 302 303 307 308,)
 
-check-agentgateway: ## Verify the local AgentGateway OpenAI-compatible API endpoint
+check-agentgateway: ## Verify the local AgentGateway port-forward and HTTP liveness
+	$(call wait_for_http_status,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/,200 301 302 303 307 308 401 403 404 405,)
+
+check-agentgateway-openai: ## Verify the local AgentGateway OpenAI-compatible API path
 	$(call wait_for_http_status,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
 
 check-litellm: ## Verify the local LiteLLM readiness and API endpoints
@@ -538,13 +629,19 @@ close-qdrant: ## Close the Qdrant port-forward
 	$(call stop_port_forward,qdrant)
 
 open-research-access: require-kubeconfig ## Open the main local research endpoints on localhost
-	$(MAKE) open-kagent-ui
-	$(MAKE) open-kagent-a2a
-	$(MAKE) open-agentgateway
-	$(MAKE) open-litellm
-	$(MAKE) open-grafana
-	$(MAKE) open-prometheus
-	$(MAKE) open-qdrant
+	@set +e; \
+	failures=0; \
+	printf '%-18s %s\n' "Endpoint" "Result"; \
+	for target in open-kagent-ui open-kagent-a2a open-agentgateway open-litellm open-grafana open-prometheus open-qdrant; do \
+	  label="$${target#open-}"; \
+	  if $(MAKE) $$target; then \
+	    printf '%-18s %s\n' "$$label" "opened"; \
+	  else \
+	    failures=$$((failures + 1)); \
+	    printf '%-18s %s\n' "$$label" "failed"; \
+	  fi; \
+	done; \
+	test $$failures -eq 0
 
 close-research-access: ## Close all background localhost research endpoints
 	$(MAKE) close-kagent-ui
@@ -558,10 +655,10 @@ close-research-access: ## Close all background localhost research endpoints
 test-a2a-agent: ## Fetch the sample agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json | jq .
 
-test-agentgateway-gemini: require-kubeconfig open-agentgateway check-agentgateway ## Test the canonical OpenAI-compatible route through agentgateway -> LiteLLM -> Gemini
+test-agentgateway-gemini: require-kubeconfig open-agentgateway check-agentgateway-openai ## Test the canonical OpenAI-compatible route through agentgateway -> LiteLLM -> Gemini
 	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .
 
-test-agentgateway-openai: require-kubeconfig open-agentgateway check-agentgateway ## Test the agentgateway OpenAI-compatible route without requiring provider-specific CLI tools
+test-agentgateway-openai: require-kubeconfig open-agentgateway check-agentgateway-openai ## Test the agentgateway OpenAI-compatible route without requiring provider-specific CLI tools
 	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .
 
 test-litellm: require-kubeconfig open-litellm check-litellm ## List available models directly from the LiteLLM service

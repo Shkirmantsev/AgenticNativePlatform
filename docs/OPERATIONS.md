@@ -68,6 +68,7 @@ That target orchestrates the existing building blocks in order:
 9. print cluster status
 
 It intentionally stops after the topology render step if tracked generated manifests under `flux/generated/...` changed locally, because Flux reads the remote Git branch rather than your local working tree.
+`make bootstrap-flux-git` also refuses to continue when the Git worktree is dirty or when local `HEAD` does not match `GIT_REPO_URL@GIT_BRANCH`, because the cluster follows the remote branch, not unpublished local edits.
 
 Topology distinction:
 
@@ -182,11 +183,26 @@ Resume the platform and let Flux restore desired state:
 ```bash
 make cluster-resume
 make cluster-status
+make diagnose-runtime-state
 ```
 
 `cluster-resume` resumes the source, HelmReleases, and staged Kustomizations, reconciles `platform-bootstrap` first, restores the saved replica targets from `ConfigMap/flux-system/cluster-pause-state`, fans out HelmRelease reconcile annotations, and then waits on `platform-infrastructure`, `platform-applications`, and `platform`.
 That ordering avoids a common failure mode after `cluster-pause`: direct `kubectl scale` changes `spec.replicas` field ownership and can leave HPA-managed Deployments such as `istiod` stuck at `ScalingDisabled` when replicas stay at `0`.
 `cluster-stop` and `cluster-start` remain as compatibility aliases for the previous names.
+
+If LiteLLM, PostgreSQL, Qdrant, Redis, or TEI appear to be missing after a pause or restart, treat that as a runtime-state problem first:
+
+```bash
+make diagnose-runtime-state
+```
+
+Those workloads live in the pause-sensitive namespaces `ai-gateway`, `ai-models`, and `context`, so stale `0` replicas usually explain the symptom better than a missing manifest does.
+
+If the saved pause snapshot is missing or stale, recover those namespaces explicitly:
+
+```bash
+make recover-paused-workloads
+```
 
 `make reconcile` follows the same staged idea without the suspend/resume step:
 
@@ -217,6 +233,8 @@ Open the common access paths in the background:
 make open-research-access
 ```
 
+`make open-research-access` is best-effort: it tries all standard port-forwards, prints a summary table, and reports failures only after attempting every endpoint.
+
 Close them:
 
 ```bash
@@ -236,6 +254,7 @@ That exposes:
 - `http://localhost:6333/dashboard` for Qdrant
 
 The AgentGateway and LiteLLM port-forwards expose API endpoints, not UI root pages.
+`make open-agentgateway` checks only gateway/tunnel liveness now; use `make check-agentgateway-openai` or `make test-agentgateway-openai` for the backend-dependent `/v1/models` path.
 
 Endpoint truth table:
 
@@ -271,6 +290,7 @@ Use the explicit checks when validating local access:
 ```bash
 make check-kagent-ui
 make check-agentgateway
+make check-agentgateway-openai
 make check-litellm
 make check-flux-stages
 ```
