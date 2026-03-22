@@ -161,3 +161,14 @@ spec:
   url: oci://ghcr.io/kagent-dev/kmcp/helm/kmcp
   ref:
     semver: ">=0.1.0"
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: weave-gitops-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/weaveworks/charts/weave-gitops
+  ref:
+    tag: 4.0.36

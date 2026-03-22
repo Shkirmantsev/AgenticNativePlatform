@@ -10,6 +10,7 @@ TOPOLOGY ?= local
 ENV ?= dev
 RUNTIME ?= none
 SECRETS_MODE ?= external
+PLATFORM_PROFILE ?=
 LMSTUDIO_ENABLED ?= false
 INSTALL_K9S ?= true
 IAC_TOOL ?= tofu
@@ -202,7 +203,7 @@ uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventor
 cluster-up-local: ## Bootstrap a single-node local topology
 	$(MAKE) terraform-init TOPOLOGY=local TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=local TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=local ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=local ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=local
 	$(MAKE) install-k3s-server TOPOLOGY=local
 	$(MAKE) kubeconfig TOPOLOGY=local
@@ -210,7 +211,7 @@ cluster-up-local: ## Bootstrap a single-node local topology
 cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 	$(MAKE) terraform-init TOPOLOGY=minipc TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=minipc TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=minipc ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=minipc ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=minipc
 	$(MAKE) install-k3s-server TOPOLOGY=minipc
 	$(MAKE) kubeconfig TOPOLOGY=minipc
@@ -218,7 +219,7 @@ cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker topology
 	$(MAKE) terraform-init TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid
 	$(MAKE) join-workers TOPOLOGY=hybrid
@@ -228,7 +229,7 @@ cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker t
 cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation and remote worker nodes
 	$(MAKE) terraform-init TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid-remote ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid-remote ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid-remote
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid-remote
 	$(MAKE) join-workers TOPOLOGY=hybrid-remote
@@ -238,7 +239,7 @@ cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation a
 cluster-up-github-workspace: ## Bootstrap a GitHub workspace / Codespaces topology with k3d
 	$(MAKE) terraform-init TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-workspace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-workspace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" TF_BIN="$(TF_BIN)" ./scripts/cluster-up-github-workspace.sh
 
 run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, and reconcile from the current repo state
@@ -254,15 +255,15 @@ run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, appl
 	else \
 	  $(MAKE) apply-plaintext-secrets TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
 	fi
-	@$(MAKE) bootstrap-flux-git TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
-	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) bootstrap-flux-git TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	@$(MAKE) cluster-status TOPOLOGY=$(TOPOLOGY)
 
 flux-values: ## Render non-secret Flux ConfigMaps for the selected topology
 	./scripts/render-flux-values.sh $(TOPOLOGY)
 
 render-cluster-root: ## Render the Flux root kustomization for the selected topology/env/runtime/secrets mode
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) ./scripts/render-cluster-kustomization.sh
+	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) ./scripts/render-cluster-kustomization.sh
 
 ensure-generated-flux-clean: flux-values render-cluster-root ## Render tracked Flux inputs and fail before cluster install continues if GitOps inputs need commit/push
 	@changed="$$(git status --porcelain -- "flux/generated/$(TOPOLOGY)" "flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)")"; \
@@ -285,7 +286,7 @@ install-flux: require-kubeconfig ## Install Flux controllers into the selected/c
 	fi
 
 bootstrap-flux-git: require-kubeconfig flux-values render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ROOT_TIMEOUT=$(PLATFORM_ROOT_TIMEOUT) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) ./scripts/bootstrap-flux-git.sh
+	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ROOT_TIMEOUT=$(PLATFORM_ROOT_TIMEOUT) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) ./scripts/bootstrap-flux-git.sh
 
 reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
 	@$(FLUX) reconcile source git platform -n flux-system || true

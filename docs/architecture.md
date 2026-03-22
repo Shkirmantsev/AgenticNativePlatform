@@ -13,6 +13,18 @@ Those are rendered under:
 - `flux/generated/<topology>/`
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`
 
+The staged roots now render through explicit profile composition:
+
+- bundle Kustomizations under `flux/components/bundles/`
+- profile Kustomizations under `flux/components/profiles/`
+- topology defaults:
+  - `platform-profile-full` for host-based topologies
+  - `platform-profile-workspace` for `github-workspace`
+- lighter opt-in profiles:
+  - `platform-profile-fast`
+  - `platform-profile-fast-serving`
+  - `platform-profile-fast-context`
+
 The older monolithic `platform-core` / `platform` path and the static pre-rendered
 `flux/clusters/*` roots are legacy compatibility paths and are not the primary
 bootstrap model for new work.

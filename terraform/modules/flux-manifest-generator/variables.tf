@@ -27,6 +27,22 @@ variable "secrets_mode" {
   }
 }
 
+variable "platform_profile" {
+  type    = string
+  default = ""
+
+  validation {
+    condition = var.platform_profile == "" || contains([
+      "platform-profile-fast",
+      "platform-profile-fast-serving",
+      "platform-profile-fast-context",
+      "platform-profile-full",
+      "platform-profile-workspace",
+    ], var.platform_profile)
+    error_message = "platform_profile must be empty or one of the supported platform-profile-* names."
+  }
+}
+
 variable "include_local_bootstrap_artifacts" {
   type    = bool
   default = true

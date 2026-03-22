@@ -52,6 +52,11 @@ variable "platform_apps_timeout" {
   default = "20m"
 }
 
+variable "platform_profile" {
+  type    = string
+  default = ""
+}
+
 variable "gemini_model" {
   type    = string
   default = "gemini-3.1-flash-lite-preview"

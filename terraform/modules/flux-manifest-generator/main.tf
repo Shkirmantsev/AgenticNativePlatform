@@ -7,11 +7,13 @@ terraform {
 }
 
 locals {
-  repo_root             = abspath("${path.root}/../../..")
-  generated_dir         = "${local.repo_root}/flux/generated/${var.topology}"
-  cluster_id            = "${var.topology}-${var.environment}-${var.runtime}-${var.secrets_mode}"
-  cluster_generated_dir = "${local.repo_root}/flux/generated/clusters/${local.cluster_id}"
-  infra_component       = var.topology == "github-workspace" ? "../../../../components/platform-infrastructure-workspace" : "../../../../components/platform-infrastructure"
+  repo_root                = abspath("${path.root}/../../..")
+  generated_dir            = "${local.repo_root}/flux/generated/${var.topology}"
+  cluster_id               = "${var.topology}-${var.environment}-${var.runtime}-${var.secrets_mode}"
+  cluster_generated_dir    = "${local.repo_root}/flux/generated/clusters/${local.cluster_id}"
+  default_platform_profile = var.topology == "github-workspace" ? "platform-profile-workspace" : "platform-profile-full"
+  platform_profile         = var.platform_profile != "" ? var.platform_profile : local.default_platform_profile
+  profile_component        = "../../../../components/profiles/${local.platform_profile}"
 
   litellm_values_configmap = templatefile("${path.module}/templates/litellm-values-configmap.yaml.tftpl", {
     gemini_model             = var.gemini_model
@@ -87,17 +89,19 @@ locals {
   })
 
   infrastructure_kustomization = templatefile("${path.module}/templates/infrastructure-kustomization.yaml.tftpl", {
-    infra_component  = local.infra_component
-    runtime          = var.runtime
-    lmstudio_enabled = var.lmstudio_enabled
+    profile_component = local.profile_component
+    runtime           = var.runtime
+    lmstudio_enabled  = var.lmstudio_enabled
   })
 
   apps_kustomization = templatefile("${path.module}/templates/apps-kustomization.yaml.tftpl", {
     environment                       = var.environment
     include_local_bootstrap_artifacts = var.include_local_bootstrap_artifacts
+    profile_component                 = local.profile_component
   })
 
   samples_echo_mcp_kustomization = templatefile("${path.module}/templates/samples-echo-mcp-kustomization.yaml.tftpl", {})
+  weave_gitops_kustomization     = templatefile("${path.module}/templates/weave-gitops-kustomization.yaml.tftpl", {})
 
   topology_files = merge(
     {
@@ -130,6 +134,7 @@ locals {
       "apps/kustomization.yaml"                                   = local.apps_kustomization
       "samples-echo-mcp/generated-echo-mcp-values-configmap.yaml" = local.echo_mcp_values_configmap
       "samples-echo-mcp/kustomization.yaml"                       = local.samples_echo_mcp_kustomization
+      "weave-gitops/kustomization.yaml"                           = local.weave_gitops_kustomization
     },
     var.include_local_bootstrap_artifacts ? {
       "bootstrap/generated-lmstudio-endpoint.yaml"         = local.lmstudio_endpoint
@@ -142,13 +147,17 @@ locals {
 resource "local_file" "topology_files" {
   for_each = local.topology_files
 
-  filename = "${local.generated_dir}/${each.key}"
-  content  = each.value
+  filename             = "${local.generated_dir}/${each.key}"
+  content              = each.value
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "cluster_files" {
   for_each = local.cluster_files
 
-  filename = "${local.cluster_generated_dir}/${each.key}"
-  content  = each.value
+  filename             = "${local.cluster_generated_dir}/${each.key}"
+  content              = each.value
+  directory_permission = "0755"
+  file_permission      = "0644"
 }

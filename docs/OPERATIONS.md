@@ -85,6 +85,8 @@ make k9s-local
 - `flux/generated/<topology>/kustomization.yaml` is the generated topology input root
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml` is the generated cluster root used by bootstrap scripts
 - the generated cluster root fans out into staged Flux `Kustomization` resources so CRDs and charts install before dependent custom resources
+- the staged infra/apps roots render through `flux/components/profiles/`, which compose bundle Kustomizations under `flux/components/bundles/`
+- optional apply paths such as `samples-echo-mcp/` and `weave-gitops/` are generated alongside the staged roots without entering the default bootstrap path
 - `flux/generated/<topology>/topology-values.yaml` is informational metadata for operators and is not applied to Kubernetes
 
 Validate generated manifests with:
@@ -93,6 +95,17 @@ Validate generated manifests with:
 kubectl kustomize flux/generated/local
 kubectl kustomize flux/generated/clusters/local-dev-none-external
 ```
+
+If you want a lighter local composition for faster iteration, override the generated profile explicitly:
+
+```bash
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external PLATFORM_PROFILE=platform-profile-fast
+```
+
+Default profile mapping stays conservative:
+
+- host-based topologies default to `platform-profile-full`
+- `github-workspace` defaults to `platform-profile-workspace`
 
 ## GitHub workspace topology
 
@@ -299,6 +312,28 @@ kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/cluste
 ```
 
 That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
+
+## Optional Weave GitOps UI
+
+The Weave GitOps dashboard is now a Flux-managed optional bundle.
+
+Render the staged roots, apply the optional path, and use localhost access:
+
+```bash
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/weave-gitops
+kubectl --kubeconfig .kube/generated/current.yaml -n flux-system port-forward svc/weave-gitops 19001:9001
+```
+
+Access the UI at `http://localhost:19001`.
+
+The bundle is configured explicitly for local operator use:
+
+- `ClusterIP` service only
+- ingress disabled
+- local admin user enabled
+
+The bundled demo credentials are `admin` / `change-me`. Rotate the bcrypt hash in `flux/components/weave-gitops/release.yaml` before using anything except localhost-only access.
 
 The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
 They also run `k3s ctr images import` immediately after copying the tarball so new image tags are available without waiting for a background import path.

@@ -73,6 +73,7 @@ When updating this file:
 - TEI CPU defaults: use an ONNX-backed embedding model for `EMBEDDING_MODEL` and generated `tei-values`; models without `model.onnx` keep `tei-embeddings` in rollout even after Flux and Helm are otherwise healthy.
 - KServe chart behavior: upstream `ghcr.io/kserve/charts/kserve:v0.16.0` always renders the built-in `ClusterServingRuntime` objects and only toggles `spec.disabled`; in this repo, strip those objects with Helm post-renderer delete patches or stage them separately, otherwise first install can deadlock on the webhook before `kserve-controller-manager` has endpoints.
 - Generated metadata like `flux/generated/*/topology-values.yaml` is for operators only and must not be listed under Kustomize `resources`.
+- Terraform/OpenTofu local_file: when generating tracked repo manifests such as `flux/generated/**`, set explicit `directory_permission="0755"` and `file_permission="0644"`; provider defaults can flip YAML files to executable and create noisy diffs.
 
 ## Skills
 

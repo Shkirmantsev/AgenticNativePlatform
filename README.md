@@ -14,6 +14,12 @@ The canonical staged bootstrap path is:
 - `platform-infrastructure`
 - `platform-applications`
 
+Those staged roots are now rendered through explicit Flux composition layers:
+
+- bundle Kustomizations under `flux/components/bundles/`
+- profile Kustomizations under `flux/components/profiles/`
+- opt-in extras such as `samples-echo-mcp` and `weave-gitops` under `flux/generated/clusters/<cluster-id>/`
+
 For deeper detail, see:
 
 - [Architecture document](./docs/architecture.md)
@@ -214,6 +220,11 @@ Bootstrap and topology:
   - `ollama`: enable Ollama
   - `vllm`: enable vLLM
 - `LMSTUDIO_ENABLED`: adds the external LM Studio integration path
+- `PLATFORM_PROFILE`: optional staged profile override
+  - leave it unset to keep the topology default
+  - host-based topologies default to `platform-profile-full`
+  - `github-workspace` defaults to `platform-profile-workspace`
+  - lighter opt-in profiles are `platform-profile-fast`, `platform-profile-fast-serving`, and `platform-profile-fast-context`
 - `SECRETS_MODE`: use `external` for the first bootstrap, `sops` after the platform is working
 - `IAC_TOOL`: `tofu` or `terraform`
 

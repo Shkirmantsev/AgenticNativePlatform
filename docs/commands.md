@@ -20,6 +20,12 @@ It installs local tools, brings up the selected topology, installs Flux, applies
 
 After `terraform-apply` writes the topology-specific inputs, it renders the tracked files under `flux/generated/<topology>/` and `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`. If those renders change tracked files, the target stops before host bootstrap continues and asks you to commit and push them first.
 
+The staged roots now point at explicit Flux profiles:
+
+- host-based topologies default to `platform-profile-full`
+- `github-workspace` defaults to `platform-profile-workspace`
+- lighter opt-in profiles are `platform-profile-fast`, `platform-profile-fast-serving`, and `platform-profile-fast-context`
+
 Useful follow-up commands:
 
 ```bash
@@ -263,6 +269,26 @@ kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/cluste
 ```
 
 That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
+
+## Optional Weave GitOps UI
+
+Render the staged roots, then apply the opt-in UI bundle:
+
+```bash
+make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+kubectl --kubeconfig .kube/generated/current.yaml apply -k flux/generated/clusters/local-dev-none-external/weave-gitops
+kubectl --kubeconfig .kube/generated/current.yaml -n flux-system port-forward svc/weave-gitops 19001:9001
+```
+
+Access the UI at `http://localhost:19001`.
+
+The optional bundle keeps the dashboard out of the default bootstrap path:
+
+- service type is `ClusterIP`
+- ingress is disabled
+- the chart creates a local admin user for localhost operator access
+
+The bundled demo credentials are `admin` / `change-me`. Rotate the bcrypt hash in `flux/components/weave-gitops/release.yaml` before exposing the dashboard beyond localhost.
 
 These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is missing.
 They also import the tarball into `k3s` containerd immediately with `k3s ctr images import`.

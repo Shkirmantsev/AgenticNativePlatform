@@ -16,6 +16,7 @@ module "flux_manifests" {
   environment                       = var.environment
   runtime                           = var.runtime
   secrets_mode                      = var.secrets_mode
+  platform_profile                  = var.platform_profile
   include_local_bootstrap_artifacts = false
   lmstudio_enabled                  = var.lmstudio_enabled
   platform_bootstrap_timeout        = var.platform_bootstrap_timeout
