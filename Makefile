@@ -106,7 +106,23 @@ define start_port_forward
 	if [ -f "$$pid_file" ] && ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
 	  rm -f "$$pid_file" "$$port_file"; \
 	fi; \
+	existing_pids="$$(ps -eo pid=,comm=,args= | awk -v service="svc/$(4)" -v mapping="$(5):$(6)" '$$2=="kubectl" && $$0 ~ /port-forward/ && index($$0, service) && index($$0, mapping) { print $$1 }')"; \
+	if [ -n "$$existing_pids" ]; then \
+	  echo "$$existing_pids" | xargs -r kill 2>/dev/null || true; \
+	  rm -f "$$pid_file" "$$port_file"; \
+	  sleep 1; \
+	fi; \
 	if command -v ss >/dev/null 2>&1 && ss -ltn "( sport = :$(5) )" | tail -n +2 | grep -q .; then \
+	  if [ -n "$$probe_url" ]; then \
+	    if [ -n "$$header" ]; then \
+	      last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' -H "$$header" "$$probe_url" 2>/dev/null || true )"; \
+	    else \
+	      last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' "$$probe_url" 2>/dev/null || true )"; \
+	    fi; \
+	    case " $$accepted_codes " in \
+	      *" $$last_code "*) echo "$(1) already available at $(2)"; exit 0 ;; \
+	    esac; \
+	  fi; \
 	  echo "$(1) cannot open because localhost:$(5) is already in use"; \
 	  exit 1; \
 	else \
