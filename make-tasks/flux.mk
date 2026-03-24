@@ -23,7 +23,8 @@ flux-values: ## Validate that Git-authored non-secret values exist for the selec
 	@test -f "values/common/litellm.yaml" || (echo "Missing values/common/litellm.yaml" >&2; exit 1)
 	@test -f "values/$(TOPOLOGY)/lmstudio-external.yaml" || (echo "Missing values/$(TOPOLOGY)/lmstudio-external.yaml" >&2; exit 1)
 
-render-cluster-root: ## Validate that the static cluster root exists under clusters/<topology>-<env>
+render-cluster-root: ## Render mode-specific cluster root fragments under clusters/<topology>-<env>
+	@TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) SECRETS_MODE=$(SECRETS_MODE) ./scripts/render-cluster-root.sh
 	@test -f "clusters/$(TOPOLOGY)-$(ENV)/kustomization.yaml" || (echo "Missing static cluster root: clusters/$(TOPOLOGY)-$(ENV)" >&2; exit 1)
 
 ensure-generated-flux-clean: flux-values render-cluster-root ## Fail before cluster install continues if tracked GitOps inputs need commit/push

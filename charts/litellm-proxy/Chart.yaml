@@ -3,4 +3,4 @@ name: litellm-proxy
 description: LiteLLM proxy for provider abstraction
 type: application
 version: 0.1.0
-appVersion: "v1.82.0-stable"
+appVersion: "v1.82.3-stable.patch.2"
