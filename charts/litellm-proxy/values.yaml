@@ -1,16 +1,34 @@
+nameOverride: litellm
+fullnameOverride: ""
 namespace: ai-gateway
+commonLabels: {}
+replicaCount: 1
 deployment:
   progressDeadlineSeconds: 1800
 image:
   repository: ghcr.io/berriai/litellm
   tag: main-stable
   pullPolicy: IfNotPresent
+containerPort: 4000
 service:
   port: 4000
 serviceAccount:
   create: true
   name: litellm
   automountServiceAccountToken: false
+  annotations: {}
+podAnnotations: {}
+podLabels:
+  istio.io/dataplane-mode: none
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 # Keep LiteLLM listening on the pod IP, not only loopback, so in-cluster
 # callers such as AgentGateway and Istio ambient workloads can reach it.
 resources:
@@ -22,6 +40,10 @@ resources:
     cpu: "500m"
     memory: "1Gi"
     ephemeral-storage: "1Gi"
+readinessProbe:
+  httpGet:
+    path: /health/readiness
+    port: 4000
 existingSecretName: litellm-provider-secrets
 config: |
   general_settings:

@@ -1,4 +1,5 @@
 variable "topology" { type = string }
+variable "environment" { type = string }
 variable "control_plane" { type = map(string) }
 variable "workers" { type = list(map(string)) }
 variable "metallb_start" { type = string }

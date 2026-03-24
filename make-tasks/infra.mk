@@ -1,6 +1,6 @@
 .PHONY: tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
 	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
-	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote cluster-up-github-workspace
+	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote cluster-up-github-codespace
 
 tools-install-local: ## Install local operator tools (age, sops, kubectl, helm, flux, optional k9s, Terraform/OpenTofu)
 	@sudo -v
@@ -40,7 +40,7 @@ uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventor
 cluster-up-local: ## Bootstrap a single-node local topology
 	$(MAKE) terraform-init TOPOLOGY=local TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=local TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=local ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=local ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=local
 	$(MAKE) install-k3s-server TOPOLOGY=local
 	$(MAKE) kubeconfig TOPOLOGY=local
@@ -48,7 +48,7 @@ cluster-up-local: ## Bootstrap a single-node local topology
 cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 	$(MAKE) terraform-init TOPOLOGY=minipc TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=minipc TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=minipc ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=minipc ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=minipc
 	$(MAKE) install-k3s-server TOPOLOGY=minipc
 	$(MAKE) kubeconfig TOPOLOGY=minipc
@@ -56,7 +56,7 @@ cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker topology
 	$(MAKE) terraform-init TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid
 	$(MAKE) join-workers TOPOLOGY=hybrid
@@ -66,15 +66,15 @@ cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker t
 cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation and remote worker nodes
 	$(MAKE) terraform-init TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid-remote ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid-remote ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid-remote
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid-remote
 	$(MAKE) join-workers TOPOLOGY=hybrid-remote
 	$(MAKE) label-llm-nodes TOPOLOGY=hybrid-remote
 	$(MAKE) kubeconfig TOPOLOGY=hybrid-remote
 
-cluster-up-github-workspace: ## Bootstrap a GitHub workspace / Codespaces topology with k3d
-	$(MAKE) terraform-init TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
-	$(MAKE) terraform-apply TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-workspace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
-	WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" TF_BIN="$(TF_BIN)" ./scripts/cluster-up-github-workspace.sh
+cluster-up-github-codespace: ## Bootstrap a GitHub Codespaces topology with k3d
+	$(MAKE) terraform-init TOPOLOGY=github-codespace TF_BIN=$(TF_BIN)
+	$(MAKE) terraform-apply TOPOLOGY=github-codespace TF_BIN=$(TF_BIN)
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-codespace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" TF_BIN="$(TF_BIN)" ./scripts/cluster-up-github-codespace.sh

@@ -1,59 +1,49 @@
-# Flux bootstrap targets
+# Flux Bootstrap
 
-This project now installs Flux with Flux Operator and bootstraps the controllers with a `FluxInstance`.
+Flux is installed with Flux Operator and configured with a committed cluster-specific `FluxInstance` template under:
 
-Pinned versions in the repository bootstrap flow:
+- `clusters/<topology>-<env>/flux-system/flux-instance.yaml`
+
+Pinned versions:
 
 - Flux Operator `0.45.1`
 - Flux `2.8.3`
 
-This project supports two topologies:
-
-## 1) Local clusters (kind/minikube/k3d)
+## Install
 
 ```bash
 make install-flux-local
 ```
 
-## 2) Non-local/shared clusters (dev/test/prod)
+or:
 
 ```bash
-make install-flux
+make install-flux KUBE_CONTEXT=<context>
 ```
 
-To target a specific kube-context:
+## Bootstrap the sync path
 
 ```bash
-make install-flux KUBE_CONTEXT=dev-cluster
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev
 ```
 
-## Target intent
+Inputs:
 
-- `install-flux-local`: local bootstrap convenience target.
-- `install-flux`: topology-neutral target, with optional explicit context.
-- `bootstrap-flux-instance`: applies the operator-managed `FluxInstance`.
-- `bootstrap-flux-git`: compatibility alias for `bootstrap-flux-instance`.
+- `GIT_REPO_URL`
+- `GIT_BRANCH`
+- `FLUX_INSTANCE_SYNC_PATH`
 
-`make bootstrap-flux-instance` renders the tracked cluster path under `flux/generated/clusters/<cluster-id>/`, then applies [`bootstrap/flux-operator/flux-instance.yaml.tmpl`](../bootstrap/flux-operator/flux-instance.yaml.tmpl) with:
+Default sync path:
 
-- `GIT_REPO_URL` from `.env` or CI environment variables
-- `GIT_BRANCH` from `.env` or CI environment variables
-- `FLUX_INSTANCE_SYNC_PATH` defaulting to `./flux/generated/clusters/<cluster-id>`
-- pinned `FLUX_OPERATOR_VERSION` and `FLUX_VERSION`
+```bash
+./clusters/local-dev
+```
 
-After `make bootstrap-flux-instance`, this repository reconciles through the staged root:
-
-- `platform-bootstrap`
-- `platform-infrastructure`
-- `platform-applications`
-
-For local testing of the built-in Flux Operator web UI:
+## Local UI access
 
 ```bash
 make open-flux-operator-ui
 make check-flux-operator-ui
 ```
 
-That port-forwards `svc/flux-operator` to `http://localhost:9080`.
-
-For operational checks, prefer `flux get kustomizations -A` over watching only the parent `platform` object.
+This opens the built-in Flux Operator UI on `http://localhost:9080`.

@@ -1,1 +1,362 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="WBS" height="2392px" preserveAspectRatio="none" style="width:2178px;height:2392px;background:#FFFFFF;" version="1.1" viewBox="0 0 2178 2392" width="2178px" zoomAndPan="magnify"><defs/><g><line style="stroke:#181818;stroke-width:1.5;" x1="91.0345" x2="91.0345" y1="66.3441" y2="86.3441"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="162.069" x="10" y="86.3441"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="142.069" x="20" y="109.1722">1. North-south entry flow</text><line style="stroke:#181818;stroke-width:1.5;" x1="91.0345" x2="101.0345" y1="155.8603" y2="155.8603"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="99.9086" x="101.0345" y="137.6882"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="79.9086" x="111.0345" y="160.5163">External client</text><line style="stroke:#181818;stroke-width:1.5;" x1="150.9888" x2="160.9888" y1="207.2044" y2="207.2044"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="162.813" x="160.9888" y="189.0323"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="142.813" x="170.9888" y="211.8604">sends HTTP /v1 and /mcp</text><line style="stroke:#181818;stroke-width:1.5;" x1="150.9888" x2="150.9888" y1="174.0323" y2="207.2044"/><line style="stroke:#181818;stroke-width:1.5;" x1="91.0345" x2="101.0345" y1="258.5485" y2="258.5485"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="105.4886" x="101.0345" y="240.3765"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="85.4886" x="111.0345" y="263.2045">public-gateway</text><line style="stroke:#181818;stroke-width:1.5;" x1="153.7788" x2="163.7788" y1="309.8926" y2="309.8926"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="171.2011" x="163.7788" y="291.7206"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="151.2011" x="173.7788" y="314.5487">package: kgateway-system</text><line style="stroke:#181818;stroke-width:1.5;" x1="153.7788" x2="163.7788" y1="361.2367" y2="361.2367"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="116.3727" x="163.7788" y="343.0647"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="96.3727" x="173.7788" y="365.8928">Envoy data plane</text><line style="stroke:#181818;stroke-width:1.5;" x1="153.7788" x2="163.7788" y1="412.5809" y2="412.5809"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="243.3576" x="163.7788" y="394.4088"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="223.3576" x="173.7788" y="417.2369">kgateway is the north-south entry point</text><line style="stroke:#181818;stroke-width:1.5;" x1="153.7788" x2="163.7788" y1="463.925" y2="463.925"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="258.5257" x="163.7788" y="445.7529"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="238.5257" x="173.7788" y="468.581">routed traffic goes to agentgateway-proxy</text><line style="stroke:#181818;stroke-width:1.5;" x1="153.7788" x2="153.7788" y1="276.7206" y2="463.925"/><line style="stroke:#181818;stroke-width:1.5;" x1="91.0345" x2="101.0345" y1="515.2691" y2="515.2691"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="136.0528" x="101.0345" y="497.097"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="116.0528" x="111.0345" y="519.9251">agentgateway-proxy</text><line style="stroke:#181818;stroke-width:1.5;" x1="169.0609" x2="179.0609" y1="566.6132" y2="566.6132"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="197.4212" x="179.0609" y="548.4411"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="177.4212" x="189.0609" y="571.2692">package: agentgateway-system</text><line style="stroke:#181818;stroke-width:1.5;" x1="169.0609" x2="179.0609" y1="617.9573" y2="617.9573"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="155.7809" x="179.0609" y="599.7853"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="135.7809" x="189.0609" y="622.6133">Gateway + Service :8080</text><line style="stroke:#181818;stroke-width:1.5;" x1="169.0609" x2="179.0609" y1="669.3014" y2="669.3014"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="288.1059" x="179.0609" y="651.1294"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="268.1059" x="189.0609" y="673.9575">agentgateway is the protocol-aware AI gateway</text><line style="stroke:#181818;stroke-width:1.5;" x1="169.0609" x2="179.0609" y1="720.6455" y2="720.6455"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="232.3295" x="179.0609" y="702.4735"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="212.3295" x="189.0609" y="725.3016">/v1 route -&gt; litellm-upstream backend</text><line style="stroke:#181818;stroke-width:1.5;" x1="169.0609" x2="179.0609" y1="771.9897" y2="771.9897"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="250.1736" x="179.0609" y="753.8176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="230.1736" x="189.0609" y="776.6457">/mcp route -&gt; kagent-tools-mcp-backend</text><line style="stroke:#181818;stroke-width:1.5;" x1="169.0609" x2="179.0609" y1="823.3338" y2="823.3338"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="384.4066" x="179.0609" y="805.1617"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="364.4066" x="189.0609" y="827.9898">backend policy requestTimeout=300s applies to litellm-upstream</text><line style="stroke:#181818;stroke-width:1.5;" x1="169.0609" x2="169.0609" y1="533.4411" y2="823.3338"/><line style="stroke:#181818;stroke-width:1.5;" x1="91.0345" x2="91.0345" y1="122.6882" y2="515.2691"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="696.0863" y1="66.3441" y2="86.3441"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="225.2375" x="583.4675" y="86.3441"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="205.2375" x="593.4675" y="109.1722">2. Cluster control-plane components</text><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="155.8603" y2="155.8603"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="117.7047" x="706.0863" y="137.6882"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="97.7047" x="716.0863" y="160.5163">kgateway-system</text><line style="stroke:#181818;stroke-width:1.5;" x1="764.9386" x2="774.9386" y1="207.2044" y2="207.2044"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="131.9248" x="774.9386" y="189.0323"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="111.9248" x="784.9386" y="211.8604">kgateway controller</text><line style="stroke:#181818;stroke-width:1.5;" x1="764.9386" x2="774.9386" y1="258.5485" y2="258.5485"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="105.4886" x="774.9386" y="240.3765"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="85.4886" x="784.9386" y="263.2045">public-gateway</text><line style="stroke:#181818;stroke-width:1.5;" x1="764.9386" x2="764.9386" y1="174.0323" y2="258.5485"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="309.8926" y2="309.8926"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="143.9249" x="706.0863" y="291.7206"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="123.9249" x="716.0863" y="314.5487">agentgateway-system</text><line style="stroke:#181818;stroke-width:1.5;" x1="778.0487" x2="788.0487" y1="361.2367" y2="361.2367"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="158.145" x="788.0487" y="343.0647"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="138.145" x="798.0487" y="365.8928">agentgateway controller</text><line style="stroke:#181818;stroke-width:1.5;" x1="778.0487" x2="788.0487" y1="412.5809" y2="412.5809"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="136.0528" x="788.0487" y="394.4088"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="116.0528" x="798.0487" y="417.2369">agentgateway-proxy</text><line style="stroke:#181818;stroke-width:1.5;" x1="778.0487" x2="788.0487" y1="463.925" y2="463.925"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="248.7816" x="788.0487" y="445.7529"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="228.7816" x="798.0487" y="468.581">AgentgatewayBackend: litellm-upstream</text><line style="stroke:#181818;stroke-width:1.5;" x1="778.0487" x2="788.0487" y1="515.2691" y2="515.2691"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="306.19" x="788.0487" y="497.097"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="286.19" x="798.0487" y="519.9251">AgentgatewayBackend: kagent-tools-mcp-backend</text><line style="stroke:#181818;stroke-width:1.5;" x1="778.0487" x2="788.0487" y1="566.6132" y2="566.6132"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="263.3257" x="788.0487" y="548.4411"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="243.3257" x="798.0487" y="571.2692">AgentgatewayPolicy: requestTimeout=300s</text><line style="stroke:#181818;stroke-width:1.5;" x1="778.0487" x2="778.0487" y1="328.0647" y2="566.6132"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="617.9573" y2="617.9573"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="59.0363" x="706.0863" y="599.7853"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="39.0363" x="716.0863" y="622.6133">kagent</text><line style="stroke:#181818;stroke-width:1.5;" x1="735.6044" x2="745.6044" y1="669.3014" y2="669.3014"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="280.1859" x="745.6044" y="651.1294"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="260.1859" x="755.6044" y="673.9575">kagent-controller, Deployment + Service :8083</text><line style="stroke:#181818;stroke-width:1.5;" x1="735.6044" x2="745.6044" y1="720.6455" y2="720.6455"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="235.7975" x="745.6044" y="702.4735"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="215.7975" x="755.6044" y="725.3016">kagent-ui, Deployment + Service :8080</text><line style="stroke:#181818;stroke-width:1.5;" x1="735.6044" x2="745.6044" y1="771.9897" y2="771.9897"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="252.9816" x="745.6044" y="753.8176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="232.9816" x="755.6044" y="776.6457">kagent-tools, Deployment + Service :8084</text><line style="stroke:#181818;stroke-width:1.5;" x1="735.6044" x2="745.6044" y1="823.3338" y2="823.3338"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="139.6048" x="745.6044" y="805.1617"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="119.6048" x="755.6044" y="827.9898">Agent: k8s-a2a-agent</text><line style="stroke:#181818;stroke-width:1.5;" x1="735.6044" x2="745.6044" y1="874.6779" y2="874.6779"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="236.0136" x="745.6044" y="856.5058"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="216.0136" x="755.6044" y="879.3339">RemoteMCPServer: kagent-tool-server</text><line style="stroke:#181818;stroke-width:1.5;" x1="735.6044" x2="735.6044" y1="636.1294" y2="874.6779"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="926.022" y2="926.022"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="94.5685" x="706.0863" y="907.8499"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="74.5685" x="716.0863" y="930.678">kmcp-system</text><line style="stroke:#181818;stroke-width:1.5;" x1="753.3705" x2="763.3705" y1="977.3661" y2="977.3661"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="164.601" x="763.3705" y="959.1941"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="144.601" x="773.3705" y="982.0221">kmcp-controller-manager</text><line style="stroke:#181818;stroke-width:1.5;" x1="753.3705" x2="753.3705" y1="944.1941" y2="977.3661"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="1028.7102" y2="1028.7102"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="75.1644" x="706.0863" y="1010.5382"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="55.1644" x="716.0863" y="1033.3663">ai-models</text><line style="stroke:#181818;stroke-width:1.5;" x1="743.6685" x2="753.6685" y1="1080.0543" y2="1080.0543"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="237.1895" x="753.6685" y="1061.8823"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="217.1895" x="763.6685" y="1084.7104">tei-embeddings, Deployment + Service</text><line style="stroke:#181818;stroke-width:1.5;" x1="743.6685" x2="753.6685" y1="1131.3985" y2="1131.3985"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="181.6532" x="753.6685" y="1113.2264"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="161.6532" x="763.6685" y="1136.0545">KServe controller + webhook</text><line style="stroke:#181818;stroke-width:1.5;" x1="743.6685" x2="753.6685" y1="1182.7426" y2="1182.7426"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="159.045" x="753.6685" y="1164.5705"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="139.045" x="763.6685" y="1187.3986">optional runtime overlay</text><line style="stroke:#181818;stroke-width:1.5;" x1="833.191" x2="843.191" y1="1234.0867" y2="1234.0867"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="60.2483" x="843.191" y="1215.9146"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="40.2483" x="853.191" y="1238.7427">Ollama</text><line style="stroke:#181818;stroke-width:1.5;" x1="833.191" x2="843.191" y1="1285.4308" y2="1285.4308"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="49.5562" x="843.191" y="1267.2587"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="29.5562" x="853.191" y="1290.0868">vLLM</text><line style="stroke:#181818;stroke-width:1.5;" x1="833.191" x2="833.191" y1="1200.9146" y2="1285.4308"/><line style="stroke:#181818;stroke-width:1.5;" x1="743.6685" x2="743.6685" y1="1046.8823" y2="1182.7426"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="1336.7749" y2="1336.7749"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="62.2163" x="706.0863" y="1318.6029"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="42.2163" x="716.0863" y="1341.4309">context</text><line style="stroke:#181818;stroke-width:1.5;" x1="737.1944" x2="747.1944" y1="1388.119" y2="1388.119"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="60.1883" x="747.1944" y="1369.947"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="40.1883" x="757.1944" y="1392.7751">Qdrant</text><line style="stroke:#181818;stroke-width:1.5;" x1="737.1944" x2="747.1944" y1="1439.4631" y2="1439.4631"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="85.9525" x="747.1944" y="1421.2911"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="65.9525" x="757.1944" y="1444.1192">PostgreSQL</text><line style="stroke:#181818;stroke-width:1.5;" x1="737.1944" x2="747.1944" y1="1490.8073" y2="1490.8073"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="50.4562" x="747.1944" y="1472.6352"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="30.4562" x="757.1944" y="1495.4633">Redis</text><line style="stroke:#181818;stroke-width:1.5;" x1="737.1944" x2="737.1944" y1="1354.947" y2="1490.8073"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="1542.1514" y2="1542.1514"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="92.0605" x="706.0863" y="1523.9793"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="72.0605" x="716.0863" y="1546.8074">observability</text><line style="stroke:#181818;stroke-width:1.5;" x1="752.1165" x2="762.1165" y1="1593.4955" y2="1593.4955"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="224.1575" x="762.1165" y="1575.3234"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="204.1575" x="772.1165" y="1598.1515">Prometheus operator + Prometheus</text><line style="stroke:#181818;stroke-width:1.5;" x1="752.1165" x2="762.1165" y1="1644.8396" y2="1644.8396"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="65.4323" x="762.1165" y="1626.6675"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="45.4323" x="772.1165" y="1649.4956">Grafana</text><line style="stroke:#181818;stroke-width:1.5;" x1="752.1165" x2="762.1165" y1="1696.1837" y2="1696.1837"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="43.0522" x="762.1165" y="1678.0117"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="23.0522" x="772.1165" y="1700.8397">Loki</text><line style="stroke:#181818;stroke-width:1.5;" x1="752.1165" x2="752.1165" y1="1560.3234" y2="1696.1837"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="1747.5278" y2="1747.5278"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="87.3325" x="706.0863" y="1729.3558"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="67.3325" x="716.0863" y="1752.1839">istio-system</text><line style="stroke:#181818;stroke-width:1.5;" x1="749.7525" x2="759.7525" y1="1798.8719" y2="1798.8719"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="50.9122" x="759.7525" y="1780.6999"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="30.9122" x="769.7525" y="1803.528">istiod</text><line style="stroke:#181818;stroke-width:1.5;" x1="749.7525" x2="759.7525" y1="1850.2161" y2="1850.2161"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="63.6683" x="759.7525" y="1832.044"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="43.6683" x="769.7525" y="1854.8721">istio-cni</text><line style="stroke:#181818;stroke-width:1.5;" x1="749.7525" x2="759.7525" y1="1901.5602" y2="1901.5602"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="62.0843" x="759.7525" y="1883.3881"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="42.0843" x="769.7525" y="1906.2162">ztunnel</text><line style="stroke:#181818;stroke-width:1.5;" x1="749.7525" x2="749.7525" y1="1765.6999" y2="1901.5602"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="1952.9043" y2="1952.9043"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="96.8845" x="706.0863" y="1934.7322"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="76.8845" x="716.0863" y="1957.5603">cert-manager</text><line style="stroke:#181818;stroke-width:1.5;" x1="754.5285" x2="764.5285" y1="2004.2484" y2="2004.2484"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="96.8845" x="764.5285" y="1986.0763"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="76.8845" x="774.5285" y="2008.9044">cert-manager</text><line style="stroke:#181818;stroke-width:1.5;" x1="754.5285" x2="764.5285" y1="2055.5925" y2="2055.5925"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="152.6729" x="764.5285" y="2037.4205"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="132.6729" x="774.5285" y="2060.2485">cert-manager-webhook</text><line style="stroke:#181818;stroke-width:1.5;" x1="754.5285" x2="764.5285" y1="2106.9366" y2="2106.9366"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="155.925" x="764.5285" y="2088.7646"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="135.925" x="774.5285" y="2111.5927">cert-manager-cainjector</text><line style="stroke:#181818;stroke-width:1.5;" x1="754.5285" x2="754.5285" y1="1971.0763" y2="2106.9366"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="2158.2807" y2="2158.2807"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="106.4246" x="706.0863" y="2140.1087"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="86.4246" x="716.0863" y="2162.9368">metallb-system</text><line style="stroke:#181818;stroke-width:1.5;" x1="759.2986" x2="769.2986" y1="2209.6249" y2="2209.6249"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="174.6572" x="769.2986" y="2191.4528"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="154.6572" x="779.2986" y="2214.2809">only for host-based profiles</text><line style="stroke:#181818;stroke-width:1.5;" x1="759.2986" x2="769.2986" y1="2260.969" y2="2260.969"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="178.5092" x="769.2986" y="2242.7969"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="158.5092" x="779.2986" y="2265.625">metallb controller + speaker</text><line style="stroke:#181818;stroke-width:1.5;" x1="759.2986" x2="759.2986" y1="2176.4528" y2="2260.969"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="706.0863" y1="2312.3131" y2="2312.3131"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="139.6168" x="706.0863" y="2294.141"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="119.6168" x="716.0863" y="2316.9691">optional sample path</text><line style="stroke:#181818;stroke-width:1.5;" x1="775.8947" x2="785.8947" y1="2363.6572" y2="2363.6572"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="140.4089" x="785.8947" y="2345.4851"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="120.4089" x="795.8947" y="2368.3132">MCPServer echo-mcp</text><line style="stroke:#181818;stroke-width:1.5;" x1="775.8947" x2="775.8947" y1="2330.4851" y2="2363.6572"/><line style="stroke:#181818;stroke-width:1.5;" x1="696.0863" x2="696.0863" y1="122.6882" y2="2312.3131"/><line style="stroke:#181818;stroke-width:1.5;" x1="1221.7754" x2="1221.7754" y1="66.3441" y2="86.3441"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="215.0733" x="1114.2387" y="86.3441"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="195.0733" x="1124.2387" y="109.1722">3. Runtime request and data paths</text><line style="stroke:#181818;stroke-width:1.5;" x1="1221.7754" x2="1231.7754" y1="155.8603" y2="155.8603"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="132.7528" x="1231.7754" y="137.6882"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="112.7528" x="1241.7754" y="160.5163">Kagent UI / API flow</text><line style="stroke:#181818;stroke-width:1.5;" x1="1298.1518" x2="1308.1518" y1="207.2044" y2="207.2044"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="188.1812" x="1308.1518" y="189.0323"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="168.1812" x="1318.1518" y="211.8604">kagent-ui -&gt; kagent-controller</text><line style="stroke:#181818;stroke-width:1.5;" x1="1298.1518" x2="1308.1518" y1="258.5485" y2="258.5485"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="214.4734" x="1308.1518" y="240.3765"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="194.4734" x="1318.1518" y="263.2045">k8s-a2a-agent -&gt; kagent-controller</text><line style="stroke:#181818;stroke-width:1.5;" x1="1298.1518" x2="1308.1518" y1="309.8926" y2="309.8926"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="290.4099" x="1308.1518" y="291.7206"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="270.4099" x="1318.1518" y="314.5487">kagent-controller -&gt; agentgateway-proxy via /v1</text><line style="stroke:#181818;stroke-width:1.5;" x1="1298.1518" x2="1298.1518" y1="174.0323" y2="309.8926"/><line style="stroke:#181818;stroke-width:1.5;" x1="1221.7754" x2="1231.7754" y1="361.2367" y2="361.2367"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="72.7644" x="1231.7754" y="343.0647"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="52.7644" x="1241.7754" y="365.8928">MCP flow</text><line style="stroke:#181818;stroke-width:1.5;" x1="1268.1576" x2="1278.1576" y1="412.5809" y2="412.5809"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="491.8676" x="1278.1576" y="394.4088"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="471.8676" x="1288.1576" y="417.2369">RemoteMCPServer kagent-tool-server -&gt; agentgateway-proxy via /mcp/kagent-tools</text><line style="stroke:#181818;stroke-width:1.5;" x1="1268.1576" x2="1278.1576" y1="463.925" y2="463.925"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="391.1147" x="1278.1576" y="445.7529"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="371.1147" x="1288.1576" y="468.581">agentgateway-proxy -&gt; kagent-tools-mcp-backend -&gt; kagent-tools</text><line style="stroke:#181818;stroke-width:1.5;" x1="1268.1576" x2="1268.1576" y1="379.4088" y2="463.925"/><line style="stroke:#181818;stroke-width:1.5;" x1="1221.7754" x2="1231.7754" y1="515.2691" y2="515.2691"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="70.4964" x="1231.7754" y="497.097"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="50.4964" x="1241.7754" y="519.9251">LLM flow</text><line style="stroke:#181818;stroke-width:1.5;" x1="1267.0236" x2="1277.0236" y1="566.6132" y2="566.6132"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="297.814" x="1277.0236" y="548.4411"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="277.814" x="1287.0236" y="571.2692">agentgateway-proxy -&gt; litellm-upstream -&gt; litellm</text><line style="stroke:#181818;stroke-width:1.5;" x1="1267.0236" x2="1277.0236" y1="617.9573" y2="617.9573"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="196.3173" x="1277.0236" y="599.7853"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="176.3173" x="1287.0236" y="622.6133">litellm -&gt; remote LLM providers</text><line style="stroke:#181818;stroke-width:1.5;" x1="1375.1822" x2="1385.1822" y1="669.3014" y2="669.3014"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="60.3323" x="1385.1822" y="651.1294"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="40.3323" x="1395.1822" y="673.9575">Gemini</text><line style="stroke:#181818;stroke-width:1.5;" x1="1375.1822" x2="1385.1822" y1="720.6455" y2="720.6455"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="62.6723" x="1385.1822" y="702.4735"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="42.6723" x="1395.1822" y="725.3016">OpenAI</text><line style="stroke:#181818;stroke-width:1.5;" x1="1375.1822" x2="1385.1822" y1="771.9897" y2="771.9897"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="75.2844" x="1385.1822" y="753.8176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="55.2844" x="1395.1822" y="776.6457">Anthropic</text><line style="stroke:#181818;stroke-width:1.5;" x1="1375.1822" x2="1385.1822" y1="823.3338" y2="823.3338"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="66.3323" x="1385.1822" y="805.1617"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="46.3323" x="1395.1822" y="827.9898">Bedrock</text><line style="stroke:#181818;stroke-width:1.5;" x1="1375.1822" x2="1385.1822" y1="874.6779" y2="874.6779"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="56.3723" x="1385.1822" y="856.5058"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="36.3723" x="1395.1822" y="879.3339">Vertex</text><line style="stroke:#181818;stroke-width:1.5;" x1="1375.1822" x2="1385.1822" y1="926.022" y2="926.022"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="56.4803" x="1385.1822" y="907.8499"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="36.4803" x="1395.1822" y="930.678">others</text><line style="stroke:#181818;stroke-width:1.5;" x1="1375.1822" x2="1375.1822" y1="636.1294" y2="926.022"/><line style="stroke:#181818;stroke-width:1.5;" x1="1267.0236" x2="1277.0236" y1="977.3661" y2="977.3661"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="414.5867" x="1277.0236" y="959.1941"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="394.5867" x="1287.0236" y="982.0221">litellm -&gt; optional external LM Studio when LMSTUDIO_ENABLED=true</text><line style="stroke:#181818;stroke-width:1.5;" x1="1267.0236" x2="1277.0236" y1="1028.7102" y2="1028.7102"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="338.9142" x="1277.0236" y="1010.5382"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="318.9142" x="1287.0236" y="1033.3663">litellm -&gt; runtime overlay when RUNTIME=ollama or vllm</text><line style="stroke:#181818;stroke-width:1.5;" x1="1267.0236" x2="1277.0236" y1="1080.0543" y2="1080.0543"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="439.5351" x="1277.0236" y="1061.8823"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="419.5351" x="1287.0236" y="1084.7104">KServe is installed in the serving stack but is not in the default /v1 hot path</text><line style="stroke:#181818;stroke-width:1.5;" x1="1267.0236" x2="1267.0236" y1="533.4411" y2="1080.0543"/><line style="stroke:#181818;stroke-width:1.5;" x1="1221.7754" x2="1231.7754" y1="1131.3985" y2="1131.3985"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="146.7569" x="1231.7754" y="1113.2264"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="126.7569" x="1241.7754" y="1136.0545">Context and state flow</text><line style="stroke:#181818;stroke-width:1.5;" x1="1305.1538" x2="1315.1538" y1="1182.7426" y2="1182.7426"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="316.4861" x="1315.1538" y="1164.5705"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="296.4861" x="1325.1538" y="1187.3986">kagent-controller -&gt; tei-embeddings for embeddings</text><line style="stroke:#181818;stroke-width:1.5;" x1="1305.1538" x2="1315.1538" y1="1234.0867" y2="1234.0867"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="278.0499" x="1315.1538" y="1215.9146"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="258.0499" x="1325.1538" y="1238.7427">kagent-controller -&gt; Qdrant for vector context</text><line style="stroke:#181818;stroke-width:1.5;" x1="1305.1538" x2="1315.1538" y1="1285.4308" y2="1285.4308"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="313.4022" x="1315.1538" y="1267.2587"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="293.4022" x="1325.1538" y="1290.0868">kagent-controller -&gt; PostgreSQL for structured state</text><line style="stroke:#181818;stroke-width:1.5;" x1="1305.1538" x2="1315.1538" y1="1336.7749" y2="1336.7749"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="266.6978" x="1315.1538" y="1318.6029"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="246.6978" x="1325.1538" y="1341.4309">kagent-controller -&gt; Redis for cache / queue</text><line style="stroke:#181818;stroke-width:1.5;" x1="1305.1538" x2="1305.1538" y1="1149.5705" y2="1336.7749"/><line style="stroke:#181818;stroke-width:1.5;" x1="1221.7754" x2="1231.7754" y1="1388.119" y2="1388.119"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="90.7645" x="1231.7754" y="1369.947"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="70.7645" x="1241.7754" y="1392.7751">Sample path</text><line style="stroke:#181818;stroke-width:1.5;" x1="1277.1576" x2="1287.1576" y1="1439.4631" y2="1439.4631"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="301.978" x="1287.1576" y="1421.2911"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="281.978" x="1297.1576" y="1444.1192">kmcp-controller-manager -&gt; MCPServer echo-mcp</text><line style="stroke:#181818;stroke-width:1.5;" x1="1277.1576" x2="1277.1576" y1="1406.2911" y2="1439.4631"/><line style="stroke:#181818;stroke-width:1.5;" x1="1221.7754" x2="1221.7754" y1="122.6882" y2="1388.119"/><line style="stroke:#181818;stroke-width:1.5;" x1="1869.5716" x2="1869.5716" y1="66.3441" y2="86.3441"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="159.093" x="1790.0251" y="86.3441"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="139.093" x="1800.0251" y="109.1722">4. Profile presence notes</text><line style="stroke:#181818;stroke-width:1.5;" x1="1869.5716" x2="1879.5716" y1="155.8603" y2="155.8603"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="193.7973" x="1879.5716" y="137.6882"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="173.7973" x="1889.5716" y="160.5163">Context services are present in</text><line style="stroke:#181818;stroke-width:1.5;" x1="1976.4703" x2="1986.4703" y1="207.2044" y2="207.2044"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="131.2528" x="1986.4703" y="189.0323"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="111.2528" x="1996.4703" y="211.8604">platform-profile-full</text><line style="stroke:#181818;stroke-width:1.5;" x1="1976.4703" x2="1986.4703" y1="258.5485" y2="258.5485"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="180.5372" x="1986.4703" y="240.3765"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="160.5372" x="1996.4703" y="263.2045">platform-profile-fast-context</text><line style="stroke:#181818;stroke-width:1.5;" x1="1976.4703" x2="1976.4703" y1="174.0323" y2="258.5485"/><line style="stroke:#181818;stroke-width:1.5;" x1="1869.5716" x2="1879.5716" y1="309.8926" y2="309.8926"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="166.2571" x="1879.5716" y="291.7206"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="146.2571" x="1889.5716" y="314.5487">Observability is present in</text><line style="stroke:#181818;stroke-width:1.5;" x1="1962.7002" x2="1972.7002" y1="361.2367" y2="361.2367"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="131.2528" x="1972.7002" y="343.0647"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="111.2528" x="1982.7002" y="365.8928">platform-profile-full</text><line style="stroke:#181818;stroke-width:1.5;" x1="1962.7002" x2="1962.7002" y1="328.0647" y2="361.2367"/><line style="stroke:#181818;stroke-width:1.5;" x1="1869.5716" x2="1869.5716" y1="122.6882" y2="309.8926"/><line style="stroke:#181818;stroke-width:1.5;" x1="91.0345" x2="1869.5716" y1="66.3441" y2="66.3441"/><rect fill="#F1F1F1" height="36.3441" style="stroke:#181818;stroke-width:1.5;" width="324.2622" x="818.172" y="10"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="304.2622" x="828.172" y="32.8281">AgenticNativePlatform - Current Runtime Architecture</text><line style="stroke:#181818;stroke-width:1.5;" x1="980.3031" x2="980.3031" y1="46.3441" y2="66.3441"/><!--SRC=[ZLPTTo8t37tdL-XnD-qaR9BjIJadFKi8tP90mWQIrnup8y35Oqzj3uJ- -ieVm0m4shUnB7caA-bAtunbsgucfd46xHbAozCdPlaIXuBPgT8v9D0fjQORU2dfEaTewtJEBQQsrDWuEuClv_2aj9qdHfLs3gIgrp0LQaMNPz1zjwWb4v0AJbTETWO6PMRWZ_5u21VBBy1a1XTvMdY3efm8dYOpPd75ra6_OEc2pR05YoXEpDfOpCDjLoxL6Z9c6HI2IGpIZIfm0tQE80zyB1JVEAH9Z1bOpQPJdi9C8HafO0wIpIyBhTwzFqV45JTh2bLNlqUVVe8HwYLF4LetpPjckAnQRRocrwrAbKZOYcd2lWSrO1nwtdT8VWD1MH4YJyh2M8qiXmdvGqX7LG9ufxlmFqkiKi8aT9FKTEE14A9Kh47ZtoKQEwRia_tjLRDfW1K59TIZjF_VXgkAotFeY98Yrv0gWfj2yCcXKrueIJytZMgQQZ1jSnTD1Ug8y45n7CUw1kV-GyTIsAx8xm8AhSC0ZwkUnhLgClJOjZu2Dm3ZNufuX5TtGVmCzrW8jSvTOzQBwQfcKl8JgisQglVvXFPr9GOAzCOax98b5IzVC5SM1vsXiq9T0oCnNXOYSxZKqkq4k-2Id4co3CgC9xdAK9YWQf4dc4ymoxYS7V4sQ3vwBog99uKLJkPABOA2AYnNZfbq93P53ehOMMVmB0JBMJmi-_s1TySzX-ynu1-PPflWXyhOcSRHZ_u6Z8o7HAg9YvrDE9LHhBAXLZbIUvU6l43Dh7BUxQIHB8YD28bmwAi5zyznGsxNuFEIhFATf9A7up-sb195S1srhKBxNvAaXbRj9cLS_aKJG8KSaTTCY4dDAIK5JG6AQqx0K1SOebVgioaN6CEBLlKCcGBP8gP-co33ya8G5p8x3wRR6WDCvyhrcUUSg_Fja8fTvKTBc0na7FBnwAiINdjm0UrXRpkgAZrJOSXzugZL_IczVR7JFMGTM7BcMBmHmwfuizTE7tJJgIS9aujgOn-ZlLF3OF_EEqcTK77oumSF9j5E5ipYmScr3zC_I_PBdg4siUk-OyvZ9LC_5YZRlNXeIplNgk1fFDzXfbMwYAStgbLyZmT57HLVhFvsMrouML38WP4jCwvWDKT9nz7uzRxt_6VtgNtNxzxVMbtYeVTrxWYcBwzFuzwWUwiyXG0rmN8RUQGb6kzS6jS0r1TS-bdlaagi1YHE5p0fhTEIocxkCvooKbW_zESatlG3T08f-M8dOqBpeARhTLXdKT-ck-C9kq1uNd_fsx_EXn_Qx8ZHsr51b7vrZAwUiFGKwerIbbBy5q0z7N80etrAE393t3j7sEBwt36k8oGgFAILD7LBeWtqjCNKX9b22u_UwBc4n7KaRib9PBPaMWfnx8gP46242vwhSy6b-l-z_eqQqoti3LhHfNqTz2aLsb0jqo9-sRpyUdxzQSGiF9GIBc_WorMh-MlhyYjqkgCnkFlFZK-3tXXe4TOKC25iDQTQemS-DnxOacqejEKxxk7-SSkfj6TphQGRjes7jy5EuPVhv8vRY22_3HhtiLAxCbMkfbhmEluzkMdqcPoLVaD6sUYeqgtXBP0Krhy0]--></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.42.4 (0)
+ -->
+<!-- Title: G Pages: 1 -->
+<svg width="4646pt" height="347pt"
+ viewBox="0.00 0.00 4646.10 346.60" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 317.8)">
+<title>G</title>
+<polygon fill="white" stroke="transparent" points="-28.8,28.8 -28.8,-317.8 4617.3,-317.8 4617.3,28.8 -28.8,28.8"/>
+<text text-anchor="middle" x="2294.25" y="-269" font-family="Arial" font-size="20.00">AgenticNativePlatform &#45; Runtime Flow With Flux Operator And Static Cluster Roots (WBS)</text>
+<!-- root -->
+<g id="node1" class="node">
+<title>root</title>
+<path fill="#eaf2ff" stroke="#5a6b7a" d="M2114.5,-259C2114.5,-259 1920.5,-259 1920.5,-259 1914.5,-259 1908.5,-253 1908.5,-247 1908.5,-247 1908.5,-218 1908.5,-218 1908.5,-212 1914.5,-206 1920.5,-206 1920.5,-206 2114.5,-206 2114.5,-206 2120.5,-206 2126.5,-212 2126.5,-218 2126.5,-218 2126.5,-247 2126.5,-247 2126.5,-253 2120.5,-259 2114.5,-259"/>
+<text text-anchor="middle" x="2017.5" y="-243.8" font-family="Arial" font-size="14.00">AgenticNativePlatform</text>
+<text text-anchor="middle" x="2017.5" y="-228.8" font-family="Arial" font-size="14.00">Runtime Flow With Flux Operator</text>
+<text text-anchor="middle" x="2017.5" y="-213.8" font-family="Arial" font-size="14.00">And Static Cluster Roots</text>
+</g>
+<!-- n1 -->
+<g id="node2" class="node">
+<title>n1</title>
+<path fill="#eef6ff" stroke="#5a6b7a" d="M646.5,-170C646.5,-170 532.5,-170 532.5,-170 526.5,-170 520.5,-164 520.5,-158 520.5,-158 520.5,-146 520.5,-146 520.5,-140 526.5,-134 532.5,-134 532.5,-134 646.5,-134 646.5,-134 652.5,-134 658.5,-140 658.5,-146 658.5,-146 658.5,-158 658.5,-158 658.5,-164 652.5,-170 646.5,-170"/>
+<text text-anchor="middle" x="589.5" y="-148.3" font-family="Arial" font-size="14.00">1. Flux control plane</text>
+</g>
+<!-- root&#45;&gt;n1 -->
+<g id="edge1" class="edge">
+<title>root&#45;&gt;n1</title>
+<path fill="none" stroke="#7a8a99" d="M1908.41,-232C1574.59,-232 589.5,-232 589.5,-232 589.5,-232 589.5,-176.15 589.5,-176.15"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="591.6,-176.15 589.5,-170.15 587.4,-176.15 591.6,-176.15"/>
+</g>
+<!-- n2 -->
+<g id="node7" class="node">
+<title>n2</title>
+<path fill="#eef6ff" stroke="#5a6b7a" d="M1489,-170C1489,-170 1344,-170 1344,-170 1338,-170 1332,-164 1332,-158 1332,-158 1332,-146 1332,-146 1332,-140 1338,-134 1344,-134 1344,-134 1489,-134 1489,-134 1495,-134 1501,-140 1501,-146 1501,-146 1501,-158 1501,-158 1501,-164 1495,-170 1489,-170"/>
+<text text-anchor="middle" x="1416.5" y="-148.3" font-family="Arial" font-size="14.00">2. North&#45;south traffic path</text>
+</g>
+<!-- root&#45;&gt;n2 -->
+<g id="edge2" class="edge">
+<title>root&#45;&gt;n2</title>
+<path fill="none" stroke="#7a8a99" d="M1968.33,-205.96C1968.33,-184.91 1968.33,-159 1968.33,-159 1968.33,-159 1507.21,-159 1507.21,-159"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="1507.21,-156.9 1501.21,-159 1507.21,-161.1 1507.21,-156.9"/>
+</g>
+<!-- n3 -->
+<g id="node12" class="node">
+<title>n3</title>
+<path fill="#eef6ff" stroke="#5a6b7a" d="M2683.5,-170C2683.5,-170 2555.5,-170 2555.5,-170 2549.5,-170 2543.5,-164 2543.5,-158 2543.5,-158 2543.5,-146 2543.5,-146 2543.5,-140 2549.5,-134 2555.5,-134 2555.5,-134 2683.5,-134 2683.5,-134 2689.5,-134 2695.5,-140 2695.5,-146 2695.5,-146 2695.5,-158 2695.5,-158 2695.5,-164 2689.5,-170 2683.5,-170"/>
+<text text-anchor="middle" x="2619.5" y="-148.3" font-family="Arial" font-size="14.00">3. Cluster components</text>
+</g>
+<!-- root&#45;&gt;n3 -->
+<g id="edge3" class="edge">
+<title>root&#45;&gt;n3</title>
+<path fill="none" stroke="#7a8a99" d="M2116.25,-205.82C2116.25,-186.59 2116.25,-164 2116.25,-164 2116.25,-164 2537.34,-164 2537.34,-164"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="2537.34,-166.1 2543.34,-164 2537.34,-161.9 2537.34,-166.1"/>
+</g>
+<!-- n4 -->
+<g id="node21" class="node">
+<title>n4</title>
+<path fill="#eef6ff" stroke="#5a6b7a" d="M3809,-170C3809,-170 3658,-170 3658,-170 3652,-170 3646,-164 3646,-158 3646,-158 3646,-146 3646,-146 3646,-140 3652,-134 3658,-134 3658,-134 3809,-134 3809,-134 3815,-134 3821,-140 3821,-146 3821,-146 3821,-158 3821,-158 3821,-164 3815,-170 3809,-170"/>
+<text text-anchor="middle" x="3733.5" y="-148.3" font-family="Arial" font-size="14.00">4. Request and data paths</text>
+</g>
+<!-- root&#45;&gt;n4 -->
+<g id="edge4" class="edge">
+<title>root&#45;&gt;n4</title>
+<path fill="none" stroke="#7a8a99" d="M2126.8,-232C2504.78,-232 3733.5,-232 3733.5,-232 3733.5,-232 3733.5,-176.15 3733.5,-176.15"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="3735.6,-176.15 3733.5,-170.15 3731.4,-176.15 3735.6,-176.15"/>
+</g>
+<!-- n11 -->
+<g id="node3" class="node">
+<title>n11</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M201,-68C201,-68 12,-68 12,-68 6,-68 0,-62 0,-56 0,-56 0,-42 0,-42 0,-36 6,-30 12,-30 12,-30 201,-30 201,-30 207,-30 213,-36 213,-42 213,-42 213,-56 213,-56 213,-62 207,-68 201,-68"/>
+<text text-anchor="middle" x="106.5" y="-52.8" font-family="Arial" font-size="14.00">Flux Operator</text>
+<text text-anchor="middle" x="106.5" y="-37.8" font-family="Arial" font-size="14.00">manages Flux controller lifecycle</text>
+</g>
+<!-- n1&#45;&gt;n11 -->
+<g id="edge5" class="edge">
+<title>n1&#45;&gt;n11</title>
+<path fill="none" stroke="#7a8a99" d="M520.3,-152C386.74,-152 106.5,-152 106.5,-152 106.5,-152 106.5,-74.37 106.5,-74.37"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="108.6,-74.37 106.5,-68.37 104.4,-74.37 108.6,-74.37"/>
+</g>
+<!-- n12 -->
+<g id="node4" class="node">
+<title>n12</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M477.5,-75.5C477.5,-75.5 243.5,-75.5 243.5,-75.5 237.5,-75.5 231.5,-69.5 231.5,-63.5 231.5,-63.5 231.5,-34.5 231.5,-34.5 231.5,-28.5 237.5,-22.5 243.5,-22.5 243.5,-22.5 477.5,-22.5 477.5,-22.5 483.5,-22.5 489.5,-28.5 489.5,-34.5 489.5,-34.5 489.5,-63.5 489.5,-63.5 489.5,-69.5 483.5,-75.5 477.5,-75.5"/>
+<text text-anchor="middle" x="360.5" y="-60.3" font-family="Arial" font-size="14.00">FluxInstance/flux</text>
+<text text-anchor="middle" x="360.5" y="-45.3" font-family="Arial" font-size="14.00">sync.kind = GitRepository</text>
+<text text-anchor="middle" x="360.5" y="-30.3" font-family="Arial" font-size="14.00">sync.path = ./clusters/&lt;topology&gt;&#45;&lt;env&gt;</text>
+</g>
+<!-- n1&#45;&gt;n12 -->
+<g id="edge6" class="edge">
+<title>n1&#45;&gt;n12</title>
+<path fill="none" stroke="#7a8a99" d="M555,-133.62C555,-109.72 555,-71 555,-71 555,-71 495.69,-71 495.69,-71"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="495.69,-68.9 489.69,-71 495.69,-73.1 495.69,-68.9"/>
+</g>
+<!-- n13 -->
+<g id="node5" class="node">
+<title>n13</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M659.5,-68C659.5,-68 519.5,-68 519.5,-68 513.5,-68 507.5,-62 507.5,-56 507.5,-56 507.5,-42 507.5,-42 507.5,-36 513.5,-30 519.5,-30 519.5,-30 659.5,-30 659.5,-30 665.5,-30 671.5,-36 671.5,-42 671.5,-42 671.5,-56 671.5,-56 671.5,-62 665.5,-68 659.5,-68"/>
+<text text-anchor="middle" x="589.5" y="-52.8" font-family="Arial" font-size="14.00">GitRepository/platform</text>
+<text text-anchor="middle" x="589.5" y="-37.8" font-family="Arial" font-size="14.00">reads remote Git branch</text>
+</g>
+<!-- n1&#45;&gt;n13 -->
+<g id="edge7" class="edge">
+<title>n1&#45;&gt;n13</title>
+<path fill="none" stroke="#7a8a99" d="M589.5,-133.59C589.5,-133.59 589.5,-74.3 589.5,-74.3"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="591.6,-74.3 589.5,-68.3 587.4,-74.3 591.6,-74.3"/>
+</g>
+<!-- n14 -->
+<g id="node6" class="node">
+<title>n14</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M833,-83C833,-83 702,-83 702,-83 696,-83 690,-77 690,-71 690,-71 690,-27 690,-27 690,-21 696,-15 702,-15 702,-15 833,-15 833,-15 839,-15 845,-21 845,-27 845,-27 845,-71 845,-71 845,-77 839,-83 833,-83"/>
+<text text-anchor="middle" x="767.5" y="-67.8" font-family="Arial" font-size="14.00">Staged Kustomizations</text>
+<text text-anchor="middle" x="767.5" y="-52.8" font-family="Arial" font-size="14.00">platform&#45;infrastructure</text>
+<text text-anchor="middle" x="767.5" y="-37.8" font-family="Arial" font-size="14.00">platform&#45;secrets</text>
+<text text-anchor="middle" x="767.5" y="-22.8" font-family="Arial" font-size="14.00">platform&#45;applications</text>
+</g>
+<!-- n1&#45;&gt;n14 -->
+<g id="edge8" class="edge">
+<title>n1&#45;&gt;n14</title>
+<path fill="none" stroke="#7a8a99" d="M624,-133.96C624,-112.34 624,-79 624,-79 624,-79 683.87,-79 683.87,-79"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="683.87,-81.1 689.87,-79 683.87,-76.9 683.87,-81.1"/>
+</g>
+<!-- n21 -->
+<g id="node8" class="node">
+<title>n21</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M1024,-68C1024,-68 875,-68 875,-68 869,-68 863,-62 863,-56 863,-56 863,-42 863,-42 863,-36 869,-30 875,-30 875,-30 1024,-30 1024,-30 1030,-30 1036,-36 1036,-42 1036,-42 1036,-56 1036,-56 1036,-62 1030,-68 1024,-68"/>
+<text text-anchor="middle" x="949.5" y="-52.8" font-family="Arial" font-size="14.00">External client</text>
+<text text-anchor="middle" x="949.5" y="-37.8" font-family="Arial" font-size="14.00">sends HTTP /v1 and /mcp</text>
+</g>
+<!-- n2&#45;&gt;n21 -->
+<g id="edge9" class="edge">
+<title>n2&#45;&gt;n21</title>
+<path fill="none" stroke="#7a8a99" d="M1331.93,-158C1197.35,-158 949.5,-158 949.5,-158 949.5,-158 949.5,-74.24 949.5,-74.24"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="951.6,-74.24 949.5,-68.24 947.4,-74.24 951.6,-74.24"/>
+</g>
+<!-- n22 -->
+<g id="node9" class="node">
+<title>n22</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M1273,-75.5C1273,-75.5 1066,-75.5 1066,-75.5 1060,-75.5 1054,-69.5 1054,-63.5 1054,-63.5 1054,-34.5 1054,-34.5 1054,-28.5 1060,-22.5 1066,-22.5 1066,-22.5 1273,-22.5 1273,-22.5 1279,-22.5 1285,-28.5 1285,-34.5 1285,-34.5 1285,-63.5 1285,-63.5 1285,-69.5 1279,-75.5 1273,-75.5"/>
+<text text-anchor="middle" x="1169.5" y="-60.3" font-family="Arial" font-size="14.00">kgateway public&#45;gateway</text>
+<text text-anchor="middle" x="1169.5" y="-45.3" font-family="Arial" font-size="14.00">north&#45;south entry point</text>
+<text text-anchor="middle" x="1169.5" y="-30.3" font-family="Arial" font-size="14.00">routes traffic to agentgateway&#45;proxy</text>
+</g>
+<!-- n2&#45;&gt;n22 -->
+<g id="edge10" class="edge">
+<title>n2&#45;&gt;n22</title>
+<path fill="none" stroke="#7a8a99" d="M1331.84,-146C1260.34,-146 1169.5,-146 1169.5,-146 1169.5,-146 1169.5,-81.51 1169.5,-81.51"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="1171.6,-81.51 1169.5,-75.51 1167.4,-81.51 1171.6,-81.51"/>
+</g>
+<!-- n23 -->
+<g id="node10" class="node">
+<title>n23</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M1518,-83C1518,-83 1315,-83 1315,-83 1309,-83 1303,-77 1303,-71 1303,-71 1303,-27 1303,-27 1303,-21 1309,-15 1315,-15 1315,-15 1518,-15 1518,-15 1524,-15 1530,-21 1530,-27 1530,-27 1530,-71 1530,-71 1530,-77 1524,-83 1518,-83"/>
+<text text-anchor="middle" x="1416.5" y="-67.8" font-family="Arial" font-size="14.00">agentgateway&#45;proxy</text>
+<text text-anchor="middle" x="1416.5" y="-52.8" font-family="Arial" font-size="14.00">protocol&#45;aware AI gateway</text>
+<text text-anchor="middle" x="1416.5" y="-37.8" font-family="Arial" font-size="14.00">/v1 &#45;&gt; litellm&#45;upstream backend</text>
+<text text-anchor="middle" x="1416.5" y="-22.8" font-family="Arial" font-size="14.00">/mcp &#45;&gt; kagent&#45;tools&#45;mcp&#45;backend</text>
+</g>
+<!-- n2&#45;&gt;n23 -->
+<g id="edge11" class="edge">
+<title>n2&#45;&gt;n23</title>
+<path fill="none" stroke="#7a8a99" d="M1416.5,-133.59C1416.5,-133.59 1416.5,-89.08 1416.5,-89.08"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="1418.6,-89.08 1416.5,-83.08 1414.4,-89.08 1418.6,-89.08"/>
+</g>
+<!-- n24 -->
+<g id="node11" class="node">
+<title>n24</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M1747,-83C1747,-83 1560,-83 1560,-83 1554,-83 1548,-77 1548,-71 1548,-71 1548,-27 1548,-27 1548,-21 1554,-15 1560,-15 1560,-15 1747,-15 1747,-15 1753,-15 1759,-21 1759,-27 1759,-27 1759,-71 1759,-71 1759,-77 1753,-83 1747,-83"/>
+<text text-anchor="middle" x="1653.5" y="-67.8" font-family="Arial" font-size="14.00">LiteLLM</text>
+<text text-anchor="middle" x="1653.5" y="-52.8" font-family="Arial" font-size="14.00">remote provider default path</text>
+<text text-anchor="middle" x="1653.5" y="-37.8" font-family="Arial" font-size="14.00">optional external LM Studio path</text>
+<text text-anchor="middle" x="1653.5" y="-22.8" font-family="Arial" font-size="14.00">optional in&#45;cluster runtime path</text>
+</g>
+<!-- n2&#45;&gt;n24 -->
+<g id="edge12" class="edge">
+<title>n2&#45;&gt;n24</title>
+<path fill="none" stroke="#7a8a99" d="M1501.06,-139C1569.12,-139 1653.5,-139 1653.5,-139 1653.5,-139 1653.5,-89.03 1653.5,-89.03"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="1655.6,-89.03 1653.5,-83.03 1651.4,-89.03 1655.6,-89.03"/>
+</g>
+<!-- n31 -->
+<g id="node13" class="node">
+<title>n31</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M2076,-75.5C2076,-75.5 1789,-75.5 1789,-75.5 1783,-75.5 1777,-69.5 1777,-63.5 1777,-63.5 1777,-34.5 1777,-34.5 1777,-28.5 1783,-22.5 1789,-22.5 1789,-22.5 2076,-22.5 2076,-22.5 2082,-22.5 2088,-28.5 2088,-34.5 2088,-34.5 2088,-63.5 2088,-63.5 2088,-69.5 2082,-75.5 2076,-75.5"/>
+<text text-anchor="middle" x="1932.5" y="-60.3" font-family="Arial" font-size="14.00">platform plumbing</text>
+<text text-anchor="middle" x="1932.5" y="-45.3" font-family="Arial" font-size="14.00">namespaces from apps/platform</text>
+<text text-anchor="middle" x="1932.5" y="-30.3" font-family="Arial" font-size="14.00">cluster wrappers from clusters/&lt;topology&gt;&#45;&lt;env&gt;</text>
+</g>
+<!-- n3&#45;&gt;n31 -->
+<g id="edge13" class="edge">
+<title>n3&#45;&gt;n31</title>
+<path fill="none" stroke="#7a8a99" d="M2543.4,-154C2383.69,-154 2028.17,-154 2028.17,-154 2028.17,-154 2028.17,-81.77 2028.17,-81.77"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="2030.27,-81.77 2028.17,-75.77 2026.07,-81.77 2030.27,-81.77"/>
+</g>
+<!-- n32 -->
+<g id="node14" class="node">
+<title>n32</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M2227,-75.5C2227,-75.5 2118,-75.5 2118,-75.5 2112,-75.5 2106,-69.5 2106,-63.5 2106,-63.5 2106,-34.5 2106,-34.5 2106,-28.5 2112,-22.5 2118,-22.5 2118,-22.5 2227,-22.5 2227,-22.5 2233,-22.5 2239,-28.5 2239,-34.5 2239,-34.5 2239,-63.5 2239,-63.5 2239,-69.5 2233,-75.5 2227,-75.5"/>
+<text text-anchor="middle" x="2172.5" y="-60.3" font-family="Arial" font-size="14.00">kgateway&#45;system</text>
+<text text-anchor="middle" x="2172.5" y="-45.3" font-family="Arial" font-size="14.00">kgateway controller</text>
+<text text-anchor="middle" x="2172.5" y="-30.3" font-family="Arial" font-size="14.00">public&#45;gateway</text>
+</g>
+<!-- n3&#45;&gt;n32 -->
+<g id="edge14" class="edge">
+<title>n3&#45;&gt;n32</title>
+<path fill="none" stroke="#7a8a99" d="M2543.42,-149C2418.29,-149 2182.75,-149 2182.75,-149 2182.75,-149 2182.75,-81.54 2182.75,-81.54"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="2184.85,-81.54 2182.75,-75.54 2180.65,-81.54 2184.85,-81.54"/>
+</g>
+<!-- n33 -->
+<g id="node15" class="node">
+<title>n33</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M2463.5,-90.5C2463.5,-90.5 2269.5,-90.5 2269.5,-90.5 2263.5,-90.5 2257.5,-84.5 2257.5,-78.5 2257.5,-78.5 2257.5,-19.5 2257.5,-19.5 2257.5,-13.5 2263.5,-7.5 2269.5,-7.5 2269.5,-7.5 2463.5,-7.5 2463.5,-7.5 2469.5,-7.5 2475.5,-13.5 2475.5,-19.5 2475.5,-19.5 2475.5,-78.5 2475.5,-78.5 2475.5,-84.5 2469.5,-90.5 2463.5,-90.5"/>
+<text text-anchor="middle" x="2366.5" y="-75.3" font-family="Arial" font-size="14.00">agentgateway&#45;system</text>
+<text text-anchor="middle" x="2366.5" y="-60.3" font-family="Arial" font-size="14.00">agentgateway controller</text>
+<text text-anchor="middle" x="2366.5" y="-45.3" font-family="Arial" font-size="14.00">agentgateway&#45;proxy</text>
+<text text-anchor="middle" x="2366.5" y="-30.3" font-family="Arial" font-size="14.00">AgentgatewayBackend resources</text>
+<text text-anchor="middle" x="2366.5" y="-15.3" font-family="Arial" font-size="14.00">AgentgatewayPolicy</text>
+</g>
+<!-- n3&#45;&gt;n33 -->
+<g id="edge15" class="edge">
+<title>n3&#45;&gt;n33</title>
+<path fill="none" stroke="#7a8a99" d="M2543.25,-144C2468.75,-144 2366.5,-144 2366.5,-144 2366.5,-144 2366.5,-96.67 2366.5,-96.67"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="2368.6,-96.67 2366.5,-90.67 2364.4,-96.67 2368.6,-96.67"/>
+</g>
+<!-- n34 -->
+<g id="node16" class="node">
+<title>n34</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M2733,-98C2733,-98 2506,-98 2506,-98 2500,-98 2494,-92 2494,-86 2494,-86 2494,-12 2494,-12 2494,-6 2500,0 2506,0 2506,0 2733,0 2733,0 2739,0 2745,-6 2745,-12 2745,-12 2745,-86 2745,-86 2745,-92 2739,-98 2733,-98"/>
+<text text-anchor="middle" x="2619.5" y="-82.8" font-family="Arial" font-size="14.00">kagent</text>
+<text text-anchor="middle" x="2619.5" y="-67.8" font-family="Arial" font-size="14.00">kagent&#45;controller</text>
+<text text-anchor="middle" x="2619.5" y="-52.8" font-family="Arial" font-size="14.00">kagent&#45;ui</text>
+<text text-anchor="middle" x="2619.5" y="-37.8" font-family="Arial" font-size="14.00">kagent&#45;tools</text>
+<text text-anchor="middle" x="2619.5" y="-22.8" font-family="Arial" font-size="14.00">Agent: k8s&#45;a2a&#45;agent</text>
+<text text-anchor="middle" x="2619.5" y="-7.8" font-family="Arial" font-size="14.00">RemoteMCPServer: kagent&#45;tool&#45;server</text>
+</g>
+<!-- n3&#45;&gt;n34 -->
+<g id="edge16" class="edge">
+<title>n3&#45;&gt;n34</title>
+<path fill="none" stroke="#7a8a99" d="M2619.5,-133.59C2619.5,-133.59 2619.5,-104.2 2619.5,-104.2"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="2621.6,-104.2 2619.5,-98.2 2617.4,-104.2 2621.6,-104.2"/>
+</g>
+<!-- n35 -->
+<g id="node17" class="node">
+<title>n35</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M2833.5,-68C2833.5,-68 2775.5,-68 2775.5,-68 2769.5,-68 2763.5,-62 2763.5,-56 2763.5,-56 2763.5,-42 2763.5,-42 2763.5,-36 2769.5,-30 2775.5,-30 2775.5,-30 2833.5,-30 2833.5,-30 2839.5,-30 2845.5,-36 2845.5,-42 2845.5,-42 2845.5,-56 2845.5,-56 2845.5,-62 2839.5,-68 2833.5,-68"/>
+<text text-anchor="middle" x="2804.5" y="-52.8" font-family="Arial" font-size="14.00">ai&#45;gateway</text>
+<text text-anchor="middle" x="2804.5" y="-37.8" font-family="Arial" font-size="14.00">LiteLLM</text>
+</g>
+<!-- n3&#45;&gt;n35 -->
+<g id="edge17" class="edge">
+<title>n3&#45;&gt;n35</title>
+<path fill="none" stroke="#7a8a99" d="M2695.55,-141C2746.57,-141 2804.5,-141 2804.5,-141 2804.5,-141 2804.5,-74.06 2804.5,-74.06"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="2806.6,-74.06 2804.5,-68.06 2802.4,-74.06 2806.6,-74.06"/>
+</g>
+<!-- n36 -->
+<g id="node18" class="node">
+<title>n36</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M3047,-83C3047,-83 2876,-83 2876,-83 2870,-83 2864,-77 2864,-71 2864,-71 2864,-27 2864,-27 2864,-21 2870,-15 2876,-15 2876,-15 3047,-15 3047,-15 3053,-15 3059,-21 3059,-27 3059,-27 3059,-71 3059,-71 3059,-77 3053,-83 3047,-83"/>
+<text text-anchor="middle" x="2961.5" y="-67.8" font-family="Arial" font-size="14.00">ai&#45;models</text>
+<text text-anchor="middle" x="2961.5" y="-52.8" font-family="Arial" font-size="14.00">tei&#45;embeddings</text>
+<text text-anchor="middle" x="2961.5" y="-37.8" font-family="Arial" font-size="14.00">KServe control plane</text>
+<text text-anchor="middle" x="2961.5" y="-22.8" font-family="Arial" font-size="14.00">optional Ollama or vLLM path</text>
+</g>
+<!-- n3&#45;&gt;n36 -->
+<g id="edge18" class="edge">
+<title>n3&#45;&gt;n36</title>
+<path fill="none" stroke="#7a8a99" d="M2695.83,-148C2796.62,-148 2961.5,-148 2961.5,-148 2961.5,-148 2961.5,-89.07 2961.5,-89.07"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="2963.6,-89.07 2961.5,-83.07 2959.4,-89.07 2963.6,-89.07"/>
+</g>
+<!-- n37 -->
+<g id="node19" class="node">
+<title>n37</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M3156,-83C3156,-83 3089,-83 3089,-83 3083,-83 3077,-77 3077,-71 3077,-71 3077,-27 3077,-27 3077,-21 3083,-15 3089,-15 3089,-15 3156,-15 3156,-15 3162,-15 3168,-21 3168,-27 3168,-27 3168,-71 3168,-71 3168,-77 3162,-83 3156,-83"/>
+<text text-anchor="middle" x="3122.5" y="-67.8" font-family="Arial" font-size="14.00">context</text>
+<text text-anchor="middle" x="3122.5" y="-52.8" font-family="Arial" font-size="14.00">Qdrant</text>
+<text text-anchor="middle" x="3122.5" y="-37.8" font-family="Arial" font-size="14.00">PostgreSQL</text>
+<text text-anchor="middle" x="3122.5" y="-22.8" font-family="Arial" font-size="14.00">Redis</text>
+</g>
+<!-- n3&#45;&gt;n37 -->
+<g id="edge19" class="edge">
+<title>n3&#45;&gt;n37</title>
+<path fill="none" stroke="#7a8a99" d="M2695.62,-155C2836.24,-155 3122.5,-155 3122.5,-155 3122.5,-155 3122.5,-89.12 3122.5,-89.12"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="3124.6,-89.12 3122.5,-83.12 3120.4,-89.12 3124.6,-89.12"/>
+</g>
+<!-- n38 -->
+<g id="node20" class="node">
+<title>n38</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M3266.5,-83C3266.5,-83 3198.5,-83 3198.5,-83 3192.5,-83 3186.5,-77 3186.5,-71 3186.5,-71 3186.5,-27 3186.5,-27 3186.5,-21 3192.5,-15 3198.5,-15 3198.5,-15 3266.5,-15 3266.5,-15 3272.5,-15 3278.5,-21 3278.5,-27 3278.5,-27 3278.5,-71 3278.5,-71 3278.5,-77 3272.5,-83 3266.5,-83"/>
+<text text-anchor="middle" x="3232.5" y="-67.8" font-family="Arial" font-size="14.00">observability</text>
+<text text-anchor="middle" x="3232.5" y="-52.8" font-family="Arial" font-size="14.00">Prometheus</text>
+<text text-anchor="middle" x="3232.5" y="-37.8" font-family="Arial" font-size="14.00">Grafana</text>
+<text text-anchor="middle" x="3232.5" y="-22.8" font-family="Arial" font-size="14.00">Loki</text>
+</g>
+<!-- n3&#45;&gt;n38 -->
+<g id="edge20" class="edge">
+<title>n3&#45;&gt;n38</title>
+<path fill="none" stroke="#7a8a99" d="M2695.59,-162C2859.76,-162 3232.5,-162 3232.5,-162 3232.5,-162 3232.5,-89.21 3232.5,-89.21"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="3234.6,-89.21 3232.5,-83.21 3230.4,-89.21 3234.6,-89.21"/>
+</g>
+<!-- n41 -->
+<g id="node22" class="node">
+<title>n41</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M3528,-83C3528,-83 3309,-83 3309,-83 3303,-83 3297,-77 3297,-71 3297,-71 3297,-27 3297,-27 3297,-21 3303,-15 3309,-15 3309,-15 3528,-15 3528,-15 3534,-15 3540,-21 3540,-27 3540,-27 3540,-71 3540,-71 3540,-77 3534,-83 3528,-83"/>
+<text text-anchor="middle" x="3418.5" y="-67.8" font-family="Arial" font-size="14.00">UI and agent path</text>
+<text text-anchor="middle" x="3418.5" y="-52.8" font-family="Arial" font-size="14.00">kagent&#45;ui &#45;&gt; kagent&#45;controller</text>
+<text text-anchor="middle" x="3418.5" y="-37.8" font-family="Arial" font-size="14.00">k8s&#45;a2a&#45;agent &#45;&gt; kagent&#45;controller</text>
+<text text-anchor="middle" x="3418.5" y="-22.8" font-family="Arial" font-size="14.00">kagent&#45;controller &#45;&gt; agentgateway /v1</text>
+</g>
+<!-- n4&#45;&gt;n41 -->
+<g id="edge21" class="edge">
+<title>n4&#45;&gt;n41</title>
+<path fill="none" stroke="#7a8a99" d="M3689.75,-133.96C3689.75,-112.34 3689.75,-79 3689.75,-79 3689.75,-79 3546.24,-79 3546.24,-79"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="3546.24,-76.9 3540.24,-79 3546.24,-81.1 3546.24,-76.9"/>
+</g>
+<!-- n42 -->
+<g id="node23" class="node">
+<title>n42</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M3896.5,-75.5C3896.5,-75.5 3570.5,-75.5 3570.5,-75.5 3564.5,-75.5 3558.5,-69.5 3558.5,-63.5 3558.5,-63.5 3558.5,-34.5 3558.5,-34.5 3558.5,-28.5 3564.5,-22.5 3570.5,-22.5 3570.5,-22.5 3896.5,-22.5 3896.5,-22.5 3902.5,-22.5 3908.5,-28.5 3908.5,-34.5 3908.5,-34.5 3908.5,-63.5 3908.5,-63.5 3908.5,-69.5 3902.5,-75.5 3896.5,-75.5"/>
+<text text-anchor="middle" x="3733.5" y="-60.3" font-family="Arial" font-size="14.00">MCP path</text>
+<text text-anchor="middle" x="3733.5" y="-45.3" font-family="Arial" font-size="14.00">RemoteMCPServer &#45;&gt; agentgateway /mcp/kagent&#45;tools</text>
+<text text-anchor="middle" x="3733.5" y="-30.3" font-family="Arial" font-size="14.00">agentgateway &#45;&gt; kagent&#45;tools backend</text>
+</g>
+<!-- n4&#45;&gt;n42 -->
+<g id="edge22" class="edge">
+<title>n4&#45;&gt;n42</title>
+<path fill="none" stroke="#7a8a99" d="M3733.5,-133.59C3733.5,-133.59 3733.5,-81.77 3733.5,-81.77"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="3735.6,-81.77 3733.5,-75.77 3731.4,-81.77 3735.6,-81.77"/>
+</g>
+<!-- n43 -->
+<g id="node24" class="node">
+<title>n43</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M4328.5,-90.5C4328.5,-90.5 3938.5,-90.5 3938.5,-90.5 3932.5,-90.5 3926.5,-84.5 3926.5,-78.5 3926.5,-78.5 3926.5,-19.5 3926.5,-19.5 3926.5,-13.5 3932.5,-7.5 3938.5,-7.5 3938.5,-7.5 4328.5,-7.5 4328.5,-7.5 4334.5,-7.5 4340.5,-13.5 4340.5,-19.5 4340.5,-19.5 4340.5,-78.5 4340.5,-78.5 4340.5,-84.5 4334.5,-90.5 4328.5,-90.5"/>
+<text text-anchor="middle" x="4133.5" y="-75.3" font-family="Arial" font-size="14.00">LLM path</text>
+<text text-anchor="middle" x="4133.5" y="-60.3" font-family="Arial" font-size="14.00">agentgateway &#45;&gt; LiteLLM</text>
+<text text-anchor="middle" x="4133.5" y="-45.3" font-family="Arial" font-size="14.00">LiteLLM &#45;&gt; Gemini / OpenAI / Anthropic / Bedrock / Vertex / others</text>
+<text text-anchor="middle" x="4133.5" y="-30.3" font-family="Arial" font-size="14.00">LiteLLM &#45;&gt; optional LM Studio endpoint</text>
+<text text-anchor="middle" x="4133.5" y="-15.3" font-family="Arial" font-size="14.00">LiteLLM &#45;&gt; optional Ollama or vLLM path</text>
+</g>
+<!-- n4&#45;&gt;n43 -->
+<g id="edge23" class="edge">
+<title>n4&#45;&gt;n43</title>
+<path fill="none" stroke="#7a8a99" d="M3777.25,-133.97C3777.25,-114.42 3777.25,-86 3777.25,-86 3777.25,-86 3920.27,-86 3920.27,-86"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="3920.27,-88.1 3926.27,-86 3920.27,-83.9 3920.27,-88.1"/>
+</g>
+<!-- n44 -->
+<g id="node25" class="node">
+<title>n44</title>
+<path fill="#f9fbff" stroke="#5a6b7a" d="M4576.5,-90.5C4576.5,-90.5 4370.5,-90.5 4370.5,-90.5 4364.5,-90.5 4358.5,-84.5 4358.5,-78.5 4358.5,-78.5 4358.5,-19.5 4358.5,-19.5 4358.5,-13.5 4364.5,-7.5 4370.5,-7.5 4370.5,-7.5 4576.5,-7.5 4576.5,-7.5 4582.5,-7.5 4588.5,-13.5 4588.5,-19.5 4588.5,-19.5 4588.5,-78.5 4588.5,-78.5 4588.5,-84.5 4582.5,-90.5 4576.5,-90.5"/>
+<text text-anchor="middle" x="4473.5" y="-75.3" font-family="Arial" font-size="14.00">Context path</text>
+<text text-anchor="middle" x="4473.5" y="-60.3" font-family="Arial" font-size="14.00">kagent&#45;controller &#45;&gt; tei&#45;embeddings</text>
+<text text-anchor="middle" x="4473.5" y="-45.3" font-family="Arial" font-size="14.00">kagent&#45;controller &#45;&gt; Qdrant</text>
+<text text-anchor="middle" x="4473.5" y="-30.3" font-family="Arial" font-size="14.00">kagent&#45;controller &#45;&gt; PostgreSQL</text>
+<text text-anchor="middle" x="4473.5" y="-15.3" font-family="Arial" font-size="14.00">kagent&#45;controller &#45;&gt; Redis</text>
+</g>
+<!-- n4&#45;&gt;n44 -->
+<g id="edge24" class="edge">
+<title>n4&#45;&gt;n44</title>
+<path fill="none" stroke="#7a8a99" d="M3821.29,-152C4017.31,-152 4473.5,-152 4473.5,-152 4473.5,-152 4473.5,-96.6 4473.5,-96.6"/>
+<polygon fill="#7a8a99" stroke="#7a8a99" points="4475.6,-96.6 4473.5,-90.6 4471.4,-96.6 4475.6,-96.6"/>
+</g>
+</g>
+</svg>

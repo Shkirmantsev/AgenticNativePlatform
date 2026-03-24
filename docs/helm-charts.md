@@ -1,24 +1,14 @@
 # Helm charts
 
-## Production path charts
+Repo-local charts live under `charts/`.
 
-These charts are part of the intended production-style path and are installed through Flux `HelmRelease` resources:
+Active charts:
+
 - `charts/litellm-proxy`
 - `charts/lmstudio-external`
 - `charts/ollama-runtime`
-- `charts/vllm-cpu`
 - `charts/tei-embeddings`
+- `charts/vllm-cpu`
+- `charts/vendor/kagent`
 
-## Demo / packaging chart
-
-`charts/ai-runtimes` is kept as a compact demo/manual packaging chart. It is useful for learning and templating, but it is not the default production path in this repository.
-
-Archived legacy charts live under `charts/legacy/` and are not part of the canonical generated-cluster flow.
-
-## Chart quality notes
-
-The local charts include:
-- explicit image tags
-- ServiceAccounts for pod-based charts
-- `automountServiceAccountToken: false` where Kubernetes API access is not needed
-- default `resources.requests` and `resources.limits`, including `ephemeral-storage`
+Legacy chart archives are removed from the active layout.

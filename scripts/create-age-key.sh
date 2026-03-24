@@ -12,7 +12,7 @@ grep '^# public key:' "${KEY_FILE}" | awk '{print $4}' > "${PUB_FILE}"
 RECIPIENT="$(cat "${PUB_FILE}")"
 cat > "${ROOT_DIR}/.sops.yaml" <<EOF
 creation_rules:
-  - path_regex: flux/secrets/.*\.ya?ml
+  - path_regex: secrets/.*\.ya?ml
     age: ${RECIPIENT}
 EOF
 echo "Created ${KEY_FILE} and updated .sops.yaml with recipient ${RECIPIENT}"

@@ -1,0 +1,4 @@
+image:
+  tag: 0.18.0
+modelPull:
+  model: qwen2.5:7b-instruct

@@ -81,7 +81,7 @@ lmstudio_host_ip   = "${LMSTUDIO_HOST_IP}"
 lmstudio_port      = ${LMSTUDIO_PORT}
 EOT
     ;;
-  github-workspace)
+  github-codespace)
     mkdir -p "${ROOT_DIR}/.generated/k3d"
     cat > "${TF_VARS_FILE}" <<EOT
 workspace_cluster_name = "${WORKSPACE_CLUSTER_NAME}"

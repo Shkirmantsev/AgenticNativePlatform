@@ -64,8 +64,8 @@ recover-paused-workloads: require-kubeconfig ## Restore paused workloads, force 
 	    done; \
 	  done; \
 	fi
-	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
-	@$(MAKE) diagnose-runtime-state TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) diagnose-runtime-state TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 
 cluster-pause: require-cluster-api ## Pause platform workloads without uninstalling the cluster
 	@PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/save-paused-workloads.sh
@@ -95,9 +95,7 @@ cluster-resume: require-cluster-api ## Resume platform workloads from Git desire
 	  $(FLUX) resume kustomization $$k -n flux-system || true; \
 	done
 	@$(FLUX) reconcile source git platform -n flux-system || true
-	@if $(KUBECTL) -n flux-system get kustomization platform-bootstrap >/dev/null 2>&1; then \
-	  $(FLUX) reconcile kustomization platform-bootstrap -n flux-system --with-source || true; \
-	fi
+	@$(FLUX) reconcile kustomization platform-infrastructure -n flux-system --with-source || true
 	@PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh
 	@token="$$(date -u +"%Y-%m-%dT%H:%M:%SZ")"; \
 	for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
@@ -106,7 +104,7 @@ cluster-resume: require-cluster-api ## Resume platform workloads from Git desire
 	    reconcile.fluxcd.io/forceAt="$$token" \
 	    reconcile.fluxcd.io/resetAt="$$token" || true; \
 	done
-	@for k in platform-infrastructure platform-applications platform; do \
+	@for k in platform-secrets platform-applications; do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) reconcile kustomization $$k -n flux-system --with-source || true; \
 	done
@@ -118,15 +116,15 @@ cluster-start: ## Deprecated alias for cluster-resume
 	@$(MAKE) cluster-resume TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) IAC_TOOL=$(IAC_TOOL) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 
 cluster-remove: ## Remove only the cluster from the selected topology and keep infrastructure/resources
-	@if [ "$(TOPOLOGY)" = "github-workspace" ]; then \
-	  WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" ./scripts/cluster-remove-github-workspace.sh; \
+	@if [ "$(TOPOLOGY)" = "github-codespace" ]; then \
+	  WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" ./scripts/cluster-remove-github-codespace.sh; \
 	else \
 	  $(MAKE) uninstall-k3s TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"; \
 	fi
 
 environment-destroy: ## Remove the cluster and destroy Terraform/OpenTofu infrastructure when the topology uses it
 	@$(MAKE) cluster-remove TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
-	@if [ "$(TOPOLOGY)" != "github-workspace" ]; then \
+	@if [ "$(TOPOLOGY)" != "github-codespace" ]; then \
 	  $(MAKE) terraform-destroy TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN); \
 	fi
 
@@ -217,7 +215,7 @@ check-flux-operator-ui: ## Verify the local Flux Operator web UI endpoint
 
 check-flux-stages: require-kubeconfig ## Show and validate readiness for the staged Flux Kustomizations
 	@failed=0; \
-	for stage in platform-bootstrap platform-infrastructure platform-applications; do \
+	for stage in platform-infrastructure platform-secrets platform-applications; do \
 	  json="$$( $(KUBECTL) -n flux-system get kustomization $$stage -o json 2>&1 )"; \
 	  status=$$?; \
 	  if [ "$$status" -ne 0 ]; then \

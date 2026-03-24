@@ -1,106 +1,76 @@
 @startwbs
-* AgenticNativePlatform - Current GitOps Staging And Profile Composition
-** 1. Source and generation flow
-*** Operator
-**** edits manifests and charts in repository source of truth
-***** flux/components/*
-***** charts/*
-***** flux/overlays/*
+* AgenticNativePlatform - Static GitOps Layout And Staged Cluster Composition
+** 1. Repository source of truth
+*** Top-level trees
+**** clusters/*
+**** infrastructure/*
+**** apps/*
+**** values/*
+**** secrets/*
+**** charts/*
+*** Operator workflow
+**** edits committed manifests in repo
 **** commits and pushes to remote Git repository
 ***** GIT_REPO_URL @ GIT_BRANCH
-*** Generated inputs
-**** flux/generated/<topology>/
-**** flux/generated/clusters/<cluster-id>/
-**** produced by
-***** make flux-values
-***** make render-cluster-root
-*** Effective flow
-**** Repository source of truth -> Generated inputs -> Remote Git repository
+*** Layout principle
+**** committed cluster roots and shared top-level trees define the GitOps source of truth
 
-** 2. Flux system reconciliation
+** 2. Cluster roots
+*** Committed sync roots
+**** clusters/local-dev
+**** clusters/github-codespace-dev
+**** clusters/minipc-dev
+**** clusters/hybrid-dev
+**** clusters/hybrid-remote-dev
+*** Per-cluster wrappers
+**** infrastructure/
+***** cluster-scoped wrapper around shared infrastructure and values
+**** secrets/
+***** cluster-scoped wrapper around topology secrets
+**** apps/
+***** cluster-scoped wrapper around shared application manifests
+**** flux-system/flux-instance.yaml
+***** committed template with url/ref/path placeholders
+
+** 3. Flux control plane
+*** Flux Operator
+**** installs and manages Flux controllers
+*** FluxInstance/flux
+**** sync.kind = GitRepository
+**** sync.path = ./clusters/<topology>-<env>
 *** GitRepository/platform
-**** Flux reads the remote branch
-**** Flux reconciles remote repository state, not local working tree
-**** Generated manifests must be committed and pushed
-*** platform-bootstrap
-**** bootstrap content
-***** base namespaces
-***** Gateway API CRDs
-***** Helm/OCI sources
-***** generated ConfigMaps
-***** secret references
-**** staged dependency to platform-infrastructure
-**** bootstrap-flux is rendered under flux/generated/clusters/<cluster-id>/bootstrap-flux/
-**** the shell wrapper only applies that path
+**** Flux reconciles remote Git state, not local unpublished files
+
+** 4. Staged reconciliation
 *** platform-infrastructure
-**** selects infrastructure profile path
-**** selects runtime overlay
-***** none
-***** ollama
-***** vllm
-**** staged dependency to platform-applications
-**** optional dependency to platform-ops-ui
+**** reads clusters/<topology>-<env>/infrastructure
+**** composes infrastructure/
+**** composes values/
+*** platform-secrets
+**** dependsOn platform-infrastructure
+**** reads clusters/<topology>-<env>/secrets
+**** composes secrets/<topology>/
 *** platform-applications
-**** applies profile applications + env overlay
-**** may render MetalLB values for host-based paths
-**** optional dependency to platform-samples
-*** Optional child roots
-**** platform-ops-ui
-***** suspend=true until enabled
-***** deploys weave-gitops bundle
-**** platform-samples
-***** suspend=true until enabled
-***** deploys samples-echo-mcp bundle
+**** dependsOn platform-secrets
+**** reads clusters/<topology>-<env>/apps
+**** composes apps/
 
-** 3. Profiles
-*** platform-profile-full
-**** base
+** 5. OCI-ready split
+*** infrastructure/
+**** sources
+**** controllers
 **** network
-**** agent-runtime
-**** serving
-**** context
 **** observability
-**** metallb
-**** host-based default
-*** platform-profile-fast
-**** base
-**** network
-**** agent-runtime
-**** metallb
-**** explicit override
-*** platform-profile-fast-serving
-**** platform-profile-fast + serving
-**** explicit override
-*** platform-profile-fast-context
-**** platform-profile-fast + context
-**** explicit override
-*** platform-profile-workspace
-**** currently aliases platform-profile-fast-serving
-**** github-workspace default
-
-** 4. Bundle mapping
-*** Applications profile
-**** platform-apps
-*** platform-profile-full -> bundles
-**** platform-base
-**** platform-network
-**** platform-agent-runtime
-**** platform-serving
-**** platform-context
-**** platform-observability
-*** platform-profile-fast -> bundles
-**** platform-base
-**** platform-network
-**** platform-agent-runtime
-*** platform-profile-fast-serving -> bundles
-**** inherits platform-profile-fast
-**** platform-serving
-*** platform-profile-fast-context -> bundles
-**** inherits platform-profile-fast
-**** platform-context
-*** platform-profile-workspace -> bundles
-**** aliases platform-profile-fast-serving
-*** Optional bundles
-**** weave-gitops bundle -> platform-ops-ui
-**** samples-echo-mcp bundle -> platform-samples
+**** security
+*** apps/
+**** platform
+**** ai-gateway
+**** ai-models
+**** context
+*** values/
+**** non-secret only
+**** future OCI artifact candidate
+*** secrets/
+**** SOPS by topology
+**** separate from non-secret values
 @endwbs

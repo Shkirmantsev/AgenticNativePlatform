@@ -7,7 +7,7 @@ KUBECONFIG_PATH="${KUBECONFIG_PATH:-}"
 STATE_NAMESPACE="${STATE_NAMESPACE:-flux-system}"
 STATE_CONFIGMAP="${PAUSE_STATE_CONFIGMAP:-cluster-pause-state}"
 PAUSE_NAMESPACES="${PAUSE_NAMESPACES:-}"
-PLATFORM_KUSTOMIZATIONS="${PLATFORM_KUSTOMIZATIONS:-platform-bootstrap platform-infrastructure platform-applications platform}"
+PLATFORM_KUSTOMIZATIONS="${PLATFORM_KUSTOMIZATIONS:-platform-infrastructure platform-secrets platform-applications}"
 
 print_default_status() {
   flux_cmd get kustomizations -A || true

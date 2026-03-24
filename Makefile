@@ -11,8 +11,6 @@ override TOPOLOGY := $(if $(strip $(TOPOLOGY)),$(strip $(TOPOLOGY)),local)
 ENV ?= dev
 RUNTIME ?= none
 SECRETS_MODE ?= external
-PLATFORM_PROFILE ?=
-PLATFORM_ENABLE_SAMPLES_ECHO_MCP ?= false
 LMSTUDIO_ENABLED ?= false
 INSTALL_K9S ?= true
 IAC_TOOL ?= tofu
@@ -20,7 +18,10 @@ TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
 TF_DIR = terraform/environments/$(TOPOLOGY)
 FLUX_OPERATOR_VERSION ?= 0.45.1
 FLUX_VERSION ?= 2.8.3
-FLUX_INSTANCE_SYNC_PATH ?= ./flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)
+FLUX_INSTANCE_SYNC_PATH ?= ./clusters/$(TOPOLOGY)-$(ENV)
+ifneq ($(filter ./flux/generated/clusters/%,$(FLUX_INSTANCE_SYNC_PATH)),)
+override FLUX_INSTANCE_SYNC_PATH := ./clusters/$(TOPOLOGY)-$(ENV)
+endif
 ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/inventory.ini.example)
 ANSIBLE_BECOME_FLAGS ?=
 KUBECONFIG_DIR ?= .kube/generated
@@ -51,7 +52,7 @@ KUBECTL ?= kubectl --kubeconfig "$(KUBECONFIG)"
 FLUX ?= flux --kubeconfig "$(KUBECONFIG)"
 
 PAUSE_NAMESPACES ?= ai-gateway ai-models context
-PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-applications platform
+PLATFORM_KUSTOMIZATIONS ?= platform-infrastructure platform-secrets platform-applications
 
 define wait_for_http_status
 	@url="$(1)"; accepted_codes="$(2)"; header="$(3)"; deadline=$$(( $$(date +%s) + $(HTTP_PROBE_TIMEOUT) )); last_code="000"; \
@@ -167,7 +168,7 @@ define stop_port_forward
 	fi
 endef
 
-.PHONY: help require-kubeconfig require-cluster-api
+.PHONY: help require-kubeconfig require-cluster-api validate-config
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "%-32s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -177,6 +178,9 @@ require-kubeconfig:
 
 require-cluster-api: require-kubeconfig
 	@./scripts/require-kube-apiserver.sh "$@"
+
+validate-config: ## Run local Helm and Kustomize validation for committed config
+	@./scripts/validate-config.sh
 
 include make-tasks/infra.mk
 include make-tasks/flux.mk

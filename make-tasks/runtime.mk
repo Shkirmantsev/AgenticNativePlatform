@@ -21,7 +21,7 @@ save-echo-mcp-image: ## Save the local echo-mcp image to ECHO_MCP_IMAGE_TARBALL
 
 preimport-echo-mcp-image-tarball: ## Import an echo-mcp image tarball into the selected cluster runtime
 	@test -n "$(ECHO_MCP_IMAGE_TARBALL)" || (echo "Set ECHO_MCP_IMAGE_TARBALL=/tmp/echo-mcp-image.tar" >&2; exit 1)
-	@if [ "$(TOPOLOGY)" = "github-workspace" ]; then \
+	@if [ "$(TOPOLOGY)" = "github-codespace" ]; then \
 	  docker load -i $(ECHO_MCP_IMAGE_TARBALL); \
 	  k3d image import $(ECHO_MCP_IMAGE) -c $(WORKSPACE_CLUSTER_NAME); \
 	else \

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ENVIRONMENT="${ENV:-dev}"
+TOPOLOGY_NAME="${TOPOLOGY:-local}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC_DIR="${ROOT_DIR}/flux/secrets/${ENVIRONMENT}"
+SRC_DIR="${ROOT_DIR}/secrets/${TOPOLOGY_NAME}"
 OUT_DIR="${ROOT_DIR}/.generated/decrypted/${ENVIRONMENT}"
 mkdir -p "${OUT_DIR}"
 if ! command -v sops >/dev/null 2>&1; then

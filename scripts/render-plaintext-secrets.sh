@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENT="${ENV:-dev}"
 OUT_DIR="${ROOT_DIR}/.generated/secrets/${ENVIRONMENT}"
-NAMESPACE_SOURCE="${ROOT_DIR}/flux/components/base/plaintext-secret-namespaces.yaml"
+NAMESPACE_SOURCE="${ROOT_DIR}/secrets/common/namespaces.yaml"
 mkdir -p "${OUT_DIR}"
 
 generate_secret() {
