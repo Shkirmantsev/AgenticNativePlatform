@@ -39,9 +39,9 @@ The staged roots now render through explicit profile composition:
   - `platform-profile-fast-serving`
   - `platform-profile-fast-context`
 
-The older monolithic `platform-core` / `platform` path and the static pre-rendered
-cluster roots have been archived under `flux/legacy/`. They are not the primary
-bootstrap model for new work.
+Older monolithic `platform-core` / `platform` layouts and static pre-rendered
+cluster roots have been retired. New work should use the staged generated-cluster
+bootstrap model above.
 
 ## Runtime architecture
 
