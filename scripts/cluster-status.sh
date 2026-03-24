@@ -8,6 +8,7 @@ STATE_NAMESPACE="${STATE_NAMESPACE:-flux-system}"
 STATE_CONFIGMAP="${PAUSE_STATE_CONFIGMAP:-cluster-pause-state}"
 PAUSE_NAMESPACES="${PAUSE_NAMESPACES:-}"
 PLATFORM_KUSTOMIZATIONS="${PLATFORM_KUSTOMIZATIONS:-platform-infrastructure platform-secrets platform-applications}"
+FLUX_SYNC_SOURCE_NAME="${FLUX_SYNC_SOURCE_NAME:-flux-system}"
 
 print_default_status() {
   flux_cmd get kustomizations -A || true
@@ -42,7 +43,7 @@ if ! kubectl_cmd get namespace "${STATE_NAMESPACE}" >/dev/null 2>&1; then
   exit 0
 fi
 
-source_suspended="$(get_jsonpath "gitrepository/platform" '{.spec.suspend}')"
+source_suspended="$(get_jsonpath "gitrepository/${FLUX_SYNC_SOURCE_NAME}" '{.spec.suspend}')"
 all_helmrelease_names="$(kubectl_cmd -n "${STATE_NAMESPACE}" get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null || true)"
 all_helmrelease_suspend_values="$(kubectl_cmd -n "${STATE_NAMESPACE}" get helmrelease -o jsonpath='{range .items[*]}{.spec.suspend}{"\n"}{end}' 2>/dev/null || true)"
 

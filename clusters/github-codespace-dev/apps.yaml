@@ -12,5 +12,5 @@ spec:
     - name: platform-secrets
   sourceRef:
     kind: GitRepository
-    name: platform
+    name: flux-system
   path: ./clusters/github-codespace-dev/apps

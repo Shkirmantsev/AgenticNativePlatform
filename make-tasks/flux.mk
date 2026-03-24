@@ -104,8 +104,8 @@ bootstrap-flux-instance: require-kubeconfig render-cluster-root ## Apply a FluxI
 
 bootstrap-flux-git: bootstrap-flux-instance ## Deprecated alias for the FluxInstance-based bootstrap flow
 
-reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
-	@$(FLUX) reconcile source git platform -n flux-system || true
+reconcile: require-kubeconfig ## Reconcile the Flux Git source and staged platform kustomizations if present
+	@$(FLUX) reconcile source git $(FLUX_SYNC_SOURCE_NAME) -n flux-system || true
 	@if $(KUBECTL) -n flux-system get kustomization platform-infrastructure >/dev/null 2>&1; then \
 	  $(FLUX) reconcile kustomization platform-infrastructure -n flux-system --with-source || true; \
 	fi

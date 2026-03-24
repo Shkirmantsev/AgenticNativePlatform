@@ -73,7 +73,7 @@ cluster-pause: require-cluster-api ## Pause platform workloads without uninstall
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) suspend kustomization $$k -n flux-system || true; \
 	done
-	@$(FLUX) suspend source git platform -n flux-system || true
+	@$(FLUX) suspend source git $(FLUX_SYNC_SOURCE_NAME) -n flux-system || true
 	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
 	  $(FLUX) suspend helmrelease $$hr -n flux-system || true; \
 	done
@@ -86,7 +86,7 @@ cluster-pause: require-cluster-api ## Pause platform workloads without uninstall
 	@echo "Infrastructure namespaces remain running by design so ambient, gateways, controllers, and cached images stay warm for fast resume."
 
 cluster-resume: require-cluster-api ## Resume platform workloads from Git desired state
-	@$(FLUX) resume source git platform -n flux-system || true
+	@$(FLUX) resume source git $(FLUX_SYNC_SOURCE_NAME) -n flux-system || true
 	@for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
 	  $(FLUX) resume helmrelease $$hr -n flux-system || true; \
 	done
@@ -94,7 +94,7 @@ cluster-resume: require-cluster-api ## Resume platform workloads from Git desire
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) resume kustomization $$k -n flux-system || true; \
 	done
-	@$(FLUX) reconcile source git platform -n flux-system || true
+	@$(FLUX) reconcile source git $(FLUX_SYNC_SOURCE_NAME) -n flux-system || true
 	@$(FLUX) reconcile kustomization platform-infrastructure -n flux-system --with-source || true
 	@PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh
 	@token="$$(date -u +"%Y-%m-%dT%H:%M:%SZ")"; \

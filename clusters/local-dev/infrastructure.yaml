@@ -10,5 +10,5 @@ spec:
   timeout: 20m
   sourceRef:
     kind: GitRepository
-    name: platform
+    name: flux-system
   path: ./clusters/local-dev/infrastructure
