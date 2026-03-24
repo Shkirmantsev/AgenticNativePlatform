@@ -18,7 +18,7 @@ Scripts are kept for local repository operations that are not natural Ansible ta
 - rendering Flux ConfigMaps and cluster roots
 - rendering external plaintext secrets
 - converting plaintext secrets into encrypted SOPS files
-- applying generated Flux bootstrap manifests and bootstrapping the Flux SOPS secret
+- applying the `FluxInstance` bootstrap manifest and bootstrapping the Flux SOPS secret
 
 ## What is committed to Git
 
@@ -61,14 +61,14 @@ That target orchestrates the existing building blocks in order:
 2. provision the selected topology inputs
 3. render tracked Flux inputs and verify they are already committed
 4. continue host bootstrap and kubeconfig export
-5. install Flux
+5. install Flux Operator
 6. apply first-pass secrets
-7. bootstrap the Flux Git objects
+7. bootstrap Flux with a `FluxInstance`
 8. reconcile staged Kustomizations and HelmReleases
 9. print cluster status
 
 It intentionally stops after the topology render step if tracked generated manifests under `flux/generated/...` changed locally, because Flux reads the remote Git branch rather than your local working tree.
-`make bootstrap-flux-git` also refuses to continue when the Git worktree is dirty or when local `HEAD` does not match `GIT_REPO_URL@GIT_BRANCH`, because the cluster follows the remote branch, not unpublished local edits.
+`make bootstrap-flux-instance` also refuses to continue when the Git worktree is dirty or when local `HEAD` does not match `GIT_REPO_URL@GIT_BRANCH`, because the cluster follows the remote branch, not unpublished local edits.
 
 Topology distinction:
 
@@ -84,10 +84,10 @@ make k9s-local
 ## Generated Flux artifacts
 
 - `flux/generated/<topology>/kustomization.yaml` is the generated topology input root
-- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml` is the generated cluster root used by bootstrap scripts
+- `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/kustomization.yaml` is the generated cluster root used by the `FluxInstance` sync path
 - the generated cluster root fans out into staged Flux `Kustomization` resources so CRDs and charts install before dependent custom resources
 - the staged infra/apps roots render through `flux/components/profiles/`, which compose bundle Kustomizations under `flux/components/bundles/`
-- optional Flux-managed child roots such as `platform-samples` and `platform-ops-ui` are generated alongside the staged roots and stay suspended until explicitly enabled
+- optional Flux-managed child roots such as `platform-samples` are generated alongside the staged roots and stay suspended until explicitly enabled
 - `flux/generated/<topology>/topology-values.yaml` is informational metadata for operators and is not applied to Kubernetes
 
 Validate generated manifests with:
@@ -254,6 +254,7 @@ That exposes:
 - `http://localhost:3000` for Grafana
 - `http://localhost:9090` for Prometheus
 - `http://localhost:6333/dashboard` for Qdrant
+- `http://localhost:9080` for the Flux Operator web UI
 
 The AgentGateway and LiteLLM port-forwards expose API endpoints, not UI root pages.
 `make open-agentgateway` checks only gateway/tunnel liveness now; use `make check-agentgateway-openai` or `make test-agentgateway-openai` for the backend-dependent `/v1/models` path.
@@ -334,27 +335,16 @@ make reconcile
 
 That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
 
-## Optional Weave GitOps UI
+## Flux Operator web UI
 
-The Weave GitOps dashboard is now a Flux-managed optional child root.
-
-Render the staged roots with the optional child root enabled, provide a local-admin password or bcrypt hash, and use localhost access:
+The built-in Flux Operator web UI is the supported dashboard path now.
 
 ```bash
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false PLATFORM_ENABLE_WEAVE_GITOPS_UI=true WEAVE_GITOPS_ADMIN_PASSWORD='<strong-password>'
-make reconcile
-kubectl --kubeconfig .kube/generated/current.yaml -n flux-system port-forward svc/weave-gitops 19001:9001
+make open-flux-operator-ui
+make check-flux-operator-ui
 ```
 
-Access the UI at `http://localhost:19001`.
-
-The bundle is configured explicitly for local operator use:
-
-- `ClusterIP` service only
-- ingress disabled
-- local admin user enabled only when `Secret/flux-system/cluster-user-auth` is rendered
-
-The repository no longer ships a baked demo password. Set `WEAVE_GITOPS_ADMIN_PASSWORD` or `WEAVE_GITOPS_ADMIN_PASSWORD_HASH` before rendering the optional UI root.
+Access the UI at `http://localhost:9080`.
 
 The import targets create `/var/lib/rancher/k3s/agent/images/` automatically when it is missing.
 They also run `k3s ctr images import` immediately after copying the tarball so new image tags are available without waiting for a background import path.

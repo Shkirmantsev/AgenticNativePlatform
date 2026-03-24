@@ -34,7 +34,6 @@ module "flux_manifests" {
   platform_apps_timeout             = var.platform_apps_timeout
   git_repo_url                      = var.git_repo_url
   git_branch                        = var.git_branch
-  enable_weave_gitops_ui            = var.enable_weave_gitops_ui
   enable_samples_echo_mcp           = var.enable_samples_echo_mcp
   gemini_model                      = var.gemini_model
   lmstudio_chat_model               = var.lmstudio_chat_model

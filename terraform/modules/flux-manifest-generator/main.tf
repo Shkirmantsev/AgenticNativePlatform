@@ -95,12 +95,6 @@ locals {
     platform_apps_timeout = var.platform_apps_timeout
   })
 
-  platform_ops_ui = templatefile("${path.module}/templates/platform-ops-ui.yaml.tftpl", {
-    cluster_path    = "./flux/generated/clusters/${local.cluster_id}/weave-gitops"
-    enabled         = var.enable_weave_gitops_ui
-    depends_on_name = "platform-infrastructure"
-  })
-
   platform_samples = templatefile("${path.module}/templates/platform-samples.yaml.tftpl", {
     cluster_path    = "./flux/generated/clusters/${local.cluster_id}/samples-echo-mcp"
     enabled         = var.enable_samples_echo_mcp
@@ -126,7 +120,6 @@ locals {
   })
 
   samples_echo_mcp_kustomization = templatefile("${path.module}/templates/samples-echo-mcp-kustomization.yaml.tftpl", {})
-  weave_gitops_kustomization     = templatefile("${path.module}/templates/weave-gitops-kustomization.yaml.tftpl", {})
 
   topology_files = merge(
     {
@@ -147,7 +140,6 @@ locals {
   cluster_files = merge(
     {
       "kustomization.yaml"                                        = local.cluster_root_kustomization
-      "platform-ops-ui.yaml"                                      = local.platform_ops_ui
       "platform-samples.yaml"                                     = local.platform_samples
       "platform-bootstrap.yaml"                                   = local.platform_bootstrap
       "platform-infrastructure.yaml"                              = local.platform_infrastructure
@@ -164,7 +156,6 @@ locals {
       "apps/kustomization.yaml"                                   = local.apps_kustomization
       "samples-echo-mcp/generated-echo-mcp-values-configmap.yaml" = local.echo_mcp_values_configmap
       "samples-echo-mcp/kustomization.yaml"                       = local.samples_echo_mcp_kustomization
-      "weave-gitops/kustomization.yaml"                           = local.weave_gitops_kustomization
     },
     var.include_local_bootstrap_artifacts ? {
       "bootstrap/generated-lmstudio-endpoint.yaml"         = local.lmstudio_endpoint

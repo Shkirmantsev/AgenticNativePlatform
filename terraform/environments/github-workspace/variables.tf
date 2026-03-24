@@ -68,11 +68,6 @@ variable "git_branch" {
   default = "main"
 }
 
-variable "enable_weave_gitops_ui" {
-  type    = bool
-  default = false
-}
-
 variable "enable_samples_echo_mcp" {
   type    = bool
   default = false

@@ -31,7 +31,6 @@ Each topology generates:
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/...`
 - `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/bootstrap-flux/`
 - optional Flux-managed child roots under `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/samples-echo-mcp/`
-- optional Flux-managed child roots under `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/weave-gitops/`
 
 Host-based topologies (`local`, `minipc`, `hybrid`, `hybrid-remote`) additionally generate:
 

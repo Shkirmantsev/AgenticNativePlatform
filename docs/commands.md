@@ -16,7 +16,7 @@ make run-cluster-from-scratch
 ```
 
 This is the preferred first-run command.
-It installs local tools, brings up the selected topology, installs Flux, applies the initial secrets, renders Flux inputs, bootstraps the Git source, reconciles the staged Kustomizations, and prints cluster status.
+It installs local tools, brings up the selected topology, installs Flux Operator, applies the initial secrets, renders Flux inputs, bootstraps Flux with a `FluxInstance`, reconciles the staged Kustomizations, and prints cluster status.
 
 After `terraform-apply` writes the topology-specific inputs, it renders the tracked files under `flux/generated/<topology>/` and `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`. If those renders change tracked files, the target stops before host bootstrap continues and asks you to commit and push them first.
 
@@ -67,13 +67,13 @@ make install-k3s-server TOPOLOGY=local
 make kubeconfig TOPOLOGY=local
 make install-flux-local
 make apply-plaintext-secrets ENV=dev
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 make verify
 ```
 
 `make install-flux-local`, `make reconcile`, `make verify`, `make cluster-status`, and `make sops-bootstrap-cluster` use `.kube/generated/current.yaml` through explicit `kubectl` / `flux` binding in the `Makefile`.
-`make bootstrap-flux-git` applies generated manifests from `flux/generated/clusters/<cluster-id>/bootstrap-flux/`, so the GitRepository and root Flux Kustomization are rendered declaratively before the thin shell wrapper applies them.
+`make bootstrap-flux-instance` applies a pinned `FluxInstance` that reads `GIT_REPO_URL`, `GIT_BRANCH`, and `FLUX_INSTANCE_SYNC_PATH` from `.env` or CI environment variables.
 
 ## Validate generated manifests locally
 
@@ -85,7 +85,7 @@ kubectl kustomize flux/generated/clusters/local-dev-none-external
 ## Register Git source for Flux
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 ```
 
@@ -94,21 +94,21 @@ make reconcile
 ## Switch to LM Studio external backend
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=true
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=true
 make reconcile
 ```
 
 ## Switch to Ollama runtime
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=ollama SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev RUNTIME=ollama SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 ```
 
 ## Switch to vLLM runtime
 
 ```bash
-make bootstrap-flux-git TOPOLOGY=local ENV=dev RUNTIME=vllm SECRETS_MODE=external LMSTUDIO_ENABLED=false
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev RUNTIME=vllm SECRETS_MODE=external LMSTUDIO_ENABLED=false
 make reconcile
 ```
 
@@ -163,6 +163,7 @@ URLs made available by `make open-research-access`:
 - `http://localhost:3000` Grafana
 - `http://localhost:9090` Prometheus
 - `http://localhost:6333/dashboard` Qdrant
+- `http://localhost:9080` Flux Operator web UI
 
 The AgentGateway and LiteLLM port-forwards expose API paths, not UI root pages.
 `make open-agentgateway` now checks only that the tunnel is up and AgentGateway answers HTTP at all; it does not require LiteLLM to be healthy.
@@ -293,25 +294,16 @@ make reconcile
 
 That opt-in path deploys only the sample `MCPServer`. It still does not create an AgentGateway `/mcp/echo` route or a validation agent.
 
-## Optional Weave GitOps UI
+## Flux Operator web UI
 
-Render the staged roots with the optional child root enabled, provide a local-admin password or bcrypt hash, and reconcile:
+The bootstrap flow now installs Flux Operator, whose built-in read-only web UI is exposed by `svc/flux-operator`.
 
 ```bash
-make render-cluster-root TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false PLATFORM_ENABLE_WEAVE_GITOPS_UI=true WEAVE_GITOPS_ADMIN_PASSWORD='<strong-password>'
-make reconcile
-kubectl --kubeconfig .kube/generated/current.yaml -n flux-system port-forward svc/weave-gitops 19001:9001
+make open-flux-operator-ui
+make check-flux-operator-ui
 ```
 
-Access the UI at `http://localhost:19001`.
-
-The optional bundle keeps the dashboard out of the default bootstrap path:
-
-- service type is `ClusterIP`
-- ingress is disabled
-- the chart reads the local admin credential from `Secret/flux-system/cluster-user-auth`
-
-The repository no longer ships a baked demo password. Set `WEAVE_GITOPS_ADMIN_PASSWORD` or `WEAVE_GITOPS_ADMIN_PASSWORD_HASH` before rendering the optional UI root.
+Access the UI at `http://localhost:9080`.
 
 These targets create `/var/lib/rancher/k3s/agent/images/` automatically if it is missing.
 They also import the tarball into `k3s` containerd immediately with `k3s ctr images import`.

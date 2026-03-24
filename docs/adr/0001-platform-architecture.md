@@ -26,7 +26,7 @@ We use the following layered architecture:
 
 - **OpenTofu or Terraform** for topology and optional external infrastructure
 - **Ansible** for machine bootstrap and k3s installation
-- **Flux** for Kubernetes GitOps
+- **Flux Operator** for Flux lifecycle/bootstrap and **Flux** for Kubernetes GitOps reconciliation
 - **MetalLB** for bare-metal LoadBalancer services
 - **Istio Ambient Mesh** for service mesh
 - **kgateway** for north-south ingress

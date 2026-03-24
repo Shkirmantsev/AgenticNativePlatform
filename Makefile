@@ -12,13 +12,15 @@ ENV ?= dev
 RUNTIME ?= none
 SECRETS_MODE ?= external
 PLATFORM_PROFILE ?=
-PLATFORM_ENABLE_WEAVE_GITOPS_UI ?= false
 PLATFORM_ENABLE_SAMPLES_ECHO_MCP ?= false
 LMSTUDIO_ENABLED ?= false
 INSTALL_K9S ?= true
 IAC_TOOL ?= tofu
 TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
 TF_DIR = terraform/environments/$(TOPOLOGY)
+FLUX_OPERATOR_VERSION ?= 0.45.1
+FLUX_VERSION ?= 2.8.3
+FLUX_INSTANCE_SYNC_PATH ?= ./flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)
 ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/inventory.ini.example)
 ANSIBLE_BECOME_FLAGS ?=
 KUBECONFIG_DIR ?= .kube/generated
@@ -34,6 +36,7 @@ LITELLM_LOCAL_PORT ?= 4000
 GRAFANA_LOCAL_PORT ?= 3000
 PROMETHEUS_LOCAL_PORT ?= 9090
 QDRANT_LOCAL_PORT ?= 6333
+FLUX_OPERATOR_UI_LOCAL_PORT ?= 9080
 LITELLM_MASTER_KEY ?=
 PAUSE_STATE_CONFIGMAP ?= cluster-pause-state
 PLATFORM_ROOT_TIMEOUT ?= 30m
@@ -55,14 +58,14 @@ PLATFORM_KUSTOMIZATIONS ?= platform-bootstrap platform-infrastructure platform-a
 	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
 	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote cluster-up-github-workspace run-cluster-from-scratch \
 	profile-fast profile-fast-serving profile-full \
-	flux-values render-cluster-root ensure-generated-flux-clean install-flux-local bootstrap-flux-git reconcile verify cluster-status \
+	flux-values render-cluster-root ensure-generated-flux-clean install-flux-operator install-flux-local install-flux bootstrap-flux-instance bootstrap-flux-git reconcile verify cluster-status \
 	render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
 	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster \
 	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy diagnose-runtime-state recover-paused-workloads preimport-vllm-image-tarball preimport-vllm-image-online require-kubeconfig require-cluster-api \
 	build-echo-mcp-image save-echo-mcp-image preimport-echo-mcp-image-tarball prepare-echo-mcp-image-local \
-	k9s-local port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant \
-	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-research-access close-research-access \
-	check-kagent-ui check-agentgateway check-agentgateway-openai check-litellm check-flux-stages \
+	k9s-local port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui \
+	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-research-access close-research-access \
+	check-kagent-ui check-agentgateway check-agentgateway-openai check-litellm check-flux-operator-ui check-flux-stages \
 	test-a2a-agent test-agentgateway-gemini test-agentgateway-openai test-litellm test-lmstudio test-ollama test-vllm
 
 define wait_for_http_status
@@ -226,7 +229,7 @@ uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventor
 cluster-up-local: ## Bootstrap a single-node local topology
 	$(MAKE) terraform-init TOPOLOGY=local TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=local TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=local ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=local ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=local
 	$(MAKE) install-k3s-server TOPOLOGY=local
 	$(MAKE) kubeconfig TOPOLOGY=local
@@ -234,7 +237,7 @@ cluster-up-local: ## Bootstrap a single-node local topology
 cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 	$(MAKE) terraform-init TOPOLOGY=minipc TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=minipc TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=minipc ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=minipc ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=minipc
 	$(MAKE) install-k3s-server TOPOLOGY=minipc
 	$(MAKE) kubeconfig TOPOLOGY=minipc
@@ -242,7 +245,7 @@ cluster-up-minipc: ## Bootstrap a single-node miniPC topology
 cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker topology
 	$(MAKE) terraform-init TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid
 	$(MAKE) join-workers TOPOLOGY=hybrid
@@ -252,7 +255,7 @@ cluster-up-hybrid: ## Bootstrap a miniPC control-plane plus workstation worker t
 cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation and remote worker nodes
 	$(MAKE) terraform-init TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=hybrid-remote TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid-remote ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=hybrid-remote ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	$(MAKE) bootstrap-hosts TOPOLOGY=hybrid-remote
 	$(MAKE) install-k3s-server TOPOLOGY=hybrid-remote
 	$(MAKE) join-workers TOPOLOGY=hybrid-remote
@@ -262,19 +265,19 @@ cluster-up-hybrid-remote: ## Bootstrap a miniPC control-plane with workstation a
 cluster-up-github-workspace: ## Bootstrap a GitHub workspace / Codespaces topology with k3d
 	$(MAKE) terraform-init TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
 	$(MAKE) terraform-apply TOPOLOGY=github-workspace TF_BIN=$(TF_BIN)
-	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-workspace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
+	$(MAKE) ensure-generated-flux-clean TOPOLOGY=github-workspace ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)"
 	WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" TF_BIN="$(TF_BIN)" ./scripts/cluster-up-github-workspace.sh
 
 profile-fast: ## Render and reconcile the fast profile for the selected topology
-	$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-fast LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
+	$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-fast LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
 	$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-fast LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 
 profile-fast-serving: ## Render and reconcile the fast-serving profile for the selected topology
-	$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-fast-serving LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
+	$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-fast-serving LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
 	$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-fast-serving LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 
 profile-full: ## Render and reconcile the full profile for the selected topology
-	$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-full LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
+	$(MAKE) render-cluster-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-full LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
 	$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=platform-profile-full LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 
 run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, and reconcile from the current repo state
@@ -290,7 +293,7 @@ run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, appl
 	else \
 	  $(MAKE) apply-plaintext-secrets TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
 	fi
-	@$(MAKE) bootstrap-flux-git TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
+	@$(MAKE) bootstrap-flux-instance TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP)
 	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	@$(MAKE) cluster-status TOPOLOGY=$(TOPOLOGY)
 
@@ -298,7 +301,7 @@ flux-values: ## Render non-secret Flux ConfigMaps for the selected topology
 	VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)" ./scripts/render-flux-values.sh $(TOPOLOGY)
 
 render-cluster-root: ## Render the Flux root kustomization for the selected topology/env/runtime/secrets mode
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ROOT_TIMEOUT=$(PLATFORM_ROOT_TIMEOUT) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) GIT_REPO_URL="$(GIT_REPO_URL)" GIT_BRANCH="$(GIT_BRANCH)" PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)" ./scripts/render-cluster-kustomization.sh
+	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ROOT_TIMEOUT=$(PLATFORM_ROOT_TIMEOUT) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) GIT_REPO_URL="$(GIT_REPO_URL)" GIT_BRANCH="$(GIT_BRANCH)" PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) VLLM_IMAGE="$(VLLM_IMAGE)" ECHO_MCP_IMAGE="$(ECHO_MCP_IMAGE)" ./scripts/render-cluster-kustomization.sh
 
 ensure-generated-flux-clean: flux-values render-cluster-root ## Render tracked Flux inputs and fail before cluster install continues if GitOps inputs need commit/push
 	@changed="$$(git status --porcelain -- "flux/generated/$(TOPOLOGY)" "flux/generated/clusters/$(TOPOLOGY)-$(ENV)-$(RUNTIME)-$(SECRETS_MODE)")"; \
@@ -308,21 +311,27 @@ ensure-generated-flux-clean: flux-values render-cluster-root ## Render tracked F
 	  exit 1; \
 	fi
 
-install-flux-local: require-cluster-api ## Install Flux controllers into the current cluster
-	$(FLUX) install
+install-flux-operator: require-cluster-api ## Install the pinned Flux Operator chart into flux-system
+	@extra_args=""; \
+	if [ -n "$(KUBE_CONTEXT)" ]; then \
+	  extra_args="--kube-context $(KUBE_CONTEXT)"; \
+	fi; \
+	helm upgrade --install flux-operator oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator \
+	  $$extra_args \
+	  --version $(FLUX_OPERATOR_VERSION) \
+	  --namespace flux-system \
+	  --create-namespace \
+	  --wait \
+	  --timeout $(PLATFORM_BOOTSTRAP_TIMEOUT)
 
-install-flux: require-cluster-api ## Install Flux controllers into the selected/current cluster
-	@if [ -n "$(KUBE_CONTEXT)" ]; then \
-		echo "Installing Flux into context $(KUBE_CONTEXT)"; \
-		flux --kubeconfig "$(KUBECONFIG)" --context "$(KUBE_CONTEXT)" install; \
-	else \
-		echo "Installing Flux into current context"; \
-		$(FLUX) install; \
-	fi
+install-flux-local: install-flux-operator ## Install Flux Operator into the current cluster
 
-bootstrap-flux-git: require-kubeconfig render-cluster-root ## Apply Flux GitRepository and root Kustomization pointing to the remote repo
+install-flux: install-flux-operator ## Install Flux Operator into the selected/current cluster
+
+bootstrap-flux-instance: require-kubeconfig render-cluster-root ## Apply a FluxInstance that points Flux sync at the remote repo and generated cluster path
+	@test -n "$(GIT_REPO_URL)" || (echo "Set GIT_REPO_URL in .env or the environment before bootstrapping Flux." >&2; exit 1)
 	@if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
-	  echo "bootstrap-flux-git requires a Git worktree." >&2; \
+	  echo "bootstrap-flux-instance requires a Git worktree." >&2; \
 	  exit 1; \
 	fi
 	@if ! git diff --quiet --ignore-submodules HEAD -- || ! git diff --cached --quiet --ignore-submodules --; then \
@@ -360,7 +369,16 @@ bootstrap-flux-git: require-kubeconfig render-cluster-root ## Apply Flux GitRepo
 	  echo "Push the current commit first or change GIT_BRANCH/GIT_REPO_URL intentionally." >&2; \
 	  exit 1; \
 	fi
-	TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) PLATFORM_PROFILE=$(PLATFORM_PROFILE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) PLATFORM_ROOT_TIMEOUT=$(PLATFORM_ROOT_TIMEOUT) PLATFORM_BOOTSTRAP_TIMEOUT=$(PLATFORM_BOOTSTRAP_TIMEOUT) PLATFORM_INFRA_TIMEOUT=$(PLATFORM_INFRA_TIMEOUT) PLATFORM_APPS_TIMEOUT=$(PLATFORM_APPS_TIMEOUT) GIT_REPO_URL="$(GIT_REPO_URL)" GIT_BRANCH="$(GIT_BRANCH)" PLATFORM_ENABLE_WEAVE_GITOPS_UI=$(PLATFORM_ENABLE_WEAVE_GITOPS_UI) PLATFORM_ENABLE_SAMPLES_ECHO_MCP=$(PLATFORM_ENABLE_SAMPLES_ECHO_MCP) ./scripts/bootstrap-flux-git.sh
+	@sed \
+	  -e 's|__FLUX_VERSION__|$(FLUX_VERSION)|g' \
+	  -e 's|__CLUSTER_DOMAIN__|$(CLUSTER_DOMAIN)|g' \
+	  -e 's|__GIT_REPO_URL__|$(GIT_REPO_URL)|g' \
+	  -e 's|__GIT_BRANCH__|$(GIT_BRANCH)|g' \
+	  -e 's|__FLUX_INSTANCE_SYNC_PATH__|$(FLUX_INSTANCE_SYNC_PATH)|g' \
+	  bootstrap/flux-operator/flux-instance.yaml.tmpl | $(KUBECTL) apply -f -
+	@$(KUBECTL) -n flux-system wait --for=condition=ready fluxinstance/flux --timeout=$(PLATFORM_ROOT_TIMEOUT)
+
+bootstrap-flux-git: bootstrap-flux-instance ## Deprecated alias for the FluxInstance-based bootstrap flow
 
 reconcile: require-kubeconfig ## Reconcile Flux source and kustomization named 'platform' if present
 	@$(FLUX) reconcile source git platform -n flux-system || true
@@ -591,6 +609,9 @@ port-forward-prometheus: require-kubeconfig ## Port-forward Prometheus to localh
 port-forward-qdrant: require-kubeconfig ## Port-forward Qdrant to localhost:6333
 	$(KUBECTL) -n context port-forward svc/context-qdrant $(QDRANT_LOCAL_PORT):6333
 
+port-forward-flux-operator-ui: require-kubeconfig ## Port-forward the Flux Operator web UI to localhost:9080
+	$(KUBECTL) -n flux-system port-forward svc/flux-operator $(FLUX_OPERATOR_UI_LOCAL_PORT):9080
+
 open-kagent-ui: require-kubeconfig ## Open the kagent UI at http://localhost:8080
 	$(call start_port_forward,kagent-ui,http://localhost:$(KAGENT_UI_LOCAL_PORT),kagent,kagent-kagent-ui,$(KAGENT_UI_LOCAL_PORT),8080,http://localhost:$(KAGENT_UI_LOCAL_PORT)/,200 301 302 303 307 308,)
 
@@ -630,6 +651,9 @@ close-prometheus: ## Close the Prometheus port-forward
 open-qdrant: require-kubeconfig ## Open Qdrant at http://localhost:6333
 	$(call start_port_forward,qdrant,http://localhost:$(QDRANT_LOCAL_PORT),context,context-qdrant,$(QDRANT_LOCAL_PORT),6333,http://localhost:$(QDRANT_LOCAL_PORT)/dashboard,200 301 302 303 307 308,)
 
+open-flux-operator-ui: require-kubeconfig ## Open the Flux Operator web UI at http://localhost:9080
+	$(call start_port_forward,flux-operator-ui,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT),flux-system,flux-operator,$(FLUX_OPERATOR_UI_LOCAL_PORT),9080,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT)/,200,)
+
 check-kagent-ui: ## Verify the local kagent UI endpoint
 	$(call wait_for_http_status,http://localhost:$(KAGENT_UI_LOCAL_PORT)/,200 301 302 303 307 308,)
 
@@ -642,6 +666,9 @@ check-agentgateway-openai: ## Verify the local AgentGateway OpenAI-compatible AP
 check-litellm: ## Verify the local LiteLLM readiness and API endpoints
 	$(call wait_for_http_status,http://localhost:$(LITELLM_LOCAL_PORT)/health/readiness,200,)
 	$(call wait_for_http_status,http://localhost:$(LITELLM_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
+
+check-flux-operator-ui: ## Verify the local Flux Operator web UI endpoint
+	$(call wait_for_http_status,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT)/,200,)
 
 check-flux-stages: require-kubeconfig ## Show and validate readiness for the staged Flux Kustomizations
 	@failed=0; \
@@ -673,6 +700,9 @@ check-flux-stages: require-kubeconfig ## Show and validate readiness for the sta
 close-qdrant: ## Close the Qdrant port-forward
 	$(call stop_port_forward,qdrant)
 
+close-flux-operator-ui: ## Close the Flux Operator web UI port-forward
+	$(call stop_port_forward,flux-operator-ui)
+
 open-research-access: require-kubeconfig ## Open the main local research endpoints on localhost
 	@set +e; \
 	failures=0; \
@@ -685,7 +715,8 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	  "open-litellm|ai-gateway|litellm" \
 	  "open-grafana|observability|observability-kube-prometheus-stack-grafana" \
 	  "open-prometheus|observability|observability-kube-prometh-prometheus" \
-	  "open-qdrant|context|context-qdrant"; do \
+	  "open-qdrant|context|context-qdrant" \
+	  "open-flux-operator-ui|flux-system|flux-operator"; do \
 	  IFS='|' read -r target namespace service <<<"$$spec"; \
 	  label="$${target#open-}"; \
 	  if ! $(KUBECTL) -n "$$namespace" get svc "$$service" >/dev/null 2>&1; then \
@@ -711,6 +742,7 @@ close-research-access: ## Close all background localhost research endpoints
 	$(MAKE) close-grafana
 	$(MAKE) close-prometheus
 	$(MAKE) close-qdrant
+	$(MAKE) close-flux-operator-ui
 
 test-a2a-agent: ## Fetch the sample agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json | jq .

@@ -8,7 +8,9 @@ The platform must be easy to start in a home-lab environment, but it must also s
 
 ## Decision
 - Use one repository for charts, Flux manifests, Terraform/OpenTofu, Ansible, docs, and helper scripts.
-- Flux reads the remote URL of this same repository after the operator pushes it.
+- Bootstrap Flux with Flux Operator and manage the controller sync configuration through a committed `FluxInstance`.
+- Source `FluxInstance.spec.sync.url`, `ref`, and `path` from operator inputs such as `.env` for local runs or CI/CD environment variables for pipeline-driven runs.
+- Flux reads the remote URL of this same repository rather than the local worktree.
 - Commit generated GitOps inputs that Flux must read remotely, including `flux/generated/<topology>/` and `flux/generated/clusters/<topology>-<env>-<runtime>-<secrets-mode>/`.
 - Render the cluster root as staged Flux `Kustomization` resources (`platform-bootstrap`, `platform-infrastructure`, `platform-applications`) so CRD-providing charts reconcile before dependent custom resources.
 - Support two practical secret modes:
@@ -19,6 +21,7 @@ The platform must be easy to start in a home-lab environment, but it must also s
 
 ## Consequences
 - The first bootstrap stays simple.
+- Flux lifecycle management is declarative and version-pinned without relying on `flux install` plus separately rendered bootstrap objects.
 - Production-like encrypted GitOps remains available without redesigning the repo.
 - Operators have one source of truth for manifests, charts, and docs.
 - Stop/start flows must account for the staged child Kustomizations, not only the top-level `platform` object.

@@ -29,13 +29,6 @@ fi
 : "${PLATFORM_POSTGRES_PASSWORD:=$(generate_secret)}"
 : "${GRAFANA_ADMIN_USERNAME:=admin}"
 : "${GRAFANA_ADMIN_PASSWORD:=$(generate_secret)}"
-: "${WEAVE_GITOPS_ADMIN_USERNAME:=admin}"
-: "${WEAVE_GITOPS_ADMIN_PASSWORD:=}"
-: "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH:=}"
-
-if [[ -n "${WEAVE_GITOPS_ADMIN_PASSWORD}" && -z "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}" ]]; then
-  WEAVE_GITOPS_ADMIN_PASSWORD_HASH="$(htpasswd -bnBC 10 "" "${WEAVE_GITOPS_ADMIN_PASSWORD}" | tr -d ':\n')"
-fi
 
 cp "${NAMESPACE_SOURCE}" "${OUT_DIR}/namespaces.yaml"
 cat > "${OUT_DIR}/litellm-provider-secrets.yaml" <<EOF
@@ -91,21 +84,7 @@ stringData:
   admin-user: ${GRAFANA_ADMIN_USERNAME}
   admin-password: ${GRAFANA_ADMIN_PASSWORD}
 EOF
-if [[ -n "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}" ]]; then
-  cat > "${OUT_DIR}/cluster-user-auth.yaml" <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cluster-user-auth
-  namespace: flux-system
-type: Opaque
-stringData:
-  username: ${WEAVE_GITOPS_ADMIN_USERNAME}
-  passwordHash: ${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}
-EOF
-else
-  rm -f "${OUT_DIR}/cluster-user-auth.yaml"
-fi
+rm -f "${OUT_DIR}/cluster-user-auth.yaml"
 cat > "${OUT_DIR}/kustomization.yaml" <<EOF
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -116,10 +95,5 @@ resources:
   - platform-postgres-auth.yaml
   - observability-grafana-admin.yaml
 EOF
-if [[ -n "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}" ]]; then
-  cat >> "${OUT_DIR}/kustomization.yaml" <<EOF
-  - cluster-user-auth.yaml
-EOF
-fi
 
 echo "Rendered plaintext secrets into ${OUT_DIR}"
