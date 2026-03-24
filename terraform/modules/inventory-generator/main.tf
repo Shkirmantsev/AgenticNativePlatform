@@ -58,7 +58,7 @@ resource "local_file" "inventory" {
 }
 
 resource "local_file" "metallb_resources" {
-  filename             = "${path.root}/../../../clusters/${var.topology}-${var.environment}/infrastructure/generated-metallb-resources.yaml"
+  filename             = "${path.root}/../../../clusters/${var.topology}-${var.environment}/infrastructure/metallb-resources/generated-metallb-resources.yaml"
   content              = local.metallb_resources
   directory_permission = "0755"
   file_permission      = "0644"

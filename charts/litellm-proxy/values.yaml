@@ -21,7 +21,6 @@ podAnnotations: {}
 podLabels:
   istio.io/dataplane-mode: none
 podSecurityContext:
-  runAsNonRoot: true
   seccompProfile:
     type: RuntimeDefault
 containerSecurityContext:

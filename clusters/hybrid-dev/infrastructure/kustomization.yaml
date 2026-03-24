@@ -24,5 +24,4 @@ resources:
   - ../../../values/common/ollama
   - ../../../values/common/vllm
   - ../../../values/hybrid/lmstudio
-  - generated-metallb-resources.yaml
   - generated-lmstudio-endpoint.yaml

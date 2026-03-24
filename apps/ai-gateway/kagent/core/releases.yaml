@@ -44,7 +44,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: platform
+        name: flux-system
         namespace: flux-system
       interval: 1m
   install:
@@ -80,6 +80,8 @@ spec:
       tools:
         image:
           tag: "0.1.1"
+        podLabels:
+          istio.io/dataplane-mode: none
     agents:
       k8s-agent:
         enabled: false

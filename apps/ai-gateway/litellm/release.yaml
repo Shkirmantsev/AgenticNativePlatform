@@ -13,7 +13,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: platform
+        name: flux-system
         namespace: flux-system
       interval: 1m
   install:
