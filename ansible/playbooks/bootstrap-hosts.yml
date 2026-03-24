@@ -48,6 +48,10 @@
           net.bridge.bridge-nf-call-iptables = 1
           net.bridge.bridge-nf-call-ip6tables = 1
           net.ipv4.ip_forward = 1
+          # Istio CNI ambient mode uses fsnotify on the host CNI config dir.
+          # The distro default (128 instances on Ubuntu) is too low for this stack.
+          fs.inotify.max_user_instances = 1024
+          fs.inotify.max_user_watches = 1048576
 
     - name: Apply sysctl settings
       command: sysctl --system
