@@ -12,6 +12,7 @@ data:
         infer_model_from_keys: true
       litellm_settings:
         set_verbose: false
+        use_chat_completions_url_for_anthropic_messages: true
       model_list:
         - model_name: default-gemini
           litellm_params:

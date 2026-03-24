@@ -13,15 +13,16 @@ spec:
 {{ include "litellm-proxy.selectorLabels" . | indent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+{{- with .Values.podAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
       labels:
 {{ include "litellm-proxy.selectorLabels" . | indent 8 }}
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
-      {{- with .Values.podAnnotations }}
-      annotations:
-{{ toYaml . | indent 8 }}
-      {{- end }}
     spec:
       serviceAccountName: {{ include "litellm-proxy.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}

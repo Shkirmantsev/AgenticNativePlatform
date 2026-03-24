@@ -19,9 +19,9 @@ TF_DIR = terraform/environments/$(TOPOLOGY)
 FLUX_OPERATOR_VERSION ?= 0.45.1
 FLUX_VERSION ?= 2.8.3
 FLUX_SYNC_SOURCE_NAME ?= flux-system
-FLUX_INSTANCE_SYNC_PATH ?= ./clusters/$(TOPOLOGY)-$(ENV)
+FLUX_INSTANCE_SYNC_PATH ?= ./clusters/$(TOPOLOGY)-$(ENV)/$(SECRETS_MODE)
 ifneq ($(filter ./flux/generated/clusters/%,$(FLUX_INSTANCE_SYNC_PATH)),)
-override FLUX_INSTANCE_SYNC_PATH := ./clusters/$(TOPOLOGY)-$(ENV)
+override FLUX_INSTANCE_SYNC_PATH := ./clusters/$(TOPOLOGY)-$(ENV)/$(SECRETS_MODE)
 endif
 ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/inventory.ini.example)
 ANSIBLE_BECOME_FLAGS ?=

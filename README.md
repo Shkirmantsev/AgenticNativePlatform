@@ -30,7 +30,7 @@ make run-cluster-from-scratch TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=e
 
 The repository now uses:
 
-- static Git-authored cluster roots under `clusters/<topology>-<env>/`
+- static Git-authored cluster roots under `clusters/<topology>-<env>/<secrets-mode>/`
 - shared top-level trees under `infrastructure/`, `apps/`, `values/`, and `secrets/`
 - Flux Operator to manage the Flux controller lifecycle
 - a committed `FluxInstance` as the GitOps sync entrypoint
@@ -112,7 +112,7 @@ AgenticNativePlatform/
 - `terraform/`: infra inputs, inventory generation, `k3d` config generation
 - `ansible/`: host bootstrap, k3s install/export, one-time SOPS age bootstrap
 - `bootstrap/flux-operator/`: declarative Flux Operator install artifacts
-- `clusters/<topology>-<env>/`: committed Flux sync roots and cluster-specific wrappers
+- `clusters/<topology>-<env>/`: committed cluster-specific bases, Flux templates, and mode-specific sync roots
 - `infrastructure/`: sources, controllers, network, observability, security, storage
 - `apps/`: platform and application manifests
 - `values/`: non-secret Git-authored values and rendered ConfigMaps
@@ -437,6 +437,7 @@ Operational behavior to remember:
 - repo Make targets bind `kubectl` and `flux` to that kubeconfig
 - `clusters/<topology>-<env>/topology-values.yaml` is operator metadata and is not a direct Kustomize resource
 - `clusters/<topology>-<env>/flux-system/flux-instance.yaml` is a committed template rendered by `make bootstrap-flux-instance`
+- Flux syncs a declarative mode-specific root at `clusters/<topology>-<env>/<secrets-mode>/`
 
 </details>
 

@@ -23,9 +23,8 @@ flux-values: ## Validate that Git-authored non-secret values exist for the selec
 	@test -f "values/common/litellm.yaml" || (echo "Missing values/common/litellm.yaml" >&2; exit 1)
 	@test -f "values/$(TOPOLOGY)/lmstudio-external.yaml" || (echo "Missing values/$(TOPOLOGY)/lmstudio-external.yaml" >&2; exit 1)
 
-render-cluster-root: ## Render mode-specific cluster root fragments under clusters/<topology>-<env>
-	@TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) SECRETS_MODE=$(SECRETS_MODE) ./scripts/render-cluster-root.sh
-	@test -f "clusters/$(TOPOLOGY)-$(ENV)/kustomization.yaml" || (echo "Missing static cluster root: clusters/$(TOPOLOGY)-$(ENV)" >&2; exit 1)
+render-cluster-root: ## Validate the declarative mode-specific cluster root under clusters/<topology>-<env>/<secrets-mode>
+	@test -f "clusters/$(TOPOLOGY)-$(ENV)/$(SECRETS_MODE)/kustomization.yaml" || (echo "Missing declarative cluster root: clusters/$(TOPOLOGY)-$(ENV)/$(SECRETS_MODE)" >&2; exit 1)
 
 ensure-generated-flux-clean: flux-values render-cluster-root ## Fail before cluster install continues if tracked GitOps inputs need commit/push
 	@changed="$$(git status --porcelain -- "values/$(TOPOLOGY)" "clusters/$(TOPOLOGY)-$(ENV)")"; \
@@ -52,7 +51,7 @@ install-flux-local: install-flux-operator ## Install Flux Operator into the curr
 
 install-flux: install-flux-operator ## Install Flux Operator into the selected/current cluster
 
-bootstrap-flux-instance: require-kubeconfig render-cluster-root ## Apply a FluxInstance that points Flux sync at the remote repo and cluster path
+bootstrap-flux-instance: require-kubeconfig render-cluster-root ## Apply a FluxInstance that points Flux sync at the remote repo and declarative cluster path
 	@test -n "$(GIT_REPO_URL)" || (echo "Set GIT_REPO_URL in .env or the environment before bootstrapping Flux." >&2; exit 1)
 	@test -f "clusters/$(TOPOLOGY)-$(ENV)/flux-system/flux-instance.yaml" || (echo "Missing clusters/$(TOPOLOGY)-$(ENV)/flux-system/flux-instance.yaml" >&2; exit 1)
 	@if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \

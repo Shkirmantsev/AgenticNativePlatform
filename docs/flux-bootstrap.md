@@ -36,7 +36,7 @@ Inputs:
 Default sync path:
 
 ```bash
-./clusters/local-dev
+./clusters/local-dev/external
 ```
 
 ## Local UI access
