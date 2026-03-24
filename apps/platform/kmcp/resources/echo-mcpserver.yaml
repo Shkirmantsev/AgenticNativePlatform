@@ -11,10 +11,19 @@ spec:
     targetPort: 3001
     path: /mcp
   deployment:
-    image: echo-mcp
+    image: node:22-bookworm-slim
     imagePullPolicy: IfNotPresent
+    cmd: sh
+    args:
+      - -c
+      - |
+        npm install -g @modelcontextprotocol/server-everything@2026.1.26
+        npm cache clean --force
+        npm run -g start:streamableHttp --prefix "$(npm root -g)/@modelcontextprotocol/server-everything"
     port: 3001
     replicas: 1
+    env:
+      PORT: "3001"
     labels:
       app.kubernetes.io/name: echo-mcp
       app.kubernetes.io/component: mcp
@@ -29,9 +38,10 @@ spec:
         memory: "128Mi"
         ephemeral-storage: "512Mi"
     securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
       runAsNonRoot: true
       allowPrivilegeEscalation: false
-      readOnlyRootFilesystem: true
       capabilities:
         drop:
           - ALL
