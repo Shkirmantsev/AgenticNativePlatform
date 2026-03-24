@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
-  timeout: 20m
+  timeout: 12m
   targetNamespace: ai-models
   chart:
     spec:

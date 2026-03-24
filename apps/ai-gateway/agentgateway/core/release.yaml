@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
-  timeout: 9m
+  timeout: 6m
   targetNamespace: agentgateway-system
   chartRef:
     kind: OCIRepository
@@ -26,7 +26,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
-  timeout: 9m
+  timeout: 6m
   dependsOn:
     - name: agentgateway-crds
   targetNamespace: agentgateway-system

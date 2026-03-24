@@ -1,7 +1,8 @@
 namespace: ai-models
 image:
   repository: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo
-  tag: v0.18.0
+  # Leave empty to default to .Chart.AppVersion.
+  tag: ""
   pullPolicy: IfNotPresent
 service:
   port: 8000

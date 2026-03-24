@@ -568,6 +568,20 @@ Endpoint truth table:
 | `http://localhost:4000/v1/models` | LiteLLM API |
 | `http://localhost:9080/` | Flux Operator web UI |
 
+Manual curls:
+
+```bash
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
+```
+
+Operator shell and `make` defaults:
+
+- repository `make` targets already bind `kubectl` and `flux` to `.kube/generated/current.yaml`
+- if `.env` sets `LITELLM_MASTER_KEY`, `make check-litellm`, `make test-litellm`, and AgentGateway OpenAI checks use it automatically
+- if `.env` does not set `LITELLM_MASTER_KEY` and plaintext secrets were rendered, `make` falls back to `.generated/secrets/<env>/litellm-provider-secrets.yaml`
+- direct manual `curl` commands in your shell still need either `export LITELLM_MASTER_KEY=...` or an explicit literal bearer token
+
 Single-target examples:
 
 ```bash

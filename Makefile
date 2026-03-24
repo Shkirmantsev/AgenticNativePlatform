@@ -27,6 +27,7 @@ ANSIBLE_INVENTORY ?= $(or $(wildcard ansible/generated/$(TOPOLOGY).ini),ansible/
 ANSIBLE_BECOME_FLAGS ?=
 KUBECONFIG_DIR ?= .kube/generated
 KUBECONFIG ?= $(abspath $(KUBECONFIG_DIR)/current.yaml)
+LITELLM_GENERATED_SECRET_FILE ?= .generated/secrets/$(ENV)/litellm-provider-secrets.yaml
 WORKSPACE_CLUSTER_NAME ?= agentic-native-platform
 ECHO_MCP_IMAGE ?= echo-mcp:local
 ECHO_MCP_IMAGE_TARBALL ?= /tmp/echo-mcp-image.tar
@@ -40,6 +41,11 @@ PROMETHEUS_LOCAL_PORT ?= 9090
 QDRANT_LOCAL_PORT ?= 6333
 FLUX_OPERATOR_UI_LOCAL_PORT ?= 9080
 LITELLM_MASTER_KEY ?=
+ifeq ($(strip $(LITELLM_MASTER_KEY)),)
+ifneq (,$(wildcard $(LITELLM_GENERATED_SECRET_FILE)))
+override LITELLM_MASTER_KEY := $(strip $(shell awk -F': ' '/LITELLM_MASTER_KEY:/ {print $$2; exit}' $(LITELLM_GENERATED_SECRET_FILE)))
+endif
+endif
 PAUSE_STATE_CONFIGMAP ?= cluster-pause-state
 PLATFORM_ROOT_TIMEOUT ?= 30m
 PLATFORM_BOOTSTRAP_TIMEOUT ?= 10m
@@ -49,6 +55,7 @@ HTTP_PROBE_TIMEOUT ?= 30
 HTTP_PROBE_INTERVAL ?= 1
 CURL ?= curl
 export KUBECONFIG
+export LITELLM_MASTER_KEY
 KUBECTL ?= kubectl --kubeconfig "$(KUBECONFIG)"
 FLUX ?= flux --kubeconfig "$(KUBECONFIG)"
 

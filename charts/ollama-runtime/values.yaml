@@ -1,7 +1,8 @@
 namespace: ai-models
 image:
   repository: ollama/ollama
-  tag: 0.18.0
+  # Leave empty to default to .Chart.AppVersion.
+  tag: ""
   pullPolicy: IfNotPresent
 service:
   port: 11434

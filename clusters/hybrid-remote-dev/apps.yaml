@@ -7,7 +7,7 @@ spec:
   interval: 10m
   prune: true
   wait: true
-  timeout: 20m
+  timeout: 12m
   dependsOn:
     - name: platform-secrets
   sourceRef:
