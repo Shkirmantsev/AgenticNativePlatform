@@ -9,6 +9,7 @@ Ansible is used for:
 - joining worker nodes
 - labeling runtime-capable worker nodes
 - exporting kubeconfig
+- bootstrapping the Flux `sops-age` secret from the local age key
 - uninstalling k3s
 
 ## What scripts do
@@ -18,7 +19,7 @@ Scripts are kept for local repository operations that are not natural Ansible ta
 - rendering Flux ConfigMaps and cluster roots
 - rendering external plaintext secrets
 - converting plaintext secrets into encrypted SOPS files
-- applying the `FluxInstance` bootstrap manifest and bootstrapping the Flux SOPS secret
+- applying the `FluxInstance` bootstrap manifest
 
 ## What is committed to Git
 

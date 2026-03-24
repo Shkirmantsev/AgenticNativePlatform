@@ -490,7 +490,7 @@ decrypt-secrets: ## Decrypt committed SOPS secrets into .generated/decrypted/<en
 	ENV=$(ENV) ./scripts/decrypt-secrets.sh
 
 sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key into flux-system for SOPS decryption
-	./scripts/bootstrap-sops-secret.sh
+	ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-sops-age-secret.yml --extra-vars "kubeconfig_path=$(KUBECONFIG)"
 
 cluster-pause: require-cluster-api ## Pause platform workloads without uninstalling the cluster
 	@PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/save-paused-workloads.sh
