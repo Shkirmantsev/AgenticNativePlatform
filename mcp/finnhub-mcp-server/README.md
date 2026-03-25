@@ -1,54 +1,142 @@
 # finnhub-mcp-server
 
-mcp server with tools for extracting finantial information and prices for stocks and currencies using the finnhub.io internet service
+Production-oriented MCP server for the free Finnhub REST endpoints.
 
-## 🚀 Getting Started
+This refactored version is built around the provided Finnhub swagger schema and exposes every detected free endpoint as an MCP tool. It also adds:
 
-This project was generated with [`kmcp`](https://github.com/kagent-dev/kmcp).
+- a generated tool catalog with schema and example arguments
+- prompt helpers for tool discovery and explanation
+- MCP resources for the catalog and free-endpoint inventory
+- default elicitation for missing required parameters
+- optional sampling-based tool recommendation
+- a browser web app for browsing tools and preparing the next MCP tool call
+- streamable HTTP mode and stdio mode
+- health endpoint and structured HTTP logging
 
-### Prerequisites
+## What is exposed
 
-- [Go](https://golang.org/doc/install) (1.23 or later)
-- [Docker](https://docs.docker.com/get-docker/)
+### Endpoint tools
 
-### Local Development
+The server generates one MCP tool for each free endpoint discovered in the supplied swagger.
 
-1.  **Tidy dependencies:**
-    ```bash
-    go mod tidy
-    ```
+Examples:
 
-2.  **Run the server:**
-    ```bash
-    go run cmd/server/main.go
-    ```
+- `finnhub_quote`
+- `finnhub_symbol_search`
+- `finnhub_company_news`
+- `finnhub_company_profile2`
+- `finnhub_stock_metric`
+- `finnhub_stock_peers`
+- `finnhub_calendar_earnings`
+- `finnhub_country`
 
-### Building the Docker Image
+### Catalog tools
 
-To build a Docker image for this project, run:
+- `catalog_list_tools`
+- `catalog_get_tool_details`
+- `catalog_match_tools`
+
+### Prompts
+
+- `discover_finnhub_tools`
+- `explain_finnhub_tool`
+
+### Resources
+
+- `finnhub://catalog/tools.json`
+- `finnhub://catalog/tools.md`
+- `finnhub://catalog/free-endpoints.json`
+- `finnhub://catalog/tool/{toolName}.json`
+
+## Runtime configuration
+
+Required:
+
+- `FINNHUB_API_TOKEN`
+
+Optional:
+
+- `FINNHUB_BASE_URL` default: `https://finnhub.io/api/v1`
+- `FINNHUB_USER_AGENT` default: `finnhub-mcp-server/1.0`
+- `FINNHUB_REQUEST_TIMEOUT_SECONDS` default: `20`
+- `FINNHUB_MCP_PATH` default: `/mcp`
+- `FINNHUB_WEB_APP_PATH` default: `/app`
+- `FINNHUB_HTTP_ADDR` default: `:8080`
+- `FINNHUB_ENABLE_RPC_LOGS` default: `false`
+
+## Run in stdio mode
 
 ```bash
-kmcp build
+export FINNHUB_API_TOKEN='YOUR_TOKEN'
+go run ./cmd/server -transport stdio
 ```
 
-This will create an image named `finnhub-mcp-server:latest`.
-
-### Deploying to Kubernetes
-
-To deploy the MCP server to Kubernetes, first ensure you have a running cluster and `kubectl` is configured. Then, run:
+## Run in HTTP mode
 
 ```bash
-kmcp deploy mcp
+export FINNHUB_API_TOKEN='YOUR_TOKEN'
+go run ./cmd/server -transport http -http-addr :8080
 ```
 
-This will create an `MCPServer` custom resource in the `default` namespace.
+Then open:
 
-## 🛠️ Adding a New Tool
+- MCP endpoint: `http://localhost:8080/mcp`
+- web app: `http://localhost:8080/app`
+- health: `http://localhost:8080/healthz`
 
-To add a new tool to your project, use the `kmcp add-tool` command:
+## Docker build
 
 ```bash
-kmcp add-tool <tool-name>
+docker build -t finnhub-mcp-server:0.1.0 .
 ```
 
-This will generate a new Go file in the `internal/tools/` directory with a template for your new tool. You will need to add the new tool to the `main.go` file.
+## Browser web app
+
+The web app is intentionally simple and operational:
+
+- browse all tools grouped by domain
+- search by tool name, title, summary, description
+- inspect input schema and example arguments
+- click a tool to select it for the next step
+- fill known arguments in the form
+- copy the generated MCP call JSON payload
+
+## Design notes
+
+### Why a thin custom Finnhub client
+
+The project now uses a small explicit HTTP client instead of depending directly on a generated Swagger client wrapper in tool handlers. That keeps the MCP boundary easy to understand and makes error shaping, logging, and schema-driven tool generation more predictable.
+
+### Elicitation behavior
+
+When a user or model calls a tool without all required fields, the tool attempts MCP elicitation first. If the client does not support elicitation, the tool returns a clear tool-visible error describing the missing fields and an example argument payload.
+
+### Sampling behavior
+
+`catalog_match_tools` can ask the MCP client to draft a concise recommendation when the client supports sampling. If sampling is unavailable, the server falls back to deterministic ranking.
+
+## Repository shape
+
+```text
+cmd/server/main.go                # entrypoint and transport setup
+internal/config/config.go         # environment-driven config
+internal/finnhub/client.go        # thin Finnhub HTTP adapter
+internal/finnhub/specs.go         # generated free-endpoint specifications
+internal/mcpserver/catalog.go     # human-facing tool catalog
+internal/mcpserver/common.go      # shared MCP helpers
+internal/mcpserver/prompts.go     # prompt registration
+internal/mcpserver/resources.go   # resource registration
+internal/mcpserver/server.go      # server assembly
+internal/mcpserver/tools.go       # generated endpoint tools + catalog tools
+internal/web/app.go               # HTTP handlers for the browser UI
+internal/web/static/index.html    # standalone browser UI
+```
+
+## Important limitation
+
+This repository was refactored against the current public MCP Go SDK API surface, but dependency download and full compile verification may still need to be executed in a network-enabled Go environment:
+
+```bash
+go mod tidy
+go test ./...
+```
