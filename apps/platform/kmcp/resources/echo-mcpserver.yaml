@@ -6,24 +6,15 @@ metadata:
   labels:
     kagent.dev/discovery: "disabled"
 spec:
-  transportType: http
-  httpTransport:
-    targetPort: 3001
-    path: /mcp
+  transportType: stdio
+  stdioTransport: {}
+  timeout: 60s
   deployment:
-    image: node:22-bookworm-slim
-    imagePullPolicy: IfNotPresent
-    cmd: sh
+    cmd: npx
     args:
-      - -c
-      - |
-        npm install -g @modelcontextprotocol/server-everything@2026.1.26
-        npm cache clean --force
-        npm run -g start:streamableHttp --prefix "$(npm root -g)/@modelcontextprotocol/server-everything"
+      - "@modelcontextprotocol/server-everything@2026.1.26"
     port: 3001
     replicas: 1
-    env:
-      PORT: "3001"
     labels:
       app.kubernetes.io/name: echo-mcp
       app.kubernetes.io/component: mcp

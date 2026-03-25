@@ -109,7 +109,7 @@ spec:
       querydoc:
         enabled: false
     kmcp:
-      enabled: false
+      enabled: true
     providers:
       openAI:
         apiKeySecretRef: kagent-agentgateway

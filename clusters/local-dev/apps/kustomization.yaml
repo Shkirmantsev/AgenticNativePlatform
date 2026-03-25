@@ -5,6 +5,7 @@ resources:
   - ../../../infrastructure/network/kgateway/resources
   - ../../../apps/ai-gateway/agentgateway/resources
   - ../../../apps/ai-gateway/kagent/resources
+  - ../../../apps/platform/kmcp/resources
 patches:
   - target:
       kind: Deployment
