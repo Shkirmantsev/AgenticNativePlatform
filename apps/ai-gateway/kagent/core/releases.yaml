@@ -84,30 +84,30 @@ spec:
           istio.io/dataplane-mode: none
     agents:
       k8s-agent:
-        enabled: false
+        enabled: true
       kgateway-agent:
-        enabled: false
+        enabled: true
       istio-agent:
-        enabled: false
+        enabled: true
       promql-agent:
         enabled: false
       observability-agent:
-        enabled: false
+        enabled: true
       argo-rollouts-agent:
-        enabled: false
+        enabled: true
       helm-agent:
-        enabled: false
+        enabled: true
       cilium-policy-agent:
-        enabled: false
+        enabled: true
       cilium-manager-agent:
-        enabled: false
+        enabled: true
       cilium-debug-agent:
-        enabled: false
+        enabled: true
     tools:
       grafana-mcp:
         enabled: false
       querydoc:
-        enabled: false
+        enabled: true
     kmcp:
       enabled: true
     providers:
