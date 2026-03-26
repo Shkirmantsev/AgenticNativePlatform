@@ -82,6 +82,17 @@ spec:
           tag: "0.1.1"
         podLabels:
           istio.io/dataplane-mode: none
+        metrics:
+          servicemonitor:
+            enabled: true
+            interval: 30s
+            scrapeTimeout: 10s
+            labels:
+              release: kube-prometheus-stack
+        prometheus:
+          url: "observability-kube-prometh-prometheus.observability.svc.cluster.local:9090"
+        grafana:
+          url: "http://observability-kube-prometheus-stack-grafana.observability.svc.cluster.local"
     agents:
       k8s-agent:
         enabled: true
@@ -105,9 +116,13 @@ spec:
         enabled: true
     tools:
       grafana-mcp:
-        enabled: false
+        enabled: true
       querydoc:
         enabled: true
+    grafana-mcp:
+      grafana:
+        url: "http://observability-kube-prometheus-stack-grafana.observability.svc.cluster.local/api"
+        secretRef: observability-grafana-admin
     kmcp:
       enabled: true
     providers:

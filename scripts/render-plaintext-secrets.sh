@@ -94,6 +94,8 @@ type: Opaque
 stringData:
   admin-user: ${GRAFANA_ADMIN_USERNAME}
   admin-password: ${GRAFANA_ADMIN_PASSWORD}
+  GRAFANA_USERNAME: ${GRAFANA_ADMIN_USERNAME}
+  GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
 EOF
 rm -f "${OUT_DIR}/cluster-user-auth.yaml"
 cat > "${OUT_DIR}/kustomization.yaml" <<EOF
