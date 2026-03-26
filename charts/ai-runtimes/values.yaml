@@ -1,11 +1,10 @@
-namespace: ai-models
 runtime:
   type: none  # none | ollama | vllm
 lmstudio:
   enabled: false
-  serviceNamespace: ai-gateway
+  serviceNamespace: ""
   serviceName: lmstudio-external
-  hostIP: 192.168.1.108
+  hostIP: 127.0.0.1
   port: 1234
 tei:
   enabled: true

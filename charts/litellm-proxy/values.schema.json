@@ -3,10 +3,6 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
-    "namespace": {
-      "type": "string",
-      "minLength": 1
-    },
     "replicaCount": {
       "type": "integer",
       "minimum": 1
@@ -66,7 +62,6 @@
     }
   },
   "required": [
-    "namespace",
     "replicaCount",
     "containerPort",
     "service",

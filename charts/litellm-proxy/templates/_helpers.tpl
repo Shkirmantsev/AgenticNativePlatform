@@ -11,7 +11,7 @@
 {{- end -}}
 
 {{- define "litellm-proxy.namespace" -}}
-{{- default .Release.Namespace .Values.namespace -}}
+{{- .Release.Namespace -}}
 {{- end -}}
 
 {{- define "litellm-proxy.labels" -}}

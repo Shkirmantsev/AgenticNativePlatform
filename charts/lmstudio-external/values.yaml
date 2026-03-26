@@ -1,3 +1,4 @@
-namespace: ai-gateway
-hostIP: 192.168.1.108
+# Use a loopback default for minimal local rendering. Real environments inject
+# the actual endpoint address through Flux valuesFrom.
+hostIP: 127.0.0.1
 port: 1234

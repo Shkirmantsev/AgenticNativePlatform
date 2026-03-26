@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 data:
   values.yaml: |
+    replicaCount: 1
     config: |
       general_settings:
         master_key: os.environ/LITELLM_MASTER_KEY

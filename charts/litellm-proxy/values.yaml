@@ -1,6 +1,5 @@
 nameOverride: litellm
 fullnameOverride: ""
-namespace: ai-gateway
 commonLabels: {}
 replicaCount: 1
 deployment:
