@@ -8,3 +8,8 @@ secrets:
     enabled: true
     provider: env
     file: .env
+  dev:
+    enabled: true
+    provider: kubernetes
+    secretName: finnhub-mcp-server
+    namespace: kagent

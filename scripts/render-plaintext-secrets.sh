@@ -25,6 +25,7 @@ fi
 : "${VERTEX_LOCATION:=europe-west3}"
 : "${VERTEX_AI_API_KEY:=}"
 : "${VERTEX_SERVICE_ACCOUNT_JSON_B64:=}"
+: "${FINNHUB_API_TOKEN:=}"
 : "${LITELLM_MASTER_KEY:=$(generate_secret)}"
 : "${PLATFORM_POSTGRES_PASSWORD:=$(generate_secret)}"
 : "${GRAFANA_ADMIN_USERNAME:=admin}"
@@ -62,6 +63,16 @@ type: Opaque
 stringData:
   OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
 EOF
+cat > "${OUT_DIR}/finnhub-mcp-server.yaml" <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: finnhub-mcp-server
+  namespace: kagent
+type: Opaque
+stringData:
+  FINNHUB_API_TOKEN: ${FINNHUB_API_TOKEN}
+EOF
 cat > "${OUT_DIR}/platform-postgres-auth.yaml" <<EOF
 apiVersion: v1
 kind: Secret
@@ -92,6 +103,7 @@ resources:
   - namespaces.yaml
   - litellm-provider-secrets.yaml
   - kagent-agentgateway.yaml
+  - finnhub-mcp-server.yaml
   - platform-postgres-auth.yaml
   - observability-grafana-admin.yaml
 EOF

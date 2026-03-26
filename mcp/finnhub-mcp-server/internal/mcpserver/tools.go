@@ -396,8 +396,6 @@ func (a *Application) sampleCatalogAdvice(ctx context.Context, request *mcp.Call
 	switch content := result.Content.(type) {
 	case *mcp.TextContent:
 		return content.Text, nil
-	case mcp.TextContent:
-		return content.Text, nil
 	default:
 		body, marshalErr := json.Marshal(content)
 		if marshalErr != nil {
