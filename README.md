@@ -21,7 +21,7 @@ Recommended first run:
 ```bash
 cp .env.example .env
 # edit .env for your machine and real credentials
-make run-cluster-from-scratch TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false IAC_TOOL=tofu
+make run-cluster-from-scratch
 ```
 
 ## Architecture
@@ -159,10 +159,21 @@ Notes by topology:
 ```bash
 cp .env.example .env
 # edit .env for your machine and real credentials
+make run-cluster-from-scratch
+# or long version
 make run-cluster-from-scratch TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false IAC_TOOL=tofu
 ```
 
 That is the preferred path for a first real bootstrap.
+
+Defaults used by the short form:
+
+- `TOPOLOGY=local`
+- `ENV=dev`
+- `RUNTIME=none`
+- `SECRETS_MODE=external`
+- `LMSTUDIO_ENABLED=false`
+- `IAC_TOOL=tofu`
 
 ## Quick Lifecycle Commands
 
@@ -179,15 +190,25 @@ make cluster-resume
 make cluster-status
 ```
 
-Remove only the cluster:
+Destructive command meanings:
+
+- `make cluster-pause`: scale application workloads down but keep the cluster and infrastructure so you can resume later
+- `make remove-cluster-only`: delete the cluster but keep Terraform/OpenTofu infrastructure and other operator assets
+- `make destroy-cluster-and-infra`: delete the cluster and also destroy Terraform/OpenTofu-managed infrastructure
+- `make cluster-remove`: compatibility alias for `make remove-cluster-only`
+- `make environment-destroy`: compatibility alias for `make destroy-cluster-and-infra`
+
+Remove only the cluster but keep infrastructure/resources:
 
 ```bash
+make remove-cluster-only TOPOLOGY=$TOPOLOGY
 make cluster-remove TOPOLOGY=$TOPOLOGY
 ```
 
 Remove the cluster and topology infrastructure:
 
 ```bash
+make destroy-cluster-and-infra TOPOLOGY=$TOPOLOGY TF_BIN=tofu
 make environment-destroy TOPOLOGY=$TOPOLOGY TF_BIN=tofu
 ```
 

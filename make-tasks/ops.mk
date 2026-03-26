@@ -1,5 +1,5 @@
 .PHONY: diagnose-runtime-state recover-paused-workloads \
-	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove environment-destroy \
+	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove remove-cluster-only environment-destroy destroy-cluster-and-infra \
 	k9s-local \
 	port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-research-access close-research-access \
@@ -115,18 +115,24 @@ cluster-stop: ## Deprecated alias for cluster-pause
 cluster-start: ## Deprecated alias for cluster-resume
 	@$(MAKE) cluster-resume TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED) IAC_TOOL=$(IAC_TOOL) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 
-cluster-remove: ## Remove only the cluster from the selected topology and keep infrastructure/resources
+remove-cluster-only: ## Remove the cluster only; keep Terraform/OpenTofu infrastructure, generated assets, and downloaded images/resources
 	@if [ "$(TOPOLOGY)" = "github-codespace" ]; then \
 	  WORKSPACE_CLUSTER_NAME="$(WORKSPACE_CLUSTER_NAME)" ./scripts/cluster-remove-github-codespace.sh; \
 	else \
 	  $(MAKE) uninstall-k3s TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"; \
 	fi
 
-environment-destroy: ## Remove the cluster and destroy Terraform/OpenTofu infrastructure when the topology uses it
-	@$(MAKE) cluster-remove TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+cluster-remove: ## Compatibility alias for remove-cluster-only
+	@$(MAKE) remove-cluster-only TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+
+destroy-cluster-and-infra: ## Remove the cluster and also destroy Terraform/OpenTofu-managed infrastructure for the topology
+	@$(MAKE) remove-cluster-only TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 	@if [ "$(TOPOLOGY)" != "github-codespace" ]; then \
 	  $(MAKE) terraform-destroy TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN); \
 	fi
+
+environment-destroy: ## Compatibility alias for destroy-cluster-and-infra
+	@$(MAKE) destroy-cluster-and-infra TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 
 k9s-local: require-kubeconfig ## Open k9s against the repo kubeconfig across all namespaces
 	k9s --kubeconfig "$(KUBECONFIG)" --all-namespaces

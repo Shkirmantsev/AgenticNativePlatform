@@ -4,7 +4,30 @@
 
 ```bash
 cp .env.example .env
-make run-cluster-from-scratch TOPOLOGY=local
+make run-cluster-from-scratch
+```
+
+Defaults:
+
+```bash
+TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false IAC_TOOL=tofu
+```
+
+## Cluster removal
+
+Meanings:
+
+- `cluster-pause`: reversible workload suspension; keep the cluster running
+- `remove-cluster-only`: delete the cluster only; keep Terraform/OpenTofu infrastructure and repo-generated assets
+- `destroy-cluster-and-infra`: delete the cluster and also destroy Terraform/OpenTofu-managed infrastructure
+- `cluster-remove`: compatibility alias for `remove-cluster-only`
+- `environment-destroy`: compatibility alias for `destroy-cluster-and-infra`
+
+```bash
+make remove-cluster-only TOPOLOGY=local
+make cluster-remove TOPOLOGY=local
+make destroy-cluster-and-infra TOPOLOGY=local TF_BIN=tofu
+make environment-destroy TOPOLOGY=local TF_BIN=tofu
 ```
 
 ## Terraform and inventory
