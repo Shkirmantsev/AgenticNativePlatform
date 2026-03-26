@@ -15,7 +15,11 @@ spec:
         mcpServer:
           name: kagent-tool-server
           kind: RemoteMCPServer
+          apiGroup: kagent.dev
           toolNames:
+            - k8s_get_resources
+            - k8s_get_available_api_resources
+          requireApproval:
             - k8s_get_resources
             - k8s_get_available_api_resources
     a2aConfig:
@@ -102,6 +106,39 @@ spec:
             - finnhub_stock_uspto_patent
             - finnhub_stock_visa_application
             - finnhub_symbol_search
+#          requireApproval:
+#            - catalog_get_tool_details
+#            - catalog_list_tools
+#            - catalog_match_tools
+#            - finnhub_company_basic_financials
+#            - finnhub_company_earnings
+#            - finnhub_company_news
+#            - finnhub_company_peers
+#            - finnhub_company_profile2
+#            - finnhub_country
+#            - finnhub_covid_19
+#            - finnhub_crypto_exchanges
+#            - finnhub_crypto_symbols
+#            - finnhub_earnings_calendar
+#            - finnhub_fda_committee_meeting_calendar
+#            - finnhub_filings
+#            - finnhub_financials_reported
+#            - finnhub_forex_exchanges
+#            - finnhub_forex_symbols
+#            - finnhub_insider_sentiment
+#            - finnhub_insider_transactions
+#            - finnhub_ipo_calendar
+#            - finnhub_market_holiday
+#            - finnhub_market_news
+#            - finnhub_market_status
+#            - finnhub_quote
+#            - finnhub_recommendation_trends
+#            - finnhub_stock_lobbying
+#            - finnhub_stock_symbols
+#            - finnhub_stock_usa_spending
+#            - finnhub_stock_uspto_patent
+#            - finnhub_stock_visa_application
+#            - finnhub_symbol_search
     a2aConfig:
       skills:
         - id: finnhub-market-data
@@ -117,3 +154,126 @@ spec:
             - Find upcoming earnings dates for NVDA.
             - Look up market news and analyst trends for TSLA.
             - Show available crypto symbols for Binance and then fetch the one that matches BTC.
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: team-lead-agent-assist
+  namespace: kagent
+spec:
+  description: A coordinating team-lead agent that triages natural-language requests, chooses the right project-defined specialist agent, and delegates work without direct MCP access of its own.
+  type: Declarative
+  declarative:
+    modelConfig: default-model-config
+    systemMessage: |-
+      You are team-lead-agent-assist, the coordinating lead agent for this Kubernetes platform.
+
+      Your role is to understand natural-language requests, map them to the right specialist agents defined in this project, delegate work, and synthesize a clear final answer.
+
+      Hard boundaries:
+      - You do not call MCP servers directly.
+      - You only use the project-defined agents exposed to you as tools.
+      - If a task requires capabilities outside those agents, say that it is out of scope instead of inventing access.
+
+      Delegation policy:
+      1. Prefer exactly one specialist agent when a single domain is clearly responsible.
+      2. Use multiple specialist agents only when the user request truly spans domains.
+      3. Choose delegates by capability:
+         - `k8s-agent` for Kubernetes operations, diagnostics, and resource inspection.
+         - `kgateway-agent` for kgateway, Gateway API, and AI gateway configuration.
+         - `istio-agent` for ambient mesh, ztunnel, waypoints, traffic, and mesh security.
+         - `helm-agent` for Helm release lifecycle and chart repository work.
+         - `observability-agent` for metrics, dashboards, incidents, and observability analysis.
+         - `promql-agent` for generating or explaining PromQL.
+         - `argo-rollouts-conversion-agent` for Argo Rollouts migration and rollout manifests.
+         - `cilium-policy-agent` for Cilium policy generation and validation guidance.
+         - `cilium-manager-agent` for Cilium installation, feature management, ClusterMesh, and service configuration.
+         - `cilium-debug-agent` for deep Cilium diagnostics and recorder management.
+         - `finnhub-agent` for market-data and finance questions backed by Finnhub.
+      4. Explain which agent you delegated to and why.
+      5. Summarize delegated results into one coherent answer for the user.
+      6. If a delegate hits a tool guarded by `requireApproval`, stop and request approval instead of bypassing it.
+      7. Do not loop delegates or ask one specialist to solve another specialist's domain when a direct delegate exists.
+
+      Interaction style:
+      - Ask concise clarification questions only when the task is ambiguous enough that delegation would likely be wrong.
+      - For operational requests, present a short plan before delegation when multiple steps are involved.
+      - Preserve concrete names, namespaces, versions, and paths from the user request.
+      - Be explicit about uncertainty and missing cluster state.
+    tools:
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: k8s-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: kgateway-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: istio-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: helm-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: observability-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: promql-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: argo-rollouts-conversion-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: cilium-policy-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: cilium-manager-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: cilium-debug-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: finnhub-agent
+    a2aConfig:
+      skills:
+        - id: coordinated-platform-delegation
+          name: Coordinated Platform Delegation
+          description: Understands broad platform requests in natural language, chooses the most relevant capabilities from project-defined specialist sub-agents, delegates work to them, and returns one coherent answer without direct MCP access.
+          inputModes: [text]
+          outputModes: [text]
+          tags: [team-lead, orchestration, a2a, delegation, kubernetes, kgateway, istio, helm, observability, promql, cilium, argo-rollouts, finnhub]
+          examples:
+            - I have a platform issue but I am not sure whether this is Kubernetes, Istio, kgateway, or Cilium. Pick the right specialist agents and coordinate the investigation.
+            - Decide which sub-agent capabilities are needed to debug why traffic is failing between services and summarize the final diagnosis.
+            - Choose between the Helm, Kubernetes, and kgateway specialists for an upgrade problem, then return one clear remediation plan.
+            - Determine whether my request belongs to observability-agent, promql-agent, or both, then provide the final answer with the right query or metrics interpretation.
+            - Investigate why an AgentGateway route is failing and summarize the findings from the relevant specialists.
+            - Review a Helm or Istio rollout issue, delegate to the right agent, and return a concise plan.
+            - Route a finance question to the market-data specialist and summarize the result.
+            - Compare Kubernetes, Cilium, and Istio findings when debugging a networking issue.
+            - Ask the observability specialist for metrics insight and the PromQL specialist for the exact query.
+            - Coordinate a migration question that needs Argo Rollouts guidance plus Kubernetes context and summarize the recommended approach.
+            - Choose the appropriate Cilium specialist capability: policy design, lifecycle management, or deep debugging, then delegate accordingly.
+            - Explain which specialist capabilities you selected for my request and why those were the right delegates.

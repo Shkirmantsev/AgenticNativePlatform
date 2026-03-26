@@ -12,3 +12,18 @@ spec:
     - group: ""
       kind: Service
       name: agentgateway-proxy
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: kagent-a2a-http-routes
+  namespace: kagent
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: agentgateway-system
+  to:
+    - group: ""
+      kind: Service
+      name: kagent-kagent-controller

@@ -4,7 +4,7 @@
 	port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-research-access close-research-access \
 	check-kagent-ui check-agentgateway check-agentgateway-openai check-litellm check-flux-operator-ui check-flux-stages \
-	test-a2a-agent test-agentgateway-gemini test-agentgateway-openai test-litellm
+	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-agentgateway-gemini test-agentgateway-openai test-litellm
 
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
 	@echo "== Flux Kustomizations =="; \
@@ -274,6 +274,14 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	    printf '%-18s %s\n' "$$label" "failed"; \
 	  fi; \
 	done; \
+	echo; \
+	echo "A2A agent cards via kagent controller:"; \
+	echo "  http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json"; \
+	echo "  http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/finnhub-agent/.well-known/agent.json"; \
+	echo "  http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json"; \
+	echo "A2A agent cards via AgentGateway:"; \
+	echo "  http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/finnhub-agent/.well-known/agent.json"; \
+	echo "  http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json"; \
 	test $$attempted -gt 0; \
 	test $$failures -eq 0
 
@@ -289,6 +297,12 @@ close-research-access: ## Close all background localhost research endpoints
 
 test-a2a-agent: ## Fetch the sample agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json | jq .
+
+test-finnhub-agent-card: ## Fetch the finnhub-agent card from kagent
+	curl -fsSL http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json | jq .
+
+test-team-lead-agent-card: ## Fetch the team-lead-agent-assist card from kagent
+	curl -fsSL http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json | jq .
 
 test-agentgateway-gemini: require-kubeconfig open-agentgateway check-agentgateway-openai ## Test the canonical OpenAI-compatible route through agentgateway -> LiteLLM -> Gemini
 	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .

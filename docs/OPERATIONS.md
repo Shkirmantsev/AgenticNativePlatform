@@ -81,7 +81,11 @@ make close-research-access
 Useful endpoints:
 
 - `http://localhost:8080` kagent UI
+- `http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json` finnhub-agent card
+- `http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` team-lead-agent-assist card
 - `http://localhost:15000/v1/models` AgentGateway
+- `http://localhost:15000/api/a2a/kagent/finnhub-agent/.well-known/agent.json` finnhub-agent card through AgentGateway
+- `http://localhost:15000/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` team-lead-agent-assist card through AgentGateway
 - `http://localhost:4000/v1/models` LiteLLM
 - `http://localhost:3000` Grafana
 - `http://localhost:9090` Prometheus

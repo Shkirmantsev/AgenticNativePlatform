@@ -535,8 +535,12 @@ Main local URLs:
 
 - `http://localhost:8080` for the `kagent` UI
 - `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` for the sample A2A card
+- `http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json` for the `finnhub-agent` A2A card
+- `http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` for the `team-lead-agent-assist` A2A card
 - `http://localhost:15000/v1/models` for `agentgateway`
 - `http://localhost:15000/mcp/kagent-tools` for the bundled MCP route through `agentgateway`
+- `http://localhost:15000/api/a2a/kagent/finnhub-agent/.well-known/agent.json` for the `finnhub-agent` A2A card through `agentgateway`
+- `http://localhost:15000/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` for the `team-lead-agent-assist` A2A card through `agentgateway`
 - `http://localhost:4000/health/readiness` for LiteLLM readiness
 - `http://localhost:4000/v1/models` for LiteLLM
 - `http://localhost:3000` for Grafana
@@ -549,7 +553,7 @@ Local access commands:
 | Component | Open command | Close command | Check/test command | Default local URL |
 | --- | --- | --- | --- | --- |
 | `kagent` UI | `make open-kagent-ui` | `make close-kagent-ui` | `make check-kagent-ui` | `http://localhost:8080` |
-| `kagent` A2A card/API | `make open-kagent-a2a` | `make close-kagent-a2a` | `make test-a2a-agent` | `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` |
+| `kagent` A2A card/API | `make open-kagent-a2a` | `make close-kagent-a2a` | `make test-a2a-agent`, `make test-finnhub-agent-card`, `make test-team-lead-agent-card` | `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` |
 | AgentGateway | `make open-agentgateway` | `make close-agentgateway` | `make check-agentgateway`, `make check-agentgateway-openai`, `make test-agentgateway-openai` | `http://localhost:15000` |
 | LiteLLM | `make open-litellm` | `make close-litellm` | `make check-litellm`, `make test-litellm` | `http://localhost:4000` |
 | Grafana | `make open-grafana` | `make close-grafana` | browser/login check | `http://localhost:3000` |
@@ -565,6 +569,8 @@ Endpoint truth table:
 | `http://localhost:15000/` | no root route is expected |
 | `http://localhost:15000/v1/models` | AgentGateway OpenAI-compatible API |
 | `http://localhost:15000/mcp/kagent-tools` | bundled MCP route through AgentGateway |
+| `http://localhost:15000/api/a2a/kagent/finnhub-agent/.well-known/agent.json` | Finnhub agent card through AgentGateway |
+| `http://localhost:15000/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` | Team lead agent card through AgentGateway |
 | `http://localhost:4000/health/readiness` | LiteLLM readiness endpoint |
 | `http://localhost:4000/v1/models` | LiteLLM API |
 | `http://localhost:9080/` | Flux Operator web UI |

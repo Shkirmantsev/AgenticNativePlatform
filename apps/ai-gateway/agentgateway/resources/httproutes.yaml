@@ -30,7 +30,7 @@ spec:
     - matches:
         - path:
             type: PathPrefix
-            value: /api/a2a/kagent/finnhub-agent
+            value: /api/a2a/kagent/
       # filters:
       #   - type: RBAC
       #     rbac:
@@ -42,18 +42,37 @@ spec:
           name: kagent-kagent-controller
           namespace: kagent
           port: 8083
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /api/a2a/kagent/team-lead-agent-assist
-      # filters:
-      #   - type: RBAC
-      #     rbac:
-      #       allowedPrincipals:
-      #         - cluster.local/ns/default/sa/team-lead-sa
-      backendRefs:
-        - group: ""
-          kind: Service
-          name: kagent-kagent-controller
-          namespace: kagent
-          port: 8083
+  # Future per-agent RBAC examples. Keep the broad prefix route above for open testing,
+  # then replace it with narrower rules like these when you want agent-specific access control.
+  #
+  # rules:
+  #   - matches:
+  #       - path:
+  #           type: PathPrefix
+  #           value: /api/a2a/kagent/finnhub-agent
+  #     filters:
+  #       - type: RBAC
+  #         rbac:
+  #           allowedPrincipals:
+  #             - cluster.local/ns/default/sa/team-lead-sa
+  #     backendRefs:
+  #       - group: ""
+  #         kind: Service
+  #         name: kagent-kagent-controller
+  #         namespace: kagent
+  #         port: 8083
+  #   - matches:
+  #       - path:
+  #           type: PathPrefix
+  #           value: /api/a2a/kagent/team-lead-agent-assist
+  #     filters:
+  #       - type: RBAC
+  #         rbac:
+  #           allowedPrincipals:
+  #             - cluster.local/ns/default/sa/team-lead-sa
+  #     backendRefs:
+  #       - group: ""
+  #         kind: Service
+  #         name: kagent-kagent-controller
+  #         namespace: kagent
+  #         port: 8083
