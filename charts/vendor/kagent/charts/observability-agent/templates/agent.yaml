@@ -104,6 +104,9 @@ spec:
           - find_error_pattern_logs
           - create_incident
           - add_activity_to_incident
+          requireApproval:
+          - create_incident
+          - add_activity_to_incident
       - type: Agent
         agent:
           name: promql-agent

@@ -117,6 +117,11 @@ spec:
           - k8s_get_resources
           - k8s_get_available_api_resources
           - k8s_apply_manifest
+          requireApproval:
+          - helm_upgrade
+          - helm_uninstall
+          - helm_repo_add
+          - k8s_apply_manifest
     a2aConfig:
       skills:
         - id: helm-release-management
