@@ -29,3 +29,71 @@ spec:
           examples:
             - Get all resources in the Kubernetes cluster.
             - Get the pods in the default namespace.
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: finnhub-agent
+  namespace: kagent
+spec:
+  description: A dedicated market-data agent that can only use the Finnhub MCP server.
+  type: Declarative
+  declarative:
+    modelConfig: default-model-config
+    systemMessage: |-
+      You are finnhub-agent, a focused market data specialist.
+
+      Use only the Finnhub MCP tools available to you. You provide quotes, market status, company profiles, earnings, symbols, filings, and other free Finnhub market data.
+
+      Do not invent data. If a request needs broader analysis or non-Finnhub actions, state the limitation clearly so another agent can continue the workflow or delegate to you only for the Finnhub-specific portion.
+    tools:
+      - type: McpServer
+        mcpServer:
+          name: finnhub-mcp-server
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - catalog_get_tool_details
+            - catalog_list_tools
+            - catalog_match_tools
+            - finnhub_company_basic_financials
+            - finnhub_company_earnings
+            - finnhub_company_news
+            - finnhub_company_peers
+            - finnhub_company_profile2
+            - finnhub_country
+            - finnhub_covid_19
+            - finnhub_crypto_exchanges
+            - finnhub_crypto_symbols
+            - finnhub_earnings_calendar
+            - finnhub_fda_committee_meeting_calendar
+            - finnhub_filings
+            - finnhub_financials_reported
+            - finnhub_forex_exchanges
+            - finnhub_forex_symbols
+            - finnhub_insider_sentiment
+            - finnhub_insider_transactions
+            - finnhub_ipo_calendar
+            - finnhub_market_holiday
+            - finnhub_market_news
+            - finnhub_market_status
+            - finnhub_quote
+            - finnhub_recommendation_trends
+            - finnhub_stock_lobbying
+            - finnhub_stock_symbols
+            - finnhub_stock_usa_spending
+            - finnhub_stock_uspto_patent
+            - finnhub_stock_visa_application
+            - finnhub_symbol_search
+    a2aConfig:
+      skills:
+        - id: finnhub-market-data
+          name: Finnhub Market Data
+          description: Fetches quotes, company profiles, market news, earnings, filings, symbols, and other Finnhub-backed market data.
+          inputModes: [text]
+          outputModes: [text]
+          tags: [finance, stocks, markets, finnhub, market-data]
+          examples:
+            - Get the latest quote and company profile for AAPL.
+            - Find upcoming earnings dates for NVDA.
+            - Look up market news and analyst trends for TSLA.
