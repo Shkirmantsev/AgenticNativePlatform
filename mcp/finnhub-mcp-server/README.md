@@ -97,6 +97,44 @@ Then open:
 docker build -t finnhub-mcp-server:0.1.0 .
 ```
 
+## Build with a fully qualified GHCR image name
+
+If you want the image name to match the Kubernetes manifest and GitHub Container Registry layout, build it directly with the full tag:
+
+```bash
+kmcp build \
+  --project-dir mcp/finnhub-mcp-server \
+  --tag ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0
+```
+
+To push it to GitHub Container Registry:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u <github-username> --password-stdin
+
+kmcp build \
+  --project-dir mcp/finnhub-mcp-server \
+  --tag ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0 \
+  --push
+```
+
+The current repository deployment manifest expects:
+
+```text
+ghcr.io/shkirmantsev/agenticnativeplatform/finnhub-mcp-server:0.1.0
+```
+
+If you already built a local image such as `finnhub-mcp-server:0.1.0`, you can retag and push it manually instead of rebuilding:
+
+```bash
+docker tag finnhub-mcp-server:0.1.0 \
+  ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0
+
+docker push ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0
+```
+
+If you publish under a different registry path or tag, update the image in `apps/platform/kmcp/resources/finnhub-mcp-server.yaml` to match.
+
 ## Browser web app
 
 The web app is intentionally simple and operational:
