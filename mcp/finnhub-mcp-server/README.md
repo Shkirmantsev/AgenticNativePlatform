@@ -8,7 +8,7 @@ This refactored version is built around the provided Finnhub swagger schema and 
 - prompt helpers for tool discovery and explanation
 - MCP resources for the catalog and free-endpoint inventory
 - default elicitation for missing required parameters
-- optional sampling-based tool recommendation
+- optional sampling-based tool recommendation and clarification planning
 - a browser web app for browsing tools and preparing the next MCP tool call
 - streamable HTTP mode and stdio mode
 - health endpoint and structured HTTP logging
@@ -113,7 +113,23 @@ When a user or model calls a tool without all required fields, the tool attempts
 
 ### Sampling behavior
 
-`catalog_match_tools` can ask the MCP client to draft a concise recommendation when the client supports sampling. If sampling is unavailable, the server falls back to deterministic ranking.
+`catalog_match_tools` can ask the MCP client to draft a concise clarification plan when the client supports sampling. The plan is intended for ambiguous requests where the server needs to clarify which tools to call, in which order, and with which candidate parameters.
+
+`catalog_match_tools` now accepts:
+
+- `goal`
+- optional `context`
+- optional `knownInputs`
+- optional `group`
+- optional `limit`
+- optional `preferSampling`
+
+It returns both:
+
+- a natural-language recommendation
+- a deterministic `clarificationPlan` with clarification questions, ordered tool steps, and candidate argument payloads
+
+If sampling is unavailable, the server still returns the deterministic clarification plan.
 
 ## Repository shape
 

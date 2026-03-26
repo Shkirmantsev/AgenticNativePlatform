@@ -36,7 +36,7 @@ func (a *Application) NewServer(logger *slog.Logger) *mcp.Server {
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		Logger:       logger,
-		Instructions: "Use catalog_list_tools or catalog_match_tools to discover the best Finnhub tools before calling endpoint tools directly. Endpoint tools support elicitation for missing required inputs when the client allows it.",
+		Instructions: "Use catalog_list_tools or catalog_match_tools to discover and clarify the best Finnhub workflow before calling endpoint tools directly. catalog_match_tools can propose clarification questions, tool order, and candidate parameters, and can use sampling when the client allows it. Endpoint tools support elicitation for missing required inputs when the client allows it.",
 	})
 
 	a.registerEndpointTools(server)

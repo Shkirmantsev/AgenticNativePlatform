@@ -276,13 +276,15 @@ func catalogMatchToolsTool() *mcp.Tool {
 	return &mcp.Tool{
 		Name:        "catalog_match_tools",
 		Title:       "Match Tools To Goal",
-		Description: "Recommend the most relevant Finnhub tools for a user goal. When the client supports sampling, the response can include a model-written recommendation.",
+		Description: "Recommend the most relevant Finnhub tools for a user goal and outline a likely call sequence with candidate parameters. When the client supports sampling, the response can include a model-written clarification plan.",
 		InputSchema: map[string]any{
 			"type":                 "object",
 			"additionalProperties": false,
 			"required":             []string{"goal"},
 			"properties": map[string]any{
 				"goal":           map[string]any{"type": "string", "description": "What the user wants to achieve with Finnhub data."},
+				"context":        map[string]any{"type": "string", "description": "Optional extra user context, assumptions, or ambiguity to resolve."},
+				"knownInputs":    map[string]any{"type": "object", "description": "Optional known user inputs or constraints that can be reused in candidate tool arguments.", "additionalProperties": true},
 				"limit":          map[string]any{"type": "integer", "description": "Maximum number of matching tools.", "default": 5},
 				"preferSampling": map[string]any{"type": "boolean", "description": "When true, attempt MCP sampling if the client supports it.", "default": true},
 				"group":          map[string]any{"type": "string", "description": "Optional group filter."},
@@ -344,25 +346,31 @@ func (a *Application) handleCatalogMatchTools(ctx context.Context, request *mcp.
 	if goal == "" {
 		return toolErrorResult(fmt.Errorf("goal is required")), nil
 	}
+	contextText := strings.TrimSpace(toString(arguments["context"]))
+	knownInputs := objectArg(arguments["knownInputs"])
 	limit := intArg(arguments["limit"], 5)
 	group := toString(arguments["group"])
 	preferSampling := boolArg(arguments["preferSampling"], true)
 
 	items := a.catalog.Search(goal, group, nil, limit)
-	advisorText := deterministicCatalogAdvice(goal, items)
+	clarificationPlan := buildClarificationPlan(goal, contextText, knownInputs, items)
+	advisorText := deterministicCatalogAdvice(goal, contextText, clarificationPlan)
 	usedSampling := false
 	if preferSampling && supportsSampling(request) && request.Session != nil {
-		if sampled, sampleErr := a.sampleCatalogAdvice(ctx, request, goal, items); sampleErr == nil && strings.TrimSpace(sampled) != "" {
+		if sampled, sampleErr := a.sampleCatalogAdvice(ctx, request, goal, contextText, clarificationPlan); sampleErr == nil && strings.TrimSpace(sampled) != "" {
 			advisorText = sampled
 			usedSampling = true
 		}
 	}
 
 	structured := map[string]any{
-		"goal":           goal,
-		"usedSampling":   usedSampling,
-		"recommendation": advisorText,
-		"tools":          items,
+		"goal":              goal,
+		"context":           contextText,
+		"knownInputs":       knownInputs,
+		"usedSampling":      usedSampling,
+		"recommendation":    advisorText,
+		"clarificationPlan": clarificationPlan,
+		"tools":             items,
 	}
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
@@ -373,16 +381,17 @@ func (a *Application) handleCatalogMatchTools(ctx context.Context, request *mcp.
 }
 
 // sampleCatalogAdvice optionally asks the MCP client to draft a short natural
-// language recommendation over the deterministic tool shortlist.
-func (a *Application) sampleCatalogAdvice(ctx context.Context, request *mcp.CallToolRequest, goal string, items []CatalogItem) (string, error) {
+// language clarification plan over the deterministic tool shortlist.
+func (a *Application) sampleCatalogAdvice(ctx context.Context, request *mcp.CallToolRequest, goal, contextText string, plan map[string]any) (string, error) {
 	payload := map[string]any{
-		"goal":  goal,
-		"tools": items,
+		"goal":    goal,
+		"context": contextText,
+		"plan":    plan,
 	}
 	result, err := request.Session.CreateMessage(ctx, &mcp.CreateMessageParams{
-		MaxTokens:    400,
+		MaxTokens:    600,
 		Temperature:  0.2,
-		SystemPrompt: "You are helping select the best Finnhub MCP tools. Explain which tools should be used first and why. Keep it concise and action-oriented.",
+		SystemPrompt: "You are helping clarify how to use Finnhub MCP tools for an ambiguous user request. Explain what should be clarified from the user, which tools should be called in which order, and which candidate parameters should be tried first. Keep it concise and action-oriented.",
 		Messages: []*mcp.SamplingMessage{
 			{
 				Role:    "user",
@@ -399,26 +408,49 @@ func (a *Application) sampleCatalogAdvice(ctx context.Context, request *mcp.Call
 	default:
 		body, marshalErr := json.Marshal(content)
 		if marshalErr != nil {
-			return fmt.Sprintf("Selected tools: %s", joinToolNames(items)), nil
+			return deterministicCatalogAdvice(goal, contextText, plan), nil
 		}
 		return string(body), nil
 	}
 }
 
-func deterministicCatalogAdvice(goal string, items []CatalogItem) string {
-	if len(items) == 0 {
+func deterministicCatalogAdvice(goal, contextText string, plan map[string]any) string {
+	tools, _ := plan["tools"].([]CatalogItem)
+	if len(tools) == 0 {
 		return fmt.Sprintf("No generated Finnhub tools matched the goal %q. Use catalog_list_tools to inspect the full catalog.", goal)
 	}
+
 	builder := strings.Builder{}
-	builder.WriteString("Recommended tools")
-	builder.WriteString(" for goal: ")
-	builder.WriteString(goal)
-	builder.WriteString(". ")
-	for index, item := range items {
-		if index > 0 {
-			builder.WriteString(" ")
+	builder.WriteString(fmt.Sprintf("Recommended Finnhub workflow for goal %q.", goal))
+	if contextText != "" {
+		builder.WriteString(" Context: ")
+		builder.WriteString(contextText)
+		builder.WriteString(".")
+	}
+
+	if questions, ok := plan["clarificationQuestions"].([]string); ok && len(questions) > 0 {
+		builder.WriteString(" Clarify first: ")
+		for index, question := range questions {
+			if index > 0 {
+				builder.WriteString(" ")
+			}
+			builder.WriteString(fmt.Sprintf("%d) %s.", index+1, question))
 		}
-		builder.WriteString(fmt.Sprintf("%d) %s — %s.", index+1, item.ToolName, item.Summary))
+	}
+
+	if steps, ok := plan["sequence"].([]map[string]any); ok && len(steps) > 0 {
+		builder.WriteString(" Call sequence: ")
+		for index, step := range steps {
+			if index > 0 {
+				builder.WriteString(" ")
+			}
+			builder.WriteString(fmt.Sprintf(
+				"%d) %s with %s.",
+				index+1,
+				toString(step["toolName"]),
+				jsonText(step["candidateArguments"]),
+			))
+		}
 	}
 	return builder.String()
 }
@@ -429,6 +461,142 @@ func joinToolNames(items []CatalogItem) string {
 		names = append(names, item.ToolName)
 	}
 	return strings.Join(names, ", ")
+}
+
+func buildClarificationPlan(goal, contextText string, knownInputs map[string]any, items []CatalogItem) map[string]any {
+	questions := make([]string, 0)
+	sequence := make([]map[string]any, 0, len(items))
+
+	for _, item := range items {
+		candidateArguments := mergeCandidateArguments(item, knownInputs)
+		for _, question := range clarificationQuestions(item, knownInputs) {
+			if !containsString(questions, question) {
+				questions = append(questions, question)
+			}
+		}
+		sequence = append(sequence, map[string]any{
+			"toolName":           item.ToolName,
+			"title":              item.Title,
+			"why":                item.Summary,
+			"candidateArguments": candidateArguments,
+		})
+	}
+
+	return map[string]any{
+		"goal":                  goal,
+		"context":               contextText,
+		"knownInputs":           knownInputs,
+		"clarificationQuestions": questions,
+		"sequence":              sequence,
+		"toolNames":             joinToolNames(items),
+		"tools":                 items,
+	}
+}
+
+func mergeCandidateArguments(item CatalogItem, knownInputs map[string]any) map[string]any {
+	candidateArguments := make(map[string]any, len(item.ExampleArguments)+len(knownInputs))
+	for key, value := range item.ExampleArguments {
+		candidateArguments[key] = value
+	}
+
+	properties, _ := item.InputSchema["properties"].(map[string]any)
+	for key, value := range knownInputs {
+		if len(properties) == 0 {
+			candidateArguments[key] = value
+			continue
+		}
+		if _, ok := properties[key]; ok {
+			candidateArguments[key] = value
+		}
+	}
+
+	return candidateArguments
+}
+
+func clarificationQuestions(item CatalogItem, knownInputs map[string]any) []string {
+	questions := make([]string, 0)
+	properties, _ := item.InputSchema["properties"].(map[string]any)
+
+	requiredNames := stringList(item.InputSchema["required"])
+	for _, name := range requiredNames {
+		if !isMissing(knownInputs[name]) {
+			continue
+		}
+		description := schemaDescription(properties, name)
+		if description == "" {
+			description = name
+		}
+		questions = append(questions, fmt.Sprintf("What should %s be for %s?", description, item.ToolName))
+	}
+
+	for key := range item.ExampleArguments {
+		if !isMissing(knownInputs[key]) {
+			continue
+		}
+		description := schemaDescription(properties, key)
+		if description == "" {
+			description = key
+		}
+		questions = append(questions, fmt.Sprintf("Should %s be set explicitly for %s?", description, item.ToolName))
+	}
+
+	return questions
+}
+
+func stringList(value any) []string {
+	switch typed := value.(type) {
+	case nil:
+		return nil
+	case []string:
+		return append([]string(nil), typed...)
+	case []any:
+		result := make([]string, 0, len(typed))
+		for _, item := range typed {
+			text := strings.TrimSpace(toString(item))
+			if text != "" {
+				result = append(result, text)
+			}
+		}
+		return result
+	default:
+		text := strings.TrimSpace(toString(value))
+		if text == "" {
+			return nil
+		}
+		return []string{text}
+	}
+}
+
+func schemaDescription(properties map[string]any, key string) string {
+	property, ok := properties[key].(map[string]any)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(toString(property["description"]))
+}
+
+func objectArg(value any) map[string]any {
+	switch typed := value.(type) {
+	case nil:
+		return map[string]any{}
+	case map[string]any:
+		result := make(map[string]any, len(typed))
+		for key, value := range typed {
+			result[key] = value
+		}
+		return result
+	default:
+		return map[string]any{}
+	}
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
 
 func intArg(value any, fallback int) int {
