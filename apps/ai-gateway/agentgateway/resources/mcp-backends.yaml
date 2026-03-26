@@ -27,3 +27,18 @@ spec:
           port: 3001
           path: /mcp
           protocol: StreamableHTTP
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: finnhub-mcp-backend
+  namespace: agentgateway-system
+spec:
+  mcp:
+    targets:
+      - name: finnhub-mcp-server
+        static:
+          host: finnhub-mcp-server.kagent.svc.cluster.local
+          port: 3000
+          path: /mcp
+          protocol: StreamableHTTP

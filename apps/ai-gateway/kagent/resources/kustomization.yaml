@@ -4,3 +4,4 @@ resources:
   - agents.yaml
   - remote-mcp.yaml
   - remote-mcp-echo.yaml
+  - remote-mcp-finnhub.yaml

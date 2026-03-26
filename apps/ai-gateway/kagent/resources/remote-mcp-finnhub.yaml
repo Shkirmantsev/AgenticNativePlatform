@@ -1,0 +1,9 @@
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: finnhub-mcp-server
+  namespace: kagent
+spec:
+  description: Finnhub MCP server exposed through agentgateway for the dedicated finnhub-agent.
+  protocol: STREAMABLE_HTTP
+  url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/finnhub-mcp-server"
