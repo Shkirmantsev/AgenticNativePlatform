@@ -12,16 +12,17 @@ func (a *Application) registerPrompts(server *mcp.Server) {
 	server.AddPrompt(&mcp.Prompt{
 		Name:        "discover_finnhub_tools",
 		Title:       "Discover Finnhub Tools",
-		Description: "Explain which generated Finnhub tools should be used for a goal and how to call them.",
+		Description: "Turn a natural-language finance question into a concrete Finnhub tool plan: which tools to call, in what order, and which inputs are still missing.",
 		Arguments: []*mcp.PromptArgument{
 			{Name: "goal", Description: "User goal or question that needs Finnhub data.", Required: true},
+			{Name: "context", Description: "Optional extra context, ambiguity, or known constraints from the user request.", Required: false},
 		},
 	}, a.handleDiscoverToolsPrompt)
 
 	server.AddPrompt(&mcp.Prompt{
 		Name:        "explain_finnhub_tool",
 		Title:       "Explain One Finnhub Tool",
-		Description: "Return an operator-friendly explanation for one tool, including schema and example arguments.",
+		Description: "Explain one Finnhub tool in natural language, including when to use it, what inputs it expects, and example prompts and payloads.",
 		Arguments: []*mcp.PromptArgument{
 			{Name: "toolName", Description: "Exact MCP tool name such as finnhub_quote.", Required: true},
 		},
@@ -30,12 +31,14 @@ func (a *Application) registerPrompts(server *mcp.Server) {
 
 func (a *Application) handleDiscoverToolsPrompt(_ context.Context, request *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 	goal := strings.TrimSpace(request.Params.Arguments["goal"])
-	matches := a.catalog.Search(goal, "", nil, 8)
-	catalogJSON := jsonText(map[string]any{"goal": goal, "tools": matches})
+	contextText := strings.TrimSpace(request.Params.Arguments["context"])
+	searchText := strings.TrimSpace(strings.Join([]string{goal, contextText}, " "))
+	matches := a.catalog.Search(searchText, "", nil, 8)
+	catalogJSON := jsonText(map[string]any{"goal": goal, "context": contextText, "tools": matches})
 
-	text := fmt.Sprintf("The user goal is: %s\n\nUse the following generated Finnhub tool catalog excerpt to decide which tools to call first, which arguments are still missing, and what order makes sense. Prefer the minimal number of tools.\n\n%s", goal, catalogJSON)
+	text := fmt.Sprintf("The user goal is: %s\nAdditional context: %s\n\nUse the following generated Finnhub tool catalog excerpt to decide which tools to call first, which arguments are still missing, how to clarify ambiguous wording, and what sequence makes sense. Prefer the minimal number of tools, keep the plan explicit, and reuse the example prompts and example arguments when they fit the request.\n\n%s", goal, defaultIfEmpty(contextText, "(none)"), catalogJSON)
 	return &mcp.GetPromptResult{
-		Description: "Prompt for selecting Finnhub tools for a goal.",
+		Description: "Prompt for selecting Finnhub tools and clarifying missing inputs for a user goal.",
 		Messages: []*mcp.PromptMessage{
 			{Role: "user", Content: &mcp.TextContent{Text: text}},
 		},
@@ -54,11 +57,18 @@ func (a *Application) handleExplainToolPrompt(_ context.Context, request *mcp.Ge
 		}, nil
 	}
 
-	text := fmt.Sprintf("Explain this tool in a concise operator-friendly way. Describe when to use it, which arguments are required, which arguments are optional, and show the example payload.\n\n%s", jsonText(item))
+	text := fmt.Sprintf("Explain this tool in a concise operator-friendly way. Describe when to use it, which user phrases should map to it, which arguments are required, which are optional, how to clarify missing inputs, and show the example prompts and example payload.\n\n%s", jsonText(item))
 	return &mcp.GetPromptResult{
-		Description: "Prompt for explaining one Finnhub tool.",
+		Description: "Prompt for explaining one Finnhub tool and how to call it from natural-language requests.",
 		Messages: []*mcp.PromptMessage{
 			{Role: "user", Content: &mcp.TextContent{Text: text}},
 		},
 	}, nil
+}
+
+func defaultIfEmpty(value, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
 }

@@ -4,6 +4,6 @@ metadata:
   name: finnhub-mcp-server
   namespace: kagent
 spec:
-  description: Finnhub MCP server exposed through agentgateway for the dedicated finnhub-agent.
+  description: Finnhub MCP server exposed through AgentGateway for finnhub-agent. It supports natural-language tool discovery, clarification planning, and direct access to all registered Finnhub catalog and endpoint tools.
   protocol: STREAMABLE_HTTP
   url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/finnhub-mcp-server"

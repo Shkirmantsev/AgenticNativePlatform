@@ -236,17 +236,17 @@ func catalogListTool() *mcp.Tool {
 	return &mcp.Tool{
 		Name:        "catalog_list_tools",
 		Title:       "List Finnhub Tools",
-		Description: "List all available generated Finnhub tools, optionally filtered by query, group, or explicit tool names.",
+		Description: "List generated Finnhub tools that match a natural-language request, domain, or explicit tool-name shortlist. Use this when you need to browse available capabilities before choosing a concrete endpoint tool.",
 		InputSchema: map[string]any{
 			"type":                 "object",
 			"additionalProperties": false,
 			"properties": map[string]any{
-				"query": map[string]any{"type": "string", "description": "Free-text search query over tool names and descriptions."},
-				"group": map[string]any{"type": "string", "description": "Optional group filter such as Market, Company, Calendar, Forex, Crypto, Alternative Data or Metadata."},
-				"limit": map[string]any{"type": "integer", "description": "Maximum number of tools to return.", "default": 25},
+				"query": map[string]any{"type": "string", "description": "Free-text search query. This can be a user request such as 'latest quote for Apple' or 'find upcoming earnings'."},
+				"group": map[string]any{"type": "string", "description": "Optional domain filter such as Market, Company, Calendar, Forex, Crypto, Alternative Data, General, or Economic."},
+				"limit": map[string]any{"type": "integer", "description": "Maximum number of tools to return. Use a smaller value when you want a short shortlist for planning.", "default": 25},
 				"names": map[string]any{
 					"type":        "array",
-					"description": "Optional explicit tool names to include.",
+					"description": "Optional explicit tool names to include. Useful when you already have a shortlist and want richer metadata back.",
 					"items":       map[string]any{"type": "string"},
 				},
 			},
@@ -259,13 +259,13 @@ func catalogGetToolDetailsTool() *mcp.Tool {
 	return &mcp.Tool{
 		Name:        "catalog_get_tool_details",
 		Title:       "Get Tool Details",
-		Description: "Return one generated Finnhub tool with its schema, example arguments, and prompt-oriented usage hint.",
+		Description: "Return one Finnhub tool with detailed metadata for natural-language use: schema, required and optional arguments, usage guidance, example prompts, and example arguments.",
 		InputSchema: map[string]any{
 			"type":                 "object",
 			"additionalProperties": false,
 			"required":             []string{"toolName"},
 			"properties": map[string]any{
-				"toolName": map[string]any{"type": "string", "description": "Exact tool name, for example finnhub_quote."},
+				"toolName": map[string]any{"type": "string", "description": "Exact tool name from the Finnhub catalog, for example finnhub_quote."},
 			},
 		},
 		Annotations: &mcp.ToolAnnotations{Title: "Get Tool Details", ReadOnlyHint: true, IdempotentHint: true, OpenWorldHint: boolPtr(false), DestructiveHint: boolPtr(false)},
@@ -276,18 +276,18 @@ func catalogMatchToolsTool() *mcp.Tool {
 	return &mcp.Tool{
 		Name:        "catalog_match_tools",
 		Title:       "Match Tools To Goal",
-		Description: "Recommend the most relevant Finnhub tools for a user goal and outline a likely call sequence with candidate parameters. When the client supports sampling, the response can include a model-written clarification plan.",
+		Description: "Turn an ambiguous natural-language finance question into a concrete Finnhub plan: recommended tools, likely call order, clarification questions, and candidate parameters. When the client supports sampling, the response can include a model-written clarification plan.",
 		InputSchema: map[string]any{
 			"type":                 "object",
 			"additionalProperties": false,
 			"required":             []string{"goal"},
 			"properties": map[string]any{
-				"goal":           map[string]any{"type": "string", "description": "What the user wants to achieve with Finnhub data."},
-				"context":        map[string]any{"type": "string", "description": "Optional extra user context, assumptions, or ambiguity to resolve."},
-				"knownInputs":    map[string]any{"type": "object", "description": "Optional known user inputs or constraints that can be reused in candidate tool arguments.", "additionalProperties": true},
-				"limit":          map[string]any{"type": "integer", "description": "Maximum number of matching tools.", "default": 5},
-				"preferSampling": map[string]any{"type": "boolean", "description": "When true, attempt MCP sampling if the client supports it.", "default": true},
-				"group":          map[string]any{"type": "string", "description": "Optional group filter."},
+				"goal":           map[string]any{"type": "string", "description": "The user goal or question in natural language. Example: 'Compare Nvidia earnings and recent company news'."},
+				"context":        map[string]any{"type": "string", "description": "Optional extra context, ambiguity, or instructions. Example: 'User said Apple but did not provide a ticker'."},
+				"knownInputs":    map[string]any{"type": "object", "description": "Optional known user inputs or constraints that can be reused in candidate tool arguments, such as symbol, exchange, from, to, category, or region.", "additionalProperties": true},
+				"limit":          map[string]any{"type": "integer", "description": "Maximum number of matching tools to include in the plan.", "default": 5},
+				"preferSampling": map[string]any{"type": "boolean", "description": "When true, attempt MCP sampling if the client supports it. Disable this if you want purely deterministic planning output.", "default": true},
+				"group":          map[string]any{"type": "string", "description": "Optional domain filter when the request is already scoped, for example Company, Market, Forex, or Crypto."},
 			},
 		},
 		Annotations: &mcp.ToolAnnotations{Title: "Match Tools To Goal", ReadOnlyHint: true, IdempotentHint: true, OpenWorldHint: boolPtr(false), DestructiveHint: boolPtr(false)},

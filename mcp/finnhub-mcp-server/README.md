@@ -5,6 +5,7 @@ Production-oriented MCP server for the free Finnhub REST endpoints.
 This refactored version is built around the provided Finnhub swagger schema and exposes every detected free endpoint as an MCP tool. It also adds:
 
 - a generated tool catalog with schema and example arguments
+- usage guidance, required/optional input metadata, and natural-language example prompts for every cataloged tool
 - prompt helpers for tool discovery and explanation
 - MCP resources for the catalog and free-endpoint inventory
 - default elicitation for missing required parameters
@@ -35,6 +36,12 @@ Examples:
 - `catalog_list_tools`
 - `catalog_get_tool_details`
 - `catalog_match_tools`
+
+Recommended usage pattern for natural-language requests:
+
+1. Start with `catalog_match_tools` for ambiguous or multi-step user questions.
+2. Use `catalog_get_tool_details` if you need deeper guidance for one shortlisted tool.
+3. Call the endpoint tool only after the required arguments are known.
 
 ### Prompts
 
@@ -130,6 +137,21 @@ It returns both:
 - a deterministic `clarificationPlan` with clarification questions, ordered tool steps, and candidate argument payloads
 
 If sampling is unavailable, the server still returns the deterministic clarification plan.
+
+### Natural-language planning examples
+
+Use `catalog_match_tools` for prompts such as:
+
+- `What is Apple's latest quote?`
+- `Compare Nvidia earnings with recent company news.`
+- `I only know the company name Tesla. Find the right ticker and then show analyst trends.`
+- `Show crypto symbols for Binance and help me pick the correct BTC pair.`
+
+Use `catalog_get_tool_details` for prompts such as:
+
+- `Explain when to use finnhub_company_news.`
+- `What inputs does finnhub_quote require?`
+- `Show example prompts and arguments for finnhub_symbol_search.`
 
 ## Repository shape
 

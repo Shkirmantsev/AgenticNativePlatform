@@ -20,7 +20,7 @@ func (a *Application) registerResources(server *mcp.Server) {
 		URI:         resourceCatalogJSON,
 		Name:        "finnhub-catalog-json",
 		Title:       "Finnhub Tool Catalog (JSON)",
-		Description: "Machine-readable catalog of all generated Finnhub tools.",
+		Description: "Machine-readable catalog of all generated Finnhub tools, including natural-language usage guidance, example prompts, and example arguments.",
 		MIMEType:    "application/json",
 	}, a.handleCatalogJSONResource)
 
@@ -28,7 +28,7 @@ func (a *Application) registerResources(server *mcp.Server) {
 		URI:         resourceCatalogMD,
 		Name:        "finnhub-catalog-markdown",
 		Title:       "Finnhub Tool Catalog (Markdown)",
-		Description: "Human-readable catalog of all generated Finnhub tools.",
+		Description: "Human-readable catalog of all generated Finnhub tools for operators and agents deciding how to answer a finance question.",
 		MIMEType:    "text/markdown",
 	}, a.handleCatalogMarkdownResource)
 
@@ -36,7 +36,7 @@ func (a *Application) registerResources(server *mcp.Server) {
 		URI:         resourceSwaggerFree,
 		Name:        "finnhub-free-endpoints-json",
 		Title:       "Free Finnhub Endpoints (JSON)",
-		Description: "JSON catalog of the free endpoints derived from the supplied Finnhub swagger schema.",
+		Description: "JSON catalog of the free endpoints derived from the supplied Finnhub swagger schema. Use this when you need the raw endpoint inventory instead of the human-friendly catalog view.",
 		MIMEType:    "application/json",
 	}, a.handleCatalogJSONResource)
 
@@ -44,7 +44,7 @@ func (a *Application) registerResources(server *mcp.Server) {
 		URITemplate: "finnhub://catalog/tool/{toolName}.json",
 		Name:        "finnhub-tool-json-template",
 		Title:       "One Finnhub Tool",
-		Description: "Read one tool definition by tool name.",
+		Description: "Read one tool definition by tool name, including usage guidance, example prompts, and example arguments.",
 		MIMEType:    "application/json",
 	}, a.handleToolTemplateResource)
 }

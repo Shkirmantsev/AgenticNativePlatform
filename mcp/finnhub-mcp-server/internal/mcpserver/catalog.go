@@ -20,6 +20,11 @@ type CatalogItem struct {
 	FreeTier         string         `json:"freeTier,omitempty"`
 	InputSchema      map[string]any `json:"inputSchema"`
 	ExampleArguments map[string]any `json:"exampleArguments"`
+	RequiredArgs     []string       `json:"requiredArgs,omitempty"`
+	OptionalArgs     []string       `json:"optionalArgs,omitempty"`
+	AtLeastOneOf     []string       `json:"atLeastOneOf,omitempty"`
+	UsageGuidance    string         `json:"usageGuidance"`
+	ExamplePrompts   []string       `json:"examplePrompts,omitempty"`
 	PromptHint       string         `json:"promptHint"`
 	EndpointPath     string         `json:"endpointPath"`
 	Method           string         `json:"method"`
@@ -150,6 +155,7 @@ func (c *Catalog) Groups() []string {
 }
 
 func newCatalogItem(endpoint finnhub.EndpointSpec) CatalogItem {
+	requiredArgs, optionalArgs := parameterNames(endpoint)
 	return CatalogItem{
 		ToolName:         endpoint.ToolName,
 		OperationID:      endpoint.OperationID,
@@ -160,6 +166,11 @@ func newCatalogItem(endpoint finnhub.EndpointSpec) CatalogItem {
 		FreeTier:         endpoint.FreeTier,
 		InputSchema:      endpoint.InputSchema(),
 		ExampleArguments: endpoint.ExampleArguments(),
+		RequiredArgs:     requiredArgs,
+		OptionalArgs:     optionalArgs,
+		AtLeastOneOf:     append([]string(nil), endpoint.AtLeastOneOf...),
+		UsageGuidance:    buildUsageGuidance(endpoint, requiredArgs, optionalArgs),
+		ExamplePrompts:   buildExamplePrompts(endpoint),
 		PromptHint:       buildPromptHint(endpoint),
 		EndpointPath:     endpoint.Path,
 		Method:           endpoint.Method,
@@ -167,11 +178,118 @@ func newCatalogItem(endpoint finnhub.EndpointSpec) CatalogItem {
 }
 
 func buildPromptHint(endpoint finnhub.EndpointSpec) string {
-	hint := fmt.Sprintf("Use %s when you need %s.", endpoint.ToolName, strings.ToLower(endpoint.Description))
+	requiredArgs, optionalArgs := parameterNames(endpoint)
+	hint := fmt.Sprintf("Use %s when a user asks for %s.", endpoint.ToolName, strings.ToLower(trimSentence(endpoint.Description)))
+	if len(requiredArgs) > 0 {
+		hint += " Required arguments: " + strings.Join(requiredArgs, ", ") + "."
+	}
+	if len(endpoint.AtLeastOneOf) > 0 {
+		hint += " At least one of " + strings.Join(endpoint.AtLeastOneOf, ", ") + " must be supplied."
+	}
+	if len(optionalArgs) > 0 {
+		hint += " Helpful optional arguments: " + strings.Join(optionalArgs, ", ") + "."
+	}
+	exampleArgs := compactJSON(endpoint.ExampleArguments())
+	if exampleArgs != "" && exampleArgs != "{}" {
+		hint += " Example arguments: " + exampleArgs + "."
+	}
 	if endpoint.FreeTier != "" {
 		hint += " Free-tier note: " + endpoint.FreeTier + "."
 	}
 	return hint
+}
+
+func buildUsageGuidance(endpoint finnhub.EndpointSpec, requiredArgs, optionalArgs []string) string {
+	parts := []string{
+		fmt.Sprintf("Start with %s when the user asks for %s.", endpoint.ToolName, strings.ToLower(trimSentence(endpoint.Description))),
+	}
+	if len(requiredArgs) > 0 {
+		parts = append(parts, "Collect required inputs first: "+strings.Join(requiredArgs, ", ")+".")
+	}
+	if len(endpoint.AtLeastOneOf) > 0 {
+		parts = append(parts, "If the user has not provided an identifier yet, collect at least one of "+strings.Join(endpoint.AtLeastOneOf, ", ")+".")
+	}
+	if len(optionalArgs) > 0 {
+		parts = append(parts, "Use optional arguments when the user asks for narrower scope or filtering: "+strings.Join(optionalArgs, ", ")+".")
+	}
+	if exampleArgs := compactJSON(endpoint.ExampleArguments()); exampleArgs != "" && exampleArgs != "{}" {
+		parts = append(parts, "A safe starter payload is "+exampleArgs+".")
+	}
+	return strings.Join(parts, " ")
+}
+
+func buildExamplePrompts(endpoint finnhub.EndpointSpec) []string {
+	exampleArgs := endpoint.ExampleArguments()
+	symbol := exampleString(exampleArgs, "symbol")
+	query := exampleString(exampleArgs, "q")
+	exchange := exampleString(exampleArgs, "exchange")
+	from := exampleString(exampleArgs, "from")
+	to := exampleString(exampleArgs, "to")
+
+	switch {
+	case symbol != "":
+		return []string{
+			fmt.Sprintf("Get %s for %s.", strings.ToLower(trimSentence(endpoint.Title)), symbol),
+			fmt.Sprintf("Use Finnhub to show %s for %s.", strings.ToLower(trimSentence(endpoint.Summary)), symbol),
+		}
+	case query != "":
+		return []string{
+			fmt.Sprintf("Find the best matching symbol for %s.", query),
+			fmt.Sprintf("Search Finnhub for %s.", query),
+		}
+	case exchange != "":
+		return []string{
+			fmt.Sprintf("List %s for exchange %s.", strings.ToLower(trimSentence(endpoint.Title)), exchange),
+			fmt.Sprintf("Show the Finnhub %s data for %s.", strings.ToLower(trimSentence(endpoint.Summary)), exchange),
+		}
+	case from != "" || to != "":
+		rangeText := strings.Trim(strings.Join([]string{from, to}, " to "), " to")
+		if rangeText == "" {
+			rangeText = "the requested date range"
+		}
+		return []string{
+			fmt.Sprintf("Get %s for %s.", strings.ToLower(trimSentence(endpoint.Title)), rangeText),
+			fmt.Sprintf("Use Finnhub to inspect %s for %s.", strings.ToLower(trimSentence(endpoint.Summary)), rangeText),
+		}
+	default:
+		return []string{
+			fmt.Sprintf("Use Finnhub to get %s.", strings.ToLower(trimSentence(endpoint.Title))),
+			fmt.Sprintf("Which Finnhub tool should I use for %s?", strings.ToLower(trimSentence(endpoint.Summary))),
+		}
+	}
+}
+
+func exampleString(arguments map[string]any, key string) string {
+	value, ok := arguments[key]
+	if !ok || value == nil {
+		return ""
+	}
+	return strings.TrimSpace(fmt.Sprint(value))
+}
+
+func parameterNames(endpoint finnhub.EndpointSpec) ([]string, []string) {
+	required := make([]string, 0, len(endpoint.Parameters))
+	optional := make([]string, 0, len(endpoint.Parameters))
+	for _, parameter := range endpoint.Parameters {
+		if parameter.Required {
+			required = append(required, parameter.Name)
+			continue
+		}
+		optional = append(optional, parameter.Name)
+	}
+	return required, optional
+}
+
+func trimSentence(value string) string {
+	return strings.TrimSpace(strings.TrimSuffix(value, "."))
+}
+
+func compactJSON(value any) string {
+	body, err := json.Marshal(value)
+	if err != nil {
+		return ""
+	}
+	return string(body)
 }
 
 func rankCatalogItem(item CatalogItem, tokens []string) int {

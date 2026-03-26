@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: agentic-native-platform
     kagent.dev/discovery: "disabled"
   annotations:
-    kmcp.dev/description: Production-ready Finnhub MCP server built with MCP Go SDK
+    kmcp.dev/description: Production-ready Finnhub MCP server built with MCP Go SDK, with natural-language tool discovery, clarification planning, and free-endpoint market-data retrieval
     kmcp.dev/project-name: finnhub-mcp-server
 spec:
   transportType: http

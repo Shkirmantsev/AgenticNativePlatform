@@ -36,7 +36,7 @@ func (a *Application) NewServer(logger *slog.Logger) *mcp.Server {
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		Logger:       logger,
-		Instructions: "Use catalog_list_tools or catalog_match_tools to discover and clarify the best Finnhub workflow before calling endpoint tools directly. catalog_match_tools can propose clarification questions, tool order, and candidate parameters, and can use sampling when the client allows it. Endpoint tools support elicitation for missing required inputs when the client allows it.",
+		Instructions: "You are a Finnhub market-data tool server. Prefer catalog_match_tools when the user request is ambiguous, refers to a company name instead of a ticker, or needs a multi-step Finnhub workflow. Use catalog_get_tool_details when you need richer natural-language guidance for one specific tool. Call endpoint tools directly only after the required arguments are known. If required inputs are missing, endpoint tools support elicitation when the client allows it. Keep plans concrete: identify the likely tool order, the parameters still missing, and a safe starter payload for the next call.",
 	})
 
 	a.registerEndpointTools(server)
