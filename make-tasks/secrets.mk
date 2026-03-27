@@ -1,5 +1,5 @@
 .PHONY: render-plaintext-secrets apply-plaintext-secrets delete-plaintext-secrets \
-	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster
+	sops-age-key render-sops-secrets encrypt-secrets decrypt-secrets sops-bootstrap-cluster provision-grafana-mcp-token
 
 render-plaintext-secrets: ## Render local plaintext Kubernetes Secrets from .env into .generated/secrets/<env>
 	ENV=$(ENV) ./scripts/render-plaintext-secrets.sh
@@ -24,3 +24,6 @@ decrypt-secrets: ## Decrypt committed SOPS secrets into .generated/decrypted/<en
 
 sops-bootstrap-cluster: require-kubeconfig ## Upload the local age private key into flux-system for SOPS decryption
 	ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-sops-age-secret.yml --extra-vars "kubeconfig_path=$(KUBECONFIG)"
+
+provision-grafana-mcp-token: require-kubeconfig ## Create or refresh the Grafana MCP service account token and apply Secret/kagent-grafana-mcp
+	ENV=$(ENV) KUBECONFIG=$(KUBECONFIG) ./scripts/provision-grafana-mcp-token.sh

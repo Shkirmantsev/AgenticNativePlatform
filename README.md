@@ -377,6 +377,7 @@ The main user-facing parameters are:
 | `LITELLM_MASTER_KEY` | Auth header value for LiteLLM and AgentGateway OpenAI checks | secret render and `check-*` / `test-*` targets | `LITELLM_MASTER_KEY=my-key make test-litellm` | random/generated or explicit secret |
 | `PLATFORM_POSTGRES_PASSWORD` | Explicit PostgreSQL password override | secret render | `PLATFORM_POSTGRES_PASSWORD=strong-secret` | real secret |
 | `GRAFANA_ADMIN_USERNAME`, `GRAFANA_ADMIN_PASSWORD` | Grafana admin bootstrap credentials | observability secret render | `GRAFANA_ADMIN_PASSWORD=strong-secret` | real username/password |
+| `GRAFANA_SERVICE_ACCOUNT_TOKEN`, `GRAFANA_API_KEY` | Grafana MCP API credentials for kagent | Grafana MCP secret render in `kagent` namespace | `GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_...` | service account token preferred; optional for `make run-cluster-from-scratch`, which can mint one after Grafana boots |
 | `FLUX_OPERATOR_UI_LOCAL_PORT` | Local port override for Flux Operator UI port-forward | `make open-flux-operator-ui` | `make open-flux-operator-ui FLUX_OPERATOR_UI_LOCAL_PORT=19080` | valid local TCP port |
 | `KAGENT_UI_LOCAL_PORT`, `KAGENT_A2A_LOCAL_PORT`, `AGENTGATEWAY_LOCAL_PORT`, `LITELLM_LOCAL_PORT`, `GRAFANA_LOCAL_PORT`, `PROMETHEUS_LOCAL_PORT`, `QDRANT_LOCAL_PORT` | Local port overrides for port-forward targets | `open-*` targets | `make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16000` | valid local TCP ports |
 

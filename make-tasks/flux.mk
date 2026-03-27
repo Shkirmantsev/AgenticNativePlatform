@@ -2,7 +2,7 @@
 	flux-values render-cluster-root ensure-generated-flux-clean install-flux-operator install-flux-local install-flux \
 	bootstrap-flux-instance bootstrap-flux-git reconcile verify cluster-status
 
-run-cluster-from-scratch: ## Bootstrap the selected topology (defaults: TOPOLOGY=local ENV=dev RUNTIME=none SECRETS_MODE=external LMSTUDIO_ENABLED=false IAC_TOOL=tofu), install Flux, apply secrets, bootstrap GitOps, and reconcile from the current repo state
+run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, auto-provision the Grafana MCP token, and reconcile from the current repo state
 	@$(MAKE) tools-install-local IAC_TOOL=$(IAC_TOOL) INSTALL_K9S=$(INSTALL_K9S)
 	@$(MAKE) cluster-up-$(TOPOLOGY) TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 	@if [ "$(TOPOLOGY)" = "local" ] || [ "$(TOPOLOGY)" = "github-codespace" ]; then \
@@ -17,6 +17,7 @@ run-cluster-from-scratch: ## Bootstrap the selected topology (defaults: TOPOLOGY
 	fi
 	@$(MAKE) bootstrap-flux-instance TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) provision-grafana-mcp-token TOPOLOGY=$(TOPOLOGY) ENV=$(ENV)
 	@$(MAKE) cluster-status TOPOLOGY=$(TOPOLOGY)
 
 flux-values: ## Validate that Git-authored non-secret values exist for the selected topology

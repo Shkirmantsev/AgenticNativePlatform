@@ -30,6 +30,8 @@ fi
 : "${PLATFORM_POSTGRES_PASSWORD:=$(generate_secret)}"
 : "${GRAFANA_ADMIN_USERNAME:=admin}"
 : "${GRAFANA_ADMIN_PASSWORD:=$(generate_secret)}"
+: "${GRAFANA_SERVICE_ACCOUNT_TOKEN:=}"
+: "${GRAFANA_API_KEY:=}"
 
 cp "${NAMESPACE_SOURCE}" "${OUT_DIR}/namespaces.yaml"
 cat > "${OUT_DIR}/litellm-provider-secrets.yaml" <<EOF
@@ -97,6 +99,24 @@ stringData:
   GRAFANA_USERNAME: ${GRAFANA_ADMIN_USERNAME}
   GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
 EOF
+cat > "${OUT_DIR}/kagent-grafana-mcp.yaml" <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kagent-grafana-mcp
+  namespace: kagent
+type: Opaque
+stringData:
+EOF
+if [[ -n "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" ]]; then
+  cat >> "${OUT_DIR}/kagent-grafana-mcp.yaml" <<EOF
+  GRAFANA_SERVICE_ACCOUNT_TOKEN: ${GRAFANA_SERVICE_ACCOUNT_TOKEN}
+EOF
+elif [[ -n "${GRAFANA_API_KEY}" ]]; then
+  cat >> "${OUT_DIR}/kagent-grafana-mcp.yaml" <<EOF
+  GRAFANA_API_KEY: ${GRAFANA_API_KEY}
+EOF
+fi
 rm -f "${OUT_DIR}/cluster-user-auth.yaml"
 cat > "${OUT_DIR}/kustomization.yaml" <<EOF
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -108,6 +128,10 @@ resources:
   - finnhub-mcp-server.yaml
   - platform-postgres-auth.yaml
   - observability-grafana-admin.yaml
+  - kagent-grafana-mcp.yaml
 EOF
 
 echo "Rendered plaintext secrets into ${OUT_DIR}"
+if [[ -z "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" && -z "${GRAFANA_API_KEY}" ]]; then
+  echo "Grafana MCP credentials were not set. Rendered an empty Secret/kagent-grafana-mcp; provision a live token after Grafana is up." >&2
+fi
