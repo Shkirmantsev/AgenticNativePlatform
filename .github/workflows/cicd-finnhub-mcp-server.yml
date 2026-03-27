@@ -219,8 +219,6 @@ jobs:
           load: true
           push: false
           tags: ${{ needs.metadata.outputs.image_ref }}
-          cache-from: type=gha,scope=finnhub-mcp-server
-          cache-to: type=gha,mode=max,scope=finnhub-mcp-server,ignore-error=true
 
       - name: Scan image with Trivy before push
         if: steps.image_exists.outputs.exists != 'true'
@@ -246,8 +244,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ needs.metadata.outputs.image_ref }}
-          cache-from: type=gha,scope=finnhub-mcp-server
-          cache-to: type=gha,mode=max,scope=finnhub-mcp-server,ignore-error=true
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
