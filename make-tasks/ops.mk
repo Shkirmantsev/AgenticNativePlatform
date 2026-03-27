@@ -4,7 +4,7 @@
 	port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-research-access close-research-access \
 	check-kagent-ui check-agentgateway check-agentgateway-openai check-litellm check-flux-operator-ui check-flux-stages \
-	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-a2a-delegation test-a2a-delegation-via-agentgateway test-agentgateway-gemini test-agentgateway-openai test-litellm
+	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-finnhub-tool-browser test-a2a-delegation test-a2a-delegation-via-agentgateway test-agentgateway-gemini test-agentgateway-openai test-litellm
 
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
 	@echo "== Flux Kustomizations =="; \
@@ -306,6 +306,9 @@ test-a2a-agent: ## Fetch the sample agent card from kagent
 
 test-finnhub-agent-card: ## Fetch the finnhub-agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json | jq .
+
+test-finnhub-tool-browser: ## Fetch the Finnhub tool-browser catalog through AgentGateway
+	curl -fsSL http://localhost:15000/finnhub/app/api/tools | jq '.count'
 
 test-team-lead-agent-card: ## Fetch the team-lead-agent-assist card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json | jq .

@@ -27,3 +27,18 @@ spec:
     - group: ""
       kind: Service
       name: kagent-kagent-controller
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: finnhub-web-app-http-routes
+  namespace: kagent
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: agentgateway-system
+  to:
+    - group: ""
+      kind: Service
+      name: finnhub-mcp-server
