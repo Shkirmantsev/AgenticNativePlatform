@@ -385,6 +385,35 @@ The main user-facing parameters are:
 - `GIT_REPO_URL`, `GIT_BRANCH`, and `FLUX_INSTANCE_SYNC_PATH` are intentionally configurable from `.env` or CI/CD inputs
 - use `.env.example` as the canonical list of available knobs and defaults
 
+<details>
+<summary><strong>Open GitHub Actions variables and defaults for the Finnhub MCP workflow</strong></summary>
+
+The `cicd-finnhub-mcp-server.yml` workflow already defines the project-specific build values directly in YAML, so they do not need to be duplicated in GitHub repository variables:
+
+```yaml
+env:
+  GO_VERSION: "1.25.0"
+  KMCP_VERSION: "v0.2.7"
+  PROJECT_DIR: mcp/finnhub-mcp-server
+  DOCKERFILE_PATH: mcp/finnhub-mcp-server/Dockerfile
+  DEPLOYMENT_MANIFEST: apps/platform/kmcp/resources/finnhub-mcp-server.yaml
+  IMAGE_NAME: ghcr.io/shkirmantsev/agenticnativeplatform/finnhub-mcp-server
+  HADOLINT_IMAGE: hadolint/hadolint:v2.14.0
+  TRIVY_IMAGE: aquasec/trivy:0.69.3
+```
+
+GitHub also provides these built-in values automatically at workflow runtime:
+
+- `GITHUB_TOKEN`
+- `github.actor`
+- `github.ref_name`
+- `github.event_name`
+- `github.sha`
+
+That means the image version, image tag, branch name, actor identity, and publish conditions are derived inside the workflow code, not entered manually in the GitHub UI.
+
+</details>
+
 </details>
 
 ## GitOps Flow And Repository Rules
