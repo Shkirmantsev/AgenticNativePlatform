@@ -39,12 +39,12 @@ spec:
       replicas: 1
       drivesPerNode: 1
       persistence:
-        size: 1350Mi
+        size: 1500Mi
     deploymentMode: SingleBinary
     singleBinary:
       replicas: 1
       persistence:
-        size: 720Mi
+        size: 800Mi
     backend:
       replicas: 0
     read:
