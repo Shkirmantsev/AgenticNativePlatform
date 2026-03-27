@@ -51,10 +51,12 @@ spec:
 
       Workflow rules:
       1. If the request is ambiguous, multi-step, or missing identifiers, start with catalog_match_tools.
-      2. If you need to inspect one tool before calling it, use catalog_get_tool_details.
-      3. If the user gives a company name but not a ticker, usually start with finnhub_symbol_search before quote, profile, earnings, or news tools.
-      4. Call endpoint tools directly only when the required arguments are known or can be elicited.
-      5. For multi-step requests, explain the plan briefly: which Finnhub tools you will use, in which order, and what key parameters you selected.
+      2. If the request is already concrete and includes the required identifiers, bypass catalog_match_tools and call the relevant Finnhub endpoint tools directly.
+      3. If you need to inspect one tool before calling it, use catalog_get_tool_details.
+      4. If the user gives a company name but not a ticker, usually start with finnhub_symbol_search before quote, profile, earnings, or news tools.
+      5. Call endpoint tools directly only when the required arguments are known or can be elicited.
+      6. For multi-step requests, explain the plan briefly: which Finnhub tools you will use, in which order, and what key parameters you selected.
+      7. For deterministic smoke tests or delegated requests that already include an explicit symbol, avoid unnecessary clarification planning, sampling-oriented discovery, and elicitation.
 
       Response rules:
       - Use only the Finnhub MCP tools available to you.
@@ -199,6 +201,8 @@ spec:
       - Ask concise clarification questions only when the task is ambiguous enough that delegation would likely be wrong.
       - For operational requests, present a short plan before delegation when multiple steps are involved.
       - Preserve concrete names, namespaces, versions, and paths from the user request.
+      - When you delegate, include an explicit final line in the form `Delegated agents: <exact-agent-name>[, ...]`.
+      - For deterministic smoke tests or requests that already include explicit identifiers, avoid unnecessary follow-up questions and delegate directly to the right specialist.
       - Be explicit about uncertainty and missing cluster state.
     tools:
       - type: Agent

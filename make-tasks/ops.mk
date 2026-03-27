@@ -4,7 +4,7 @@
 	port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui \
 	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-research-access close-research-access \
 	check-kagent-ui check-agentgateway check-agentgateway-openai check-litellm check-flux-operator-ui check-flux-stages \
-	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-agentgateway-gemini test-agentgateway-openai test-litellm
+	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-a2a-delegation test-a2a-delegation-via-agentgateway test-agentgateway-gemini test-agentgateway-openai test-litellm
 
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
 	@echo "== Flux Kustomizations =="; \
@@ -309,6 +309,18 @@ test-finnhub-agent-card: ## Fetch the finnhub-agent card from kagent
 
 test-team-lead-agent-card: ## Fetch the team-lead-agent-assist card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json | jq .
+
+test-a2a-delegation: require-kubeconfig ## Run a direct kagent A2A smoke test: team-lead-agent-assist delegates to finnhub-agent
+	@$(MAKE) open-kagent-a2a TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	python3 ./scripts/test-a2a-task-flow.py \
+	  --card-url http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json \
+	  --scenario-file ./scripts/a2a-scenarios/team-lead-finnhub-delegation.json
+
+test-a2a-delegation-via-agentgateway: require-kubeconfig ## Run the same A2A delegation smoke test through AgentGateway
+	@$(MAKE) open-agentgateway TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	python3 ./scripts/test-a2a-task-flow.py \
+	  --card-url http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json \
+	  --scenario-file ./scripts/a2a-scenarios/team-lead-finnhub-delegation.json
 
 test-agentgateway-gemini: require-kubeconfig open-agentgateway check-agentgateway-openai ## Test the canonical OpenAI-compatible route through agentgateway -> LiteLLM -> Gemini
 	curl -fsSL -H "Authorization: Bearer $(LITELLM_MASTER_KEY)" http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models | jq .

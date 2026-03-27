@@ -1,0 +1,22 @@
+{
+  "name": "team-lead-finnhub-delegation",
+  "expected_delegation_to": "finnhub-agent",
+  "bypass_sampling": true,
+  "bypass_elicitation": true,
+  "message": "A2A delegation smoke test. Delegate exactly one specialist agent: finnhub-agent. Do not ask clarifying questions. Do not use catalog discovery, clarification planning, sampling, or elicitation when the request is already concrete enough to call Finnhub tools directly. Fetch the latest quote and company profile for AAPL, then return a concise answer. In the final answer include the exact line 'Delegated agents: finnhub-agent'. Also mention AAPL explicitly.",
+  "expected_contains": [
+    "Delegated agents: finnhub-agent",
+    "AAPL"
+  ],
+  "expected_any_contains": [
+    "company profile",
+    "latest quote",
+    "current price",
+    "profile"
+  ],
+  "forbidden_contains": [
+    "input-required",
+    "need more information",
+    "approval"
+  ]
+}

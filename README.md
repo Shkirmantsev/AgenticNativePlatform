@@ -603,7 +603,7 @@ Local access commands:
 | Component | Open command | Close command | Check/test command | Default local URL |
 | --- | --- | --- | --- | --- |
 | `kagent` UI | `make open-kagent-ui` | `make close-kagent-ui` | `make check-kagent-ui` | `http://localhost:8080` |
-| `kagent` A2A card/API | `make open-kagent-a2a` | `make close-kagent-a2a` | `make test-a2a-agent`, `make test-finnhub-agent-card`, `make test-team-lead-agent-card` | `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` |
+| `kagent` A2A card/API | `make open-kagent-a2a` | `make close-kagent-a2a` | `make test-a2a-agent`, `make test-finnhub-agent-card`, `make test-team-lead-agent-card`, `make test-a2a-delegation` | `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` |
 | AgentGateway | `make open-agentgateway` | `make close-agentgateway` | `make check-agentgateway`, `make check-agentgateway-openai`, `make test-agentgateway-openai` | `http://localhost:15000` |
 | LiteLLM | `make open-litellm` | `make close-litellm` | `make check-litellm`, `make test-litellm` | `http://localhost:4000` |
 | Grafana | `make open-grafana` | `make close-grafana` | browser/login check | `http://localhost:3000` |
@@ -639,12 +639,23 @@ Operator shell and `make` defaults:
 - if `.env` does not set `LITELLM_MASTER_KEY` and plaintext secrets were rendered, `make` falls back to `.generated/secrets/<env>/litellm-provider-secrets.yaml`
 - direct manual `curl` commands in your shell still need either `export LITELLM_MASTER_KEY=...` or an explicit literal bearer token
 
+Delegated A2A smoke test examples:
+
+```bash
+make test-a2a-delegation
+make test-a2a-delegation-via-agentgateway
+```
+
+Both smoke tests send a JSON-RPC `message/send` request to `team-lead-agent-assist`, expect that agent to delegate to `finnhub-agent`, and fail when the call falls into `input-required` instead of completing deterministically. The default scenario deliberately asks for `AAPL` with an explicit symbol so the delegated Finnhub flow can bypass unnecessary elicitation and sampling-oriented discovery.
+
 Single-target examples:
 
 ```bash
 make open-kagent-ui
 make open-kagent-a2a
 make open-agentgateway
+make test-a2a-delegation
+make test-a2a-delegation-via-agentgateway
 make open-litellm
 make open-grafana
 make open-prometheus
@@ -693,6 +704,10 @@ API tests:
 
 ```bash
 make test-a2a-agent
+make test-finnhub-agent-card
+make test-team-lead-agent-card
+make test-a2a-delegation
+make test-a2a-delegation-via-agentgateway
 make test-agentgateway-openai
 make test-litellm
 ```
