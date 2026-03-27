@@ -332,6 +332,14 @@ spec:
           # Kubernetes Tools
           - k8s_get_resources
           - k8s_describe_resource
+          requireApproval:
+          - cilium_install_cilium
+          - cilium_upgrade_cilium
+          - cilium_connect_to_remote_cluster
+          - cilium_toggle_cluster_mesh
+          - cilium_toggle_hubble
+          - cilium_toggle_configuration_option
+          - cilium_update_service
 
     a2aConfig:
       skills:

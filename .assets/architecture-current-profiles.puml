@@ -1,126 +1,99 @@
 @startuml
 !pragma layout smetana
-title AgenticNativePlatform - Current GitOps Staging And Profile Composition
+title AgenticNativePlatform - Static GitOps Layout And Staged Cluster Composition
 
 left to right direction
 skinparam shadowing false
 skinparam packageStyle rectangle
 skinparam componentStyle rectangle
-skinparam wrapWidth 180
+skinparam wrapWidth 160
+skinparam defaultTextAlignment center
 hide stereotype
 
 actor "Operator" as Operator
-rectangle "Repository source of truth\nflux/components/*\ncharts/*\nflux/overlays/*" as RepoSources
-rectangle "Generated inputs\nflux/generated/<topology>/\nflux/generated/clusters/<cluster-id>/" as GeneratedInputs
 rectangle "Remote Git repository\nGIT_REPO_URL @ GIT_BRANCH" as RemoteRepo
 
+package "Repository source of truth" {
+  component "clusters/" as RepoClusters
+  component "infrastructure/" as RepoInfrastructure
+  component "apps/" as RepoApps
+  component "values/\nnon-secret only" as RepoValues
+  component "secrets/\nSOPS roots by topology" as RepoSecrets
+}
+
+package "Committed cluster roots" {
+  component "clusters/local-dev" as ClusterLocal
+  component "clusters/github-codespace-dev" as ClusterCodespace
+  component "clusters/minipc-dev" as ClusterMiniPC
+  component "clusters/hybrid-dev" as ClusterHybrid
+  component "clusters/hybrid-remote-dev" as ClusterHybridRemote
+}
+
+package "One cluster root" {
+  component "flux-system/flux-instance.yaml" as ClusterFluxInstance
+  component "infrastructure/\ncluster wrapper" as ClusterInfrastructure
+  component "secrets/\ncluster wrapper" as ClusterSecrets
+  component "apps/\ncluster wrapper" as ClusterApps
+}
+
 node "flux-system" {
+  component "Flux Operator" as FluxOperator
+  component "FluxInstance/flux" as FluxInstance
   component "GitRepository/platform" as GitRepository
-  component "platform-bootstrap" as PlatformBootstrap
   component "platform-infrastructure" as PlatformInfrastructure
+  component "platform-secrets" as PlatformSecrets
   component "platform-applications" as PlatformApplications
-  component "platform-ops-ui\nsuspend=true until enabled" as PlatformOpsUI
-  component "platform-samples\nsuspend=true until enabled" as PlatformSamples
 }
 
-package "Bootstrap stage" {
-  component "base namespaces\nGateway API CRDs\nHelm/OCI sources\ngenerated ConfigMaps\nsecret references" as BootstrapContent
-}
-
-package "Infrastructure stage" {
-  component "selected profile\ninfrastructure path" as InfrastructureProfile
-  component "runtime overlay\nnone | ollama | vllm" as RuntimeChoice
-}
-
-package "Applications stage" {
-  component "profile applications\n+ env overlay" as ApplicationsProfile
-  component "generated MetalLB values\nwhen rendered for host-based paths" as MetalLBValues
-}
-
-package "Optional child roots" {
-  component "weave-gitops bundle" as WeaveBundle
-  component "samples-echo-mcp bundle" as SamplesBundle
-}
-
-package "Profiles" {
-  component "platform-profile-full\nbase + network + agent-runtime +\nserving + context + observability + metallb" as ProfileFull
-  component "platform-profile-fast\nbase + network + agent-runtime + metallb" as ProfileFast
-  component "platform-profile-fast-serving\nplatform-profile-fast + serving" as ProfileFastServing
-  component "platform-profile-fast-context\nplatform-profile-fast + context" as ProfileFastContext
-  component "platform-profile-workspace\ncurrently aliases platform-profile-fast-serving" as ProfileWorkspace
-}
-
-package "Bundles" {
-  component "platform-base" as BundleBase
-  component "platform-network" as BundleNetwork
-  component "platform-agent-runtime" as BundleAgentRuntime
-  component "platform-serving" as BundleServing
-  component "platform-context" as BundleContext
-  component "platform-observability" as BundleObservability
-  component "platform-apps" as BundleApps
-  component "platform-ops-ui" as BundleOpsUI
-  component "platform-samples" as BundleSamples
-}
-
-Operator --> RepoSources : edit manifests / charts
-RepoSources --> GeneratedInputs : make flux-values\nmake render-cluster-root
+Operator --> RepoClusters : edit
+Operator --> RepoInfrastructure : edit
+Operator --> RepoApps : edit
+Operator --> RepoValues : edit
+Operator --> RepoSecrets : edit
 Operator --> RemoteRepo : commit and push
-GeneratedInputs --> RemoteRepo : tracked generated files
 
-RemoteRepo --> GitRepository : Flux reads remote branch
-GitRepository --> PlatformBootstrap
-PlatformBootstrap --> BootstrapContent
-PlatformBootstrap --> PlatformInfrastructure : staged dependency
-PlatformInfrastructure --> InfrastructureProfile
-PlatformInfrastructure --> RuntimeChoice
-PlatformInfrastructure --> PlatformApplications : staged dependency
-PlatformApplications --> ApplicationsProfile
-PlatformApplications --> MetalLBValues
-PlatformInfrastructure --> PlatformOpsUI : optional dependency
-PlatformApplications --> PlatformSamples : optional dependency
-PlatformOpsUI --> WeaveBundle
-PlatformSamples --> SamplesBundle
+RepoClusters --> ClusterLocal
+RepoClusters --> ClusterCodespace
+RepoClusters --> ClusterMiniPC
+RepoClusters --> ClusterHybrid
+RepoClusters --> ClusterHybridRemote
 
-InfrastructureProfile --> ProfileFull : host-based default
-InfrastructureProfile --> ProfileWorkspace : github-workspace default
-InfrastructureProfile --> ProfileFast : explicit override
-InfrastructureProfile --> ProfileFastServing : explicit override
-InfrastructureProfile --> ProfileFastContext : explicit override
+ClusterLocal --> ClusterFluxInstance
+ClusterLocal --> ClusterInfrastructure
+ClusterLocal --> ClusterSecrets
+ClusterLocal --> ClusterApps
 
-ApplicationsProfile --> BundleApps
-ProfileFull --> BundleBase
-ProfileFull --> BundleNetwork
-ProfileFull --> BundleAgentRuntime
-ProfileFull --> BundleServing
-ProfileFull --> BundleContext
-ProfileFull --> BundleObservability
-ProfileFast --> BundleBase
-ProfileFast --> BundleNetwork
-ProfileFast --> BundleAgentRuntime
-ProfileFastServing --> ProfileFast
-ProfileFastServing --> BundleServing
-ProfileFastContext --> ProfileFast
-ProfileFastContext --> BundleContext
-ProfileWorkspace --> ProfileFastServing
-WeaveBundle --> BundleOpsUI
-SamplesBundle --> BundleSamples
+FluxOperator --> FluxInstance : manages lifecycle
+ClusterFluxInstance --> FluxInstance : rendered and applied
+FluxInstance --> GitRepository : sync.kind=GitRepository
+RemoteRepo --> GitRepository : remote source of truth
 
-note bottom of PlatformBootstrap
-bootstrap-flux is rendered under
-flux/generated/clusters/<cluster-id>/bootstrap-flux/
-and the shell wrapper only applies that path.
+GitRepository --> PlatformInfrastructure
+PlatformInfrastructure --> PlatformSecrets : dependsOn
+PlatformSecrets --> PlatformApplications : dependsOn
+
+PlatformInfrastructure --> ClusterInfrastructure
+PlatformSecrets --> ClusterSecrets
+PlatformApplications --> ClusterApps
+
+ClusterInfrastructure --> RepoInfrastructure
+ClusterInfrastructure --> RepoValues
+ClusterSecrets --> RepoSecrets
+ClusterApps --> RepoApps
+
+note bottom of RepoClusters
+Committed cluster roots are now the GitOps
+entrypoint for every topology.
 end note
 
-note bottom of GitRepository
-Flux reconciles the remote repository state,
-not the local working tree.
-Generated manifests must be committed and pushed.
+note bottom of RepoValues
+values/ contains non-secret config only.
+That keeps the layout OCI-ready.
 end note
 
-note bottom of ProfileWorkspace
-Current repository state:
-platform-profile-workspace
-aliases platform-profile-fast-serving.
+note bottom of PlatformApplications
+Staging keeps controllers and CRDs ahead of
+dependent secrets and application objects.
 end note
 
 @enduml

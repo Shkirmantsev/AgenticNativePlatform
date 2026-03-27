@@ -101,6 +101,11 @@ spec:
         - cilium_get_pcap_recorder
         - cilium_update_pcap_recorder
         - cilium_delete_pcap_recorder
+        requireApproval:
+        - cilium_manage_endpoint_config
+        - cilium_flush_ipsec_state
+        - cilium_update_pcap_recorder
+        - cilium_delete_pcap_recorder
     a2aConfig:
       skills:
         - id: advanced-cilium-debugging

@@ -1,0 +1,29 @@
+apiVersion: kagent.dev/v1alpha1
+kind: MCPServer
+metadata:
+  name: finnhub-mcp-server
+  namespace: kagent
+  labels:
+    app.kubernetes.io/name: finnhub-mcp-server
+    app.kubernetes.io/component: mcp
+    app.kubernetes.io/part-of: agentic-native-platform
+    kagent.dev/discovery: "disabled"
+  annotations:
+    kmcp.dev/description: Production-ready Finnhub MCP server built with MCP Go SDK, with natural-language tool discovery, clarification planning, and free-endpoint market-data retrieval
+    kmcp.dev/project-name: finnhub-mcp-server
+spec:
+  transportType: http
+  httpTransport:
+    path: /mcp
+    targetPort: 3000
+  deployment:
+    cmd: ./finnhub-mcp-server
+    args:
+      - -transport
+      - http
+      - -http-addr
+      - :3000
+    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.1.0
+    port: 3000
+    secretRefs:
+      - name: finnhub-mcp-server

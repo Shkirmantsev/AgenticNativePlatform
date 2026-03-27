@@ -1,6 +1,8 @@
 modelConfigRef: ""
 imagePullSecrets: []
 
+grafanaMCP:
+  enabled: true
 
 resources:
   requests:

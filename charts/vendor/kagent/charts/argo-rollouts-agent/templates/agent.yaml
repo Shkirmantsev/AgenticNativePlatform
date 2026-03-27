@@ -133,6 +133,10 @@ spec:
         - k8s_delete_resource
         - k8s_apply_manifest
         - k8s_describe_resource
+        requireApproval:
+        - k8s_create_resource
+        - k8s_delete_resource
+        - k8s_apply_manifest
     a2aConfig:
       skills:
         - id: convert-deployment-to-rollout

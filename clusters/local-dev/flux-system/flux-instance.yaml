@@ -1,0 +1,48 @@
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  name: flux
+  namespace: flux-system
+  annotations:
+    fluxcd.controlplane.io/reconcile: "enabled"
+    fluxcd.controlplane.io/reconcileEvery: "1h"
+    fluxcd.controlplane.io/reconcileTimeout: "5m"
+spec:
+  distribution:
+    version: "__FLUX_VERSION__"
+    registry: "ghcr.io/fluxcd"
+  kustomize:
+    patches:
+      - patch: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ignored
+          spec:
+            template:
+              metadata:
+                labels:
+                  istio.io/dataplane-mode: none
+        target:
+          kind: Deployment
+          namespace: flux-system
+          labelSelector: app.kubernetes.io/part-of=flux
+  components:
+    - source-controller
+    - kustomize-controller
+    - helm-controller
+    - notification-controller
+    - image-reflector-controller
+    - image-automation-controller
+    - source-watcher
+  cluster:
+    type: kubernetes
+    size: small
+    multitenant: false
+    networkPolicy: true
+    domain: "__CLUSTER_DOMAIN__"
+  sync:
+    kind: GitRepository
+    url: "__GIT_REPO_URL__"
+    ref: "refs/heads/__GIT_BRANCH__"
+    path: "__FLUX_INSTANCE_SYNC_PATH__"

@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 8m
+  targetNamespace: cert-manager
+  chart:
+    spec:
+      chart: cert-manager
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack
+        namespace: flux-system
+      version: v1.19.1
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: ignored
+              spec:
+                template:
+                  metadata:
+                    labels:
+                      istio.io/dataplane-mode: none
+            target:
+              kind: Deployment
+              namespace: cert-manager
+              labelSelector: app.kubernetes.io/instance=cert-manager-cert-manager
+  values:
+    crds:
+      enabled: true
+    prometheus:
+      enabled: false

@@ -1,0 +1,7 @@
+topology:
+  name: github-codespace
+  controlPlane:
+    name: agentic-native-platform
+    ansible_host: 127.0.0.1
+    ansible_user: codespace
+  workers: []

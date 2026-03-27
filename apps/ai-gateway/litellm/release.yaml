@@ -1,0 +1,29 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: litellm-proxy
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 8m
+  targetNamespace: ai-gateway
+  chart:
+    spec:
+      chart: ./charts/litellm-proxy
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 1m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: ConfigMap
+      name: litellm-values
+      valuesKey: values.yaml

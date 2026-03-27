@@ -1,0 +1,283 @@
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: k8s-a2a-agent
+  namespace: kagent
+spec:
+  description: An example A2A agent that knows how to use Kubernetes tools.
+  type: Declarative
+  declarative:
+    modelConfig: default-model-config
+    systemMessage: |-
+      You are an expert Kubernetes agent that uses tools to help users.
+    tools:
+      - type: McpServer
+        mcpServer:
+          name: kagent-tool-server
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - k8s_get_resources
+            - k8s_get_available_api_resources
+          requireApproval:
+            - k8s_get_resources
+            - k8s_get_available_api_resources
+    a2aConfig:
+      skills:
+        - id: get-resources-skill
+          name: Get Resources
+          description: Get resources in the Kubernetes cluster.
+          inputModes: [text]
+          outputModes: [text]
+          tags: [k8s, resources]
+          examples:
+            - Get all resources in the Kubernetes cluster.
+            - Get the pods in the default namespace.
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: finnhub-agent
+  namespace: kagent
+spec:
+  description: A dedicated Finnhub market-data agent for natural-language finance questions, tool planning, and retrieval of free Finnhub-backed market data.
+  type: Declarative
+  declarative:
+    modelConfig: default-model-config
+    systemMessage: |-
+      You are finnhub-agent, a focused Finnhub market-data specialist.
+
+      Your job is to turn natural-language finance requests into reliable Finnhub tool usage. You can answer requests about quotes, market status, company profiles, company news, earnings, filings, analyst trends, insider activity, forex, crypto, exchange symbol lookup, and other free Finnhub-backed market data.
+
+      Workflow rules:
+      1. If the request is ambiguous, multi-step, or missing identifiers, start with catalog_match_tools.
+      2. If the request is already concrete and includes the required identifiers, bypass catalog_match_tools and call the relevant Finnhub endpoint tools directly.
+      3. If you need to inspect one tool before calling it, use catalog_get_tool_details.
+      4. If the user gives a company name but not a ticker, usually start with finnhub_symbol_search before quote, profile, earnings, or news tools.
+      5. Call endpoint tools directly only when the required arguments are known or can be elicited.
+      6. For multi-step requests, explain the plan briefly: which Finnhub tools you will use, in which order, and what key parameters you selected.
+      7. For deterministic smoke tests or delegated requests that already include an explicit symbol, avoid unnecessary clarification planning, sampling-oriented discovery, and elicitation.
+
+      Response rules:
+      - Use only the Finnhub MCP tools available to you.
+      - Do not invent market data, symbols, dates, or company facts.
+      - If Finnhub does not provide the requested capability, say so clearly.
+      - If the request needs broader reasoning, trading advice, or non-Finnhub actions, state the limitation and complete only the Finnhub-specific portion.
+      - Prefer precise, tool-grounded answers over vague summaries.
+
+      Example behaviors:
+      - "What is Apple's latest quote?" -> resolve the ticker if needed, then use finnhub_quote.
+      - "Compare Nvidia earnings and recent news" -> plan with catalog_match_tools, then likely use earnings and company news tools with symbol NVDA.
+      - "I need data for Bitcoin pairs on Binance" -> use the crypto catalog or symbol tools before any symbol-specific lookup.
+    tools:
+      - type: McpServer
+        mcpServer:
+          name: finnhub-mcp-server
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - catalog_get_tool_details
+            - catalog_list_tools
+            - catalog_match_tools
+            - finnhub_company_basic_financials
+            - finnhub_company_earnings
+            - finnhub_company_news
+            - finnhub_company_peers
+            - finnhub_company_profile2
+            - finnhub_country
+            - finnhub_covid_19
+            - finnhub_crypto_exchanges
+            - finnhub_crypto_symbols
+            - finnhub_earnings_calendar
+            - finnhub_fda_committee_meeting_calendar
+            - finnhub_filings
+            - finnhub_financials_reported
+            - finnhub_forex_exchanges
+            - finnhub_forex_symbols
+            - finnhub_insider_sentiment
+            - finnhub_insider_transactions
+            - finnhub_ipo_calendar
+            - finnhub_market_holiday
+            - finnhub_market_news
+            - finnhub_market_status
+            - finnhub_quote
+            - finnhub_recommendation_trends
+            - finnhub_stock_lobbying
+            - finnhub_stock_symbols
+            - finnhub_stock_usa_spending
+            - finnhub_stock_uspto_patent
+            - finnhub_stock_visa_application
+            - finnhub_symbol_search
+#          requireApproval:
+#            - catalog_get_tool_details
+#            - catalog_list_tools
+#            - catalog_match_tools
+#            - finnhub_company_basic_financials
+#            - finnhub_company_earnings
+#            - finnhub_company_news
+#            - finnhub_company_peers
+#            - finnhub_company_profile2
+#            - finnhub_country
+#            - finnhub_covid_19
+#            - finnhub_crypto_exchanges
+#            - finnhub_crypto_symbols
+#            - finnhub_earnings_calendar
+#            - finnhub_fda_committee_meeting_calendar
+#            - finnhub_filings
+#            - finnhub_financials_reported
+#            - finnhub_forex_exchanges
+#            - finnhub_forex_symbols
+#            - finnhub_insider_sentiment
+#            - finnhub_insider_transactions
+#            - finnhub_ipo_calendar
+#            - finnhub_market_holiday
+#            - finnhub_market_news
+#            - finnhub_market_status
+#            - finnhub_quote
+#            - finnhub_recommendation_trends
+#            - finnhub_stock_lobbying
+#            - finnhub_stock_symbols
+#            - finnhub_stock_usa_spending
+#            - finnhub_stock_uspto_patent
+#            - finnhub_stock_visa_application
+#            - finnhub_symbol_search
+    a2aConfig:
+      skills:
+        - id: finnhub-market-data
+          name: Finnhub Market Data
+          description: Plans and fetches Finnhub-backed market data for natural-language requests, including tool discovery, symbol lookup, quotes, company data, market news, earnings, filings, forex, and crypto.
+          inputModes: [text]
+          outputModes: [text]
+          tags: [finance, stocks, markets, finnhub, market-data]
+          examples:
+            - Get the latest quote and company profile for AAPL.
+            - I only know the company name Tesla; find the right ticker and then show recent company news.
+            - Compare Nvidia earnings with recent company news and tell me which Finnhub tools you used.
+            - Find upcoming earnings dates for NVDA.
+            - Look up market news and analyst trends for TSLA.
+            - Show available crypto symbols for Binance and then fetch the one that matches BTC.
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: team-lead-agent-assist
+  namespace: kagent
+spec:
+  description: A coordinating team-lead agent that triages natural-language requests, chooses the right project-defined specialist agent, and delegates work without direct MCP access of its own.
+  type: Declarative
+  declarative:
+    modelConfig: default-model-config
+    systemMessage: |-
+      You are team-lead-agent-assist, the coordinating lead agent for this Kubernetes platform.
+
+      Your role is to understand natural-language requests, map them to the right specialist agents defined in this project, delegate work, and synthesize a clear final answer.
+
+      Hard boundaries:
+      - You do not call MCP servers directly.
+      - You only use the project-defined agents exposed to you as tools.
+      - If a task requires capabilities outside those agents, say that it is out of scope instead of inventing access.
+
+      Delegation policy:
+      1. Prefer exactly one specialist agent when a single domain is clearly responsible.
+      2. Use multiple specialist agents only when the user request truly spans domains.
+      3. Choose delegates by capability:
+         - `k8s-agent` for Kubernetes operations, diagnostics, and resource inspection.
+         - `kgateway-agent` for kgateway, Gateway API, and AI gateway configuration.
+         - `istio-agent` for ambient mesh, ztunnel, waypoints, traffic, and mesh security.
+         - `helm-agent` for Helm release lifecycle and chart repository work.
+         - `observability-agent` for metrics, dashboards, incidents, and observability analysis.
+         - `promql-agent` for generating or explaining PromQL.
+         - `argo-rollouts-conversion-agent` for Argo Rollouts migration and rollout manifests.
+         - `cilium-policy-agent` for Cilium policy generation and validation guidance.
+         - `cilium-manager-agent` for Cilium installation, feature management, ClusterMesh, and service configuration.
+         - `cilium-debug-agent` for deep Cilium diagnostics and recorder management.
+         - `finnhub-agent` for market-data and finance questions backed by Finnhub.
+      4. Explain which agent you delegated to and why.
+      5. Summarize delegated results into one coherent answer for the user.
+      6. If a delegate hits a tool guarded by `requireApproval`, stop and request approval instead of bypassing it.
+      7. Do not loop delegates or ask one specialist to solve another specialist's domain when a direct delegate exists.
+
+      Interaction style:
+      - Ask concise clarification questions only when the task is ambiguous enough that delegation would likely be wrong.
+      - For operational requests, present a short plan before delegation when multiple steps are involved.
+      - Preserve concrete names, namespaces, versions, and paths from the user request.
+      - When you delegate, include an explicit final line in the form `Delegated agents: <exact-agent-name>[, ...]`.
+      - For deterministic smoke tests or requests that already include explicit identifiers, avoid unnecessary follow-up questions and delegate directly to the right specialist.
+      - Be explicit about uncertainty and missing cluster state.
+    tools:
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: k8s-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: kgateway-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: istio-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: helm-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: observability-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: promql-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: argo-rollouts-conversion-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: cilium-policy-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: cilium-manager-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: cilium-debug-agent
+      - type: Agent
+        agent:
+          apiGroup: kagent.dev
+          kind: Agent
+          name: finnhub-agent
+    a2aConfig:
+      skills:
+        - id: coordinated-platform-delegation
+          name: Coordinated Platform Delegation
+          description: Understands broad platform requests in natural language, chooses the most relevant capabilities from project-defined specialist sub-agents, delegates work to them, and returns one coherent answer without direct MCP access.
+          inputModes: [text]
+          outputModes: [text]
+          tags: [team-lead, orchestration, a2a, delegation, kubernetes, kgateway, istio, helm, observability, promql, cilium, argo-rollouts, finnhub]
+          examples:
+            - I have a platform issue but I am not sure whether this is Kubernetes, Istio, kgateway, or Cilium. Pick the right specialist agents and coordinate the investigation.
+            - Decide which sub-agent capabilities are needed to debug why traffic is failing between services and summarize the final diagnosis.
+            - Choose between the Helm, Kubernetes, and kgateway specialists for an upgrade problem, then return one clear remediation plan.
+            - Determine whether my request belongs to observability-agent, promql-agent, or both, then provide the final answer with the right query or metrics interpretation.
+            - Investigate why an AgentGateway route is failing and summarize the findings from the relevant specialists.
+            - Review a Helm or Istio rollout issue, delegate to the right agent, and return a concise plan.
+            - Route a finance question to the market-data specialist and summarize the result.
+            - Compare Kubernetes, Cilium, and Istio findings when debugging a networking issue.
+            - Ask the observability specialist for metrics insight and the PromQL specialist for the exact query.
+            - Coordinate a migration question that needs Argo Rollouts guidance plus Kubernetes context and summarize the recommended approach.
+            - "Choose the appropriate Cilium specialist capability: policy design, lifecycle management, or deep debugging, then delegate accordingly."
+            - Explain which specialist capabilities you selected for my request and why those were the right delegates.

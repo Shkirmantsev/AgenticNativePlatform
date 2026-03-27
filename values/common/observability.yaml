@@ -1,0 +1,2 @@
+grafana:
+  existingSecret: observability-grafana-admin

@@ -1,0 +1,15 @@
+name: finnhub-mcp-server
+framework: mcp-go
+version: 0.1.0
+description: Production-ready Finnhub MCP server built with MCP Go SDK
+
+secrets:
+  local:
+    enabled: true
+    provider: env
+    file: .env
+  dev:
+    enabled: true
+    provider: kubernetes
+    secretName: finnhub-mcp-server
+    namespace: kagent

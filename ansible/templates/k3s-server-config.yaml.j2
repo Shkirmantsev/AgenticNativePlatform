@@ -10,4 +10,9 @@ flannel-backend: vxlan
 node-label:
   - topology-role=control-plane
 kubelet-arg:
-  - eviction-hard=imagefs.available<5%,nodefs.available<5%
+  # Use small absolute eviction thresholds for local/dev k3s hosts.
+  # Percentage-based defaults were too aggressive on this repo's laptop-sized nodes
+  # and triggered DiskPressure despite tens of GiB still free on the root filesystem.
+  - eviction-hard=imagefs.available<2Gi,nodefs.available<2Gi
+  - image-gc-high-threshold=70
+  - image-gc-low-threshold=60

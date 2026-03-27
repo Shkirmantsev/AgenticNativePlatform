@@ -1,0 +1,109 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: bitnami-postgresql-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://registry-1.docker.io/bitnamicharts/postgresql
+  ref:
+    tag: 18.5.7
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: bitnami-redis-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://registry-1.docker.io/bitnamicharts/redis
+  ref:
+    tag: 25.3.5
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kgateway-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://cr.kgateway.dev/kgateway-dev/charts/kgateway
+  ref:
+    tag: v2.0.2
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: agentgateway-crds-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://cr.agentgateway.dev/charts/agentgateway-crds
+  ref:
+    tag: 1.0.0
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: agentgateway-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://cr.agentgateway.dev/charts/agentgateway
+  ref:
+    tag: 1.0.0
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kagent-crds-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/kagent-dev/kagent/helm/kagent-crds
+  ref:
+    tag: 0.7.23
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kserve-crd-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/kserve/charts/kserve-crd
+  ref:
+    tag: v0.16.0
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kserve-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/kserve/charts/kserve
+  ref:
+    tag: v0.16.0
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kmcp-crds-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/kagent-dev/kmcp/helm/kmcp-crds
+  ref:
+    tag: 0.2.7
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kmcp-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/kagent-dev/kmcp/helm/kmcp
+  ref:
+    tag: 0.2.7

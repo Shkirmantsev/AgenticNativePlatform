@@ -1,0 +1,75 @@
+name: ci-general
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+# Cancel older runs for the same ref so only the newest result matters.
+concurrency:
+  group: ci-general-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  repo-hygiene:
+    name: Repo hygiene checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # This validates workflow syntax and common mistakes. If the tool image
+      # cannot be pulled because of a transient registry or rate-limit problem,
+      # the pipeline continues and reports a warning instead of failing hard.
+      - name: Lint GitHub Actions workflows with actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          IMAGE="rhysd/actionlint:1.7.11"
+          if ! docker pull "${IMAGE}" >/dev/null 2>&1; then
+            echo "::warning title=actionlint unavailable::Could not pull ${IMAGE}. Skipping workflow lint instead of failing the whole pipeline."
+            exit 0
+          fi
+
+          docker run --rm \
+            -v "${PWD}:/repo" \
+            --workdir /repo \
+            "${IMAGE}" \
+            -color
+
+      # Secret scanning is repository-wide. Real findings must fail the job,
+      # but temporary scanner unavailability should only produce a warning.
+      - name: Scan repository for secrets with Gitleaks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          IMAGE="ghcr.io/gitleaks/gitleaks:v8.29.0"
+          if ! docker pull "${IMAGE}" >/dev/null 2>&1; then
+            echo "::warning title=Gitleaks unavailable::Could not pull ${IMAGE}. Skipping secret scan instead of failing the whole pipeline."
+            exit 0
+          fi
+
+          docker run --rm \
+            -v "${PWD}:/repo" \
+            --workdir /repo \
+            "${IMAGE}" \
+            dir \
+            --config /repo/.gitleaks.toml \
+            --no-banner \
+            --redact \
+            --exit-code 1 \
+            /repo

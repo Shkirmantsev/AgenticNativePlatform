@@ -231,6 +231,15 @@ spec:
           - helm_uninstall
           - helm_repo_add
           - helm_repo_update
+          requireApproval:
+          - k8s_patch_resource
+          - k8s_create_resource
+          - k8s_create_resource_from_url
+          - k8s_delete_resource
+          - k8s_apply_manifest
+          - helm_upgrade
+          - helm_uninstall
+          - helm_repo_add
     a2aConfig:
       skills:
         - id: kgateway-installation-management

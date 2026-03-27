@@ -1,36 +1,49 @@
-# Flux bootstrap targets
+# Flux Bootstrap
 
-This project supports two topologies:
+Flux is installed with Flux Operator and configured with a committed cluster-specific `FluxInstance` template under:
 
-## 1) Local clusters (kind/minikube/k3d)
+- `clusters/<topology>-<env>/flux-system/flux-instance.yaml`
+
+Pinned versions:
+
+- Flux Operator `0.45.1`
+- Flux `2.8.3`
+
+## Install
 
 ```bash
 make install-flux-local
 ```
 
-## 2) Non-local/shared clusters (dev/test/prod)
+or:
 
 ```bash
-make install-flux
+make install-flux KUBE_CONTEXT=<context>
 ```
 
-To target a specific kube-context:
+## Bootstrap the sync path
 
 ```bash
-make install-flux KUBE_CONTEXT=dev-cluster
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev
 ```
 
-## Target intent
+Inputs:
 
-- `install-flux-local`: local bootstrap convenience target.
-- `install-flux`: topology-neutral target, with optional explicit context.
+- `GIT_REPO_URL`
+- `GIT_BRANCH`
+- `FLUX_INSTANCE_SYNC_PATH`
 
-`make bootstrap-flux-git` now applies generated manifests from `flux/generated/clusters/<cluster-id>/bootstrap-flux/`, so the GitRepository and root Flux Kustomization are rendered declaratively by OpenTofu before the thin shell wrapper applies them.
+Default sync path:
 
-After `make bootstrap-flux-git`, this repository reconciles through the staged root:
+```bash
+./clusters/local-dev/external
+```
 
-- `platform-bootstrap`
-- `platform-infrastructure`
-- `platform-applications`
+## Local UI access
 
-For operational checks, prefer `flux get kustomizations -A` over watching only the parent `platform` object.
+```bash
+make open-flux-operator-ui
+make check-flux-operator-ui
+```
+
+This opens the built-in Flux Operator UI on `http://localhost:9080`.

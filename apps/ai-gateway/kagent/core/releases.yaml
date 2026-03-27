@@ -1,0 +1,137 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kagent-crds
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 9m
+  targetNamespace: kagent
+  chartRef:
+    kind: OCIRepository
+    name: kagent-crds-chart
+    namespace: flux-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    tag: "0.7.23"
+    kmcp:
+      enabled: false
+    providers:
+      openAI:
+        apiKeySecretRef: kagent-agentgateway
+        apiKeySecretKey: OPENAI_API_KEY
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kagent
+  namespace: flux-system
+spec:
+  interval: 30m
+  timeout: 30m
+  dependsOn:
+    - name: kagent-crds
+  targetNamespace: kagent
+  chart:
+    spec:
+      chart: ./charts/vendor/kagent
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 1m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    tag: "0.7.23"
+    controller:
+      image:
+        tag: "0.7.23"
+      agentImage:
+        tag: "0.7.23"
+      skillsInitImage:
+        tag: "0.7.23"
+    ui:
+      podLabels:
+        istio.io/dataplane-mode: none
+      startupProbe:
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        failureThreshold: 18
+        timeoutSeconds: 1
+      readinessProbe:
+        periodSeconds: 30
+        failureThreshold: 3
+        timeoutSeconds: 1
+      image:
+        tag: "0.7.23"
+    kagent-tools:
+      tools:
+        image:
+          tag: "0.1.1"
+        podLabels:
+          istio.io/dataplane-mode: none
+        metrics:
+          servicemonitor:
+            enabled: true
+            interval: 30s
+            scrapeTimeout: 10s
+            labels:
+              release: kube-prometheus-stack
+        prometheus:
+          url: "observability-kube-prometh-prometheus.observability.svc.cluster.local:9090"
+        grafana:
+          url: "http://observability-kube-prometheus-stack-grafana.observability.svc.cluster.local"
+    agents:
+      k8s-agent:
+        enabled: true
+      kgateway-agent:
+        enabled: true
+      istio-agent:
+        enabled: true
+      promql-agent:
+        enabled: true
+      observability-agent:
+        enabled: true
+      argo-rollouts-agent:
+        enabled: true
+      helm-agent:
+        enabled: true
+      cilium-policy-agent:
+        enabled: true
+      cilium-manager-agent:
+        enabled: true
+      cilium-debug-agent:
+        enabled: true
+    tools:
+      grafana-mcp:
+        enabled: true
+      querydoc:
+        enabled: true
+    observability-agent:
+      grafanaMCP:
+        enabled: true
+    grafana-mcp:
+      grafana:
+        url: "http://observability-kube-prometheus-stack-grafana.observability.svc.cluster.local"
+        secretRef: kagent-grafana-mcp
+    kmcp:
+      enabled: true
+    providers:
+      openAI:
+        apiKeySecretRef: kagent-agentgateway
+        apiKeySecretKey: OPENAI_API_KEY
+        model: default-gemini
+        config:
+          baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"

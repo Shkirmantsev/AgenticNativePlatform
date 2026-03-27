@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }}</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1020;
+      --panel: #131a2e;
+      --panel-2: #1a233d;
+      --text: #edf2ff;
+      --muted: #9eb0d3;
+      --accent: #4da3ff;
+      --border: rgba(255,255,255,0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #09101d, #0d1323 30%, #0a1020 100%);
+      color: var(--text);
+    }
+    a { color: #8cc3ff; }
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar, .content { padding: 20px; }
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+    .content { overflow: auto; }
+    .title { font-size: 26px; font-weight: 700; margin: 0 0 8px; }
+    .subtitle { color: var(--muted); line-height: 1.5; margin: 0 0 18px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+    .tool-list { display: grid; gap: 10px; }
+    .tool-item {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      border-radius: 14px;
+      padding: 12px;
+      cursor: pointer;
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .tool-item:hover, .tool-item.active {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+    .tool-name { font-weight: 700; margin-bottom: 6px; }
+    .tool-summary { color: var(--muted); font-size: 14px; line-height: 1.4; }
+    .group-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font: inherit;
+    }
+    button {
+      cursor: pointer;
+      background: linear-gradient(180deg, #2b5fff, #2549c9);
+      border: none;
+      font-weight: 700;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      overflow: auto;
+    }
+    .section-title { font-size: 18px; font-weight: 700; margin: 0 0 10px; }
+    .grid-two { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+    .muted { color: var(--muted); }
+    .field-grid { display: grid; gap: 10px; }
+    .field-hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+      .grid-two { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <h1 class="title">Finnhub MCP Web App</h1>
+      <p class="subtitle">
+        Browse all generated free Finnhub tools, inspect each schema, and prepare the next MCP call.
+        MCP endpoint: <code>{{ .MCPPath }}</code>
+      </p>
+
+      <div class="panel">
+        <div class="controls">
+          <input id="searchBox" type="text" placeholder="Search tool name, summary, description">
+          <select id="groupFilter">
+            <option value="">All groups</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tool-list" id="toolList"></div>
+    </aside>
+
+    <main class="content">
+      <div class="panel">
+        <div class="section-title">Selected tool</div>
+        <div id="selectedToolHeader" class="muted">Choose a tool from the left.</div>
+      </div>
+
+      <div class="grid-two">
+        <section class="panel">
+          <div class="section-title">Schema and usage</div>
+          <div id="toolDetails" class="muted">No tool selected yet.</div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">Prepare the next step</div>
+          <div id="toolForm" class="field-grid"></div>
+          <button id="copyRequestButton" type="button">Copy MCP call JSON</button>
+          <div class="field-hint">Click a tool, fill the known arguments, and copy the JSON payload for the next MCP step. Missing required fields can be collected via elicitation when the client supports it.</div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="section-title">Generated MCP call</div>
+        <pre id="requestPreview">{
+  "tool": null,
+  "arguments": {}
+}</pre>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const basePath = {{ printf "%q" .BasePath }};
+    const state = { tools: [], selected: null, filters: { q: '', group: '' }, formValues: {} };
+
+    async function loadCatalog() {
+      const response = await fetch(basePath + '/api/tools');
+      const payload = await response.json();
+      state.tools = payload.tools || [];
+      renderGroupOptions(payload.groups || []);
+      renderToolList();
+      if (state.tools.length > 0) {
+        selectTool(state.tools[0].toolName);
+      }
+    }
+
+    function renderGroupOptions(groups) {
+      const groupFilter = document.getElementById('groupFilter');
+      for (const group of groups) {
+        const option = document.createElement('option');
+        option.value = group;
+        option.textContent = group;
+        groupFilter.appendChild(option);
+      }
+    }
+
+    function filteredTools() {
+      const query = state.filters.q.trim().toLowerCase();
+      const group = state.filters.group.trim().toLowerCase();
+      return state.tools.filter(tool => {
+        if (group && tool.group.toLowerCase() !== group) return false;
+        if (!query) return true;
+        const haystack = [tool.toolName, tool.title, tool.summary, tool.description, tool.group].join(' ').toLowerCase();
+        return haystack.includes(query);
+      });
+    }
+
+    function renderToolList() {
+      const toolList = document.getElementById('toolList');
+      toolList.innerHTML = '';
+      for (const tool of filteredTools()) {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'tool-item' + (state.selected && state.selected.toolName === tool.toolName ? ' active' : '');
+        item.innerHTML = `
+          <div class="group-pill">${escapeHtml(tool.group)}</div>
+          <div class="tool-name">${escapeHtml(tool.toolName)}</div>
+          <div class="tool-summary">${escapeHtml(tool.summary || tool.description || '')}</div>
+        `;
+        item.addEventListener('click', () => selectTool(tool.toolName));
+        toolList.appendChild(item);
+      }
+    }
+
+    function selectTool(toolName) {
+      state.selected = state.tools.find(item => item.toolName === toolName) || null;
+      state.formValues = buildInitialFormValues(state.selected);
+      renderToolList();
+      renderSelectedTool();
+      renderForm();
+      renderRequestPreview();
+    }
+
+    function buildInitialFormValues(tool) {
+      if (!tool) return {};
+      return { ...(tool.exampleArguments || {}) };
+    }
+
+    function renderSelectedTool() {
+      const header = document.getElementById('selectedToolHeader');
+      const details = document.getElementById('toolDetails');
+      if (!state.selected) {
+        header.textContent = 'Choose a tool from the left.';
+        details.textContent = 'No tool selected yet.';
+        return;
+      }
+
+      header.innerHTML = `
+        <strong>${escapeHtml(state.selected.title || state.selected.toolName)}</strong><br>
+        <span class="muted">${escapeHtml(state.selected.toolName)} · ${escapeHtml(state.selected.method)} ${escapeHtml(state.selected.endpointPath)}</span>
+      `;
+
+      details.innerHTML = `
+        <div class="group-pill">${escapeHtml(state.selected.group)}</div>
+        <p>${escapeHtml(state.selected.description || '')}</p>
+        <p><strong>Prompt hint:</strong> ${escapeHtml(state.selected.promptHint || '')}</p>
+        <p><strong>Example arguments:</strong></p>
+        <pre>${escapeHtml(JSON.stringify(state.selected.exampleArguments || {}, null, 2))}</pre>
+        <p><strong>Input schema:</strong></p>
+        <pre>${escapeHtml(JSON.stringify(state.selected.inputSchema || {}, null, 2))}</pre>
+      `;
+    }
+
+    function renderForm() {
+      const form = document.getElementById('toolForm');
+      form.innerHTML = '';
+      if (!state.selected) return;
+
+      const schema = state.selected.inputSchema || {};
+      const properties = schema.properties || {};
+      const required = new Set(schema.required || []);
+
+      for (const [name, property] of Object.entries(properties)) {
+        const wrapper = document.createElement('label');
+        const title = document.createElement('div');
+        title.innerHTML = `<strong>${escapeHtml(name)}</strong>${required.has(name) ? ' <span class="muted">required</span>' : ''}`;
+        wrapper.appendChild(title);
+
+        let field;
+        if (Array.isArray(property.enum) && property.enum.length > 0) {
+          field = document.createElement('select');
+          const emptyOption = document.createElement('option');
+          emptyOption.value = '';
+          emptyOption.textContent = '(empty)';
+          field.appendChild(emptyOption);
+          for (const optionValue of property.enum) {
+            const option = document.createElement('option');
+            option.value = optionValue;
+            option.textContent = optionValue;
+            field.appendChild(option);
+          }
+        } else {
+          field = document.createElement('input');
+          field.type = property.type === 'integer' || property.type === 'number' ? 'number' : 'text';
+        }
+
+        field.value = state.formValues[name] ?? '';
+        field.addEventListener('input', event => {
+          state.formValues[name] = normalizeValue(property.type, event.target.value);
+          renderRequestPreview();
+        });
+        wrapper.appendChild(field);
+
+        const hint = document.createElement('div');
+        hint.className = 'field-hint';
+        hint.textContent = property.description || '';
+        wrapper.appendChild(hint);
+        form.appendChild(wrapper);
+      }
+    }
+
+    function normalizeValue(type, raw) {
+      if (raw === '') return '';
+      if (type === 'integer') return Number.parseInt(raw, 10);
+      if (type === 'number') return Number(raw);
+      if (type === 'boolean') return raw === 'true';
+      return raw;
+    }
+
+    function renderRequestPreview() {
+      const preview = document.getElementById('requestPreview');
+      const payload = {
+        tool: state.selected ? state.selected.toolName : null,
+        arguments: cleanArguments(state.formValues)
+      };
+      preview.textContent = JSON.stringify(payload, null, 2);
+    }
+
+    function cleanArguments(values) {
+      const result = {};
+      for (const [key, value] of Object.entries(values || {})) {
+        if (value === '' || value === null || value === undefined) continue;
+        result[key] = value;
+      }
+      return result;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    document.getElementById('searchBox').addEventListener('input', event => {
+      state.filters.q = event.target.value || '';
+      renderToolList();
+    });
+
+    document.getElementById('groupFilter').addEventListener('change', event => {
+      state.filters.group = event.target.value || '';
+      renderToolList();
+    });
+
+    document.getElementById('copyRequestButton').addEventListener('click', async () => {
+      const text = document.getElementById('requestPreview').textContent;
+      await navigator.clipboard.writeText(text);
+    });
+
+    loadCatalog();
+  </script>
+</body>
+</html>

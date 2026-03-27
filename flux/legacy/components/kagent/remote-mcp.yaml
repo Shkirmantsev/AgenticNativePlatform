@@ -1,9 +1,0 @@
-apiVersion: kagent.dev/v1alpha2
-kind: RemoteMCPServer
-metadata:
-  name: echo-mcp
-  namespace: kagent
-spec:
-  description: Example echo MCP server managed by kmcp.
-  protocol: STREAMABLE_HTTP
-  url: "http://echo-mcp.kagent.svc.cluster.local:3001/mcp"

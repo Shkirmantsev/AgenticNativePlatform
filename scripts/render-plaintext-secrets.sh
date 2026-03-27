@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENT="${ENV:-dev}"
 OUT_DIR="${ROOT_DIR}/.generated/secrets/${ENVIRONMENT}"
-NAMESPACE_SOURCE="${ROOT_DIR}/flux/components/base/plaintext-secret-namespaces.yaml"
+NAMESPACE_SOURCE="${ROOT_DIR}/secrets/common/namespaces.yaml"
 mkdir -p "${OUT_DIR}"
 
 generate_secret() {
@@ -25,17 +25,13 @@ fi
 : "${VERTEX_LOCATION:=europe-west3}"
 : "${VERTEX_AI_API_KEY:=}"
 : "${VERTEX_SERVICE_ACCOUNT_JSON_B64:=}"
+: "${FINNHUB_API_TOKEN:=}"
 : "${LITELLM_MASTER_KEY:=$(generate_secret)}"
 : "${PLATFORM_POSTGRES_PASSWORD:=$(generate_secret)}"
 : "${GRAFANA_ADMIN_USERNAME:=admin}"
 : "${GRAFANA_ADMIN_PASSWORD:=$(generate_secret)}"
-: "${WEAVE_GITOPS_ADMIN_USERNAME:=admin}"
-: "${WEAVE_GITOPS_ADMIN_PASSWORD:=}"
-: "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH:=}"
-
-if [[ -n "${WEAVE_GITOPS_ADMIN_PASSWORD}" && -z "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}" ]]; then
-  WEAVE_GITOPS_ADMIN_PASSWORD_HASH="$(htpasswd -bnBC 10 "" "${WEAVE_GITOPS_ADMIN_PASSWORD}" | tr -d ':\n')"
-fi
+: "${GRAFANA_SERVICE_ACCOUNT_TOKEN:=}"
+: "${GRAFANA_API_KEY:=}"
 
 cp "${NAMESPACE_SOURCE}" "${OUT_DIR}/namespaces.yaml"
 cat > "${OUT_DIR}/litellm-provider-secrets.yaml" <<EOF
@@ -69,6 +65,16 @@ type: Opaque
 stringData:
   OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
 EOF
+cat > "${OUT_DIR}/finnhub-mcp-server.yaml" <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: finnhub-mcp-server
+  namespace: kagent
+type: Opaque
+stringData:
+  FINNHUB_API_TOKEN: ${FINNHUB_API_TOKEN}
+EOF
 cat > "${OUT_DIR}/platform-postgres-auth.yaml" <<EOF
 apiVersion: v1
 kind: Secret
@@ -90,22 +96,28 @@ type: Opaque
 stringData:
   admin-user: ${GRAFANA_ADMIN_USERNAME}
   admin-password: ${GRAFANA_ADMIN_PASSWORD}
+  GRAFANA_USERNAME: ${GRAFANA_ADMIN_USERNAME}
+  GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
 EOF
-if [[ -n "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}" ]]; then
-  cat > "${OUT_DIR}/cluster-user-auth.yaml" <<EOF
+cat > "${OUT_DIR}/kagent-grafana-mcp.yaml" <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: cluster-user-auth
-  namespace: flux-system
+  name: kagent-grafana-mcp
+  namespace: kagent
 type: Opaque
 stringData:
-  username: ${WEAVE_GITOPS_ADMIN_USERNAME}
-  passwordHash: ${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}
 EOF
-else
-  rm -f "${OUT_DIR}/cluster-user-auth.yaml"
+if [[ -n "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" ]]; then
+  cat >> "${OUT_DIR}/kagent-grafana-mcp.yaml" <<EOF
+  GRAFANA_SERVICE_ACCOUNT_TOKEN: ${GRAFANA_SERVICE_ACCOUNT_TOKEN}
+EOF
+elif [[ -n "${GRAFANA_API_KEY}" ]]; then
+  cat >> "${OUT_DIR}/kagent-grafana-mcp.yaml" <<EOF
+  GRAFANA_API_KEY: ${GRAFANA_API_KEY}
+EOF
 fi
+rm -f "${OUT_DIR}/cluster-user-auth.yaml"
 cat > "${OUT_DIR}/kustomization.yaml" <<EOF
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -113,13 +125,13 @@ resources:
   - namespaces.yaml
   - litellm-provider-secrets.yaml
   - kagent-agentgateway.yaml
+  - finnhub-mcp-server.yaml
   - platform-postgres-auth.yaml
   - observability-grafana-admin.yaml
+  - kagent-grafana-mcp.yaml
 EOF
-if [[ -n "${WEAVE_GITOPS_ADMIN_PASSWORD_HASH}" ]]; then
-  cat >> "${OUT_DIR}/kustomization.yaml" <<EOF
-  - cluster-user-auth.yaml
-EOF
-fi
 
 echo "Rendered plaintext secrets into ${OUT_DIR}"
+if [[ -z "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" && -z "${GRAFANA_API_KEY}" ]]; then
+  echo "Grafana MCP credentials were not set. Rendered an empty Secret/kagent-grafana-mcp; provision a live token after Grafana is up." >&2
+fi

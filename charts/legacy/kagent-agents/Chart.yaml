@@ -1,6 +1,0 @@
-apiVersion: v2
-name: kagent-agents
-description: Declarative sample kagent resources routed through agentgateway
-version: 0.1.0
-appVersion: "1.0"
-type: application

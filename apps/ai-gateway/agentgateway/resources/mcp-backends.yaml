@@ -1,0 +1,44 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: kagent-tools-mcp-backend
+  namespace: agentgateway-system
+spec:
+  mcp:
+    targets:
+      - name: kagent-tools
+        static:
+          host: kagent-kagent-tools.kagent.svc.cluster.local
+          port: 8084
+          path: /mcp
+          protocol: StreamableHTTP
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: echo-mcp-backend
+  namespace: agentgateway-system
+spec:
+  mcp:
+    targets:
+      - name: echo-mcp
+        static:
+          host: echo-mcp-http.kagent.svc.cluster.local
+          port: 3001
+          path: /mcp
+          protocol: StreamableHTTP
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: finnhub-mcp-backend
+  namespace: agentgateway-system
+spec:
+  mcp:
+    targets:
+      - name: finnhub-mcp-server
+        static:
+          host: finnhub-mcp-server.kagent.svc.cluster.local
+          port: 3000
+          path: /mcp
+          protocol: StreamableHTTP

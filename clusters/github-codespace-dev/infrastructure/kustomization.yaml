@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../apps/platform/namespaces
+  - ../../../infrastructure/sources
+  - ../../../infrastructure/security/network-policies
+  - ../../../infrastructure/controllers/cert-manager
+  - ../../../infrastructure/network/gateway-api
+  - ../../../infrastructure/network/istio
+  - ../../../infrastructure/network/metallb
+  - ../../../infrastructure/network/kgateway/core
+  - ../../../apps/ai-gateway/agentgateway/core
+  - ../../../apps/ai-gateway/litellm
+  - ../../../apps/ai-gateway/kagent/core
+  - ../../../apps/platform/kmcp/core
+  - ../../../infrastructure/controllers/kserve
+  - ../../../apps/ai-models/tei
+  - ../../../values/common/litellm
+  - ../../../values/common/tei
+  - ../../../values/common/ollama
+  - ../../../values/common/vllm
+  - ../../../values/github-codespace/lmstudio

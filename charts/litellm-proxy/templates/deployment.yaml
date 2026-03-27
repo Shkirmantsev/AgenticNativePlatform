@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "litellm-proxy.fullname" . }}
+  namespace: {{ include "litellm-proxy.namespace" . }}
+  labels:
+{{ include "litellm-proxy.labels" . | indent 4 }}
+spec:
+  progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "litellm-proxy.selectorLabels" . | indent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+{{- with .Values.podAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+      labels:
+{{ include "litellm-proxy.selectorLabels" . | indent 8 }}
+{{- with .Values.podLabels }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+      serviceAccountName: {{ include "litellm-proxy.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      containers:
+        - name: litellm
+          image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --config
+            - /config/config.yaml
+            - --host
+            - 0.0.0.0
+            - --port
+            - {{ .Values.containerPort | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingSecretName }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          readinessProbe:
+{{ toYaml .Values.readinessProbe | indent 12 }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "litellm-proxy.fullname" . }}-config

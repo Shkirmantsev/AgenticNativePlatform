@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<!-- saved from url=(0075)https://widget.finnhub.io/widgets/price-target-chart?symbol=NVDA&theme=dark -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<meta name="author" content="Finnhub.io">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="Finnhub - Free stock API for realtime market data, global company fundamentals, economic data, and alternative data.">
+<meta name="keywords" content="stock api,realtime,stock,equity,forex,crypto,fundamental data,economic data,alternative data">
+<meta property="og:title" content="Finnhub - Free realtime APIs for stock, forex and cryptocurrency.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://finnhub.io/">
+<meta property="og:image" content="https://res.cloudinary.com/whirlpooldata/image/upload/v1587681286/finnhub/logo/logo-transparent-thumbnail.png">
+<meta property="og:description" content="Finnhub - Free APIs for realtime stock, forex, and cryptocurrency. Company fundamentals, Economic data, and Alternative data.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Finnhub - Free realtime APIs for stock, forex and cryptocurrency.">
+<meta name="twitter:image" content="https://res.cloudinary.com/whirlpooldata/image/upload/v1587681286/finnhub/logo/logo-transparent-thumbnail.png">
+<meta name="twitter:description" content="Finnhub - Free APIs for realtime stock, forex, and cryptocurrency. Company fundamentals, Economic data, and Alternative data.">
+
+
+<link rel="shortcut icon" href="https://res.cloudinary.com/whirlpooldata/image/upload/v1587681286/finnhub/logo/logo-gradient2.png">
+<link rel="stylesheet" href="./bootstrap.min.css">
+
+
+<script async="" src="./js(2)"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+
+  gtag('js', new Date());
+
+  gtag('config', 'G-ED30WBPL5P');
+</script>
+
+<script src="./jquery.min.js"></script>
+<script src="./jquery.easing.min.js"></script>
+
+<script src="./popper.min.js"></script>
+<script src="./bootstrap.min.js"></script>
+
+<script src="./react.production.min.js"></script>
+<script src="./react-dom.production.min.js"></script>
+
+<link href="./iziToast.min.css" rel="stylesheet">
+<script src="./iziToast.min.js"></script>
+
+<script src="./jquery.waypoints.min.js"></script>
+<script src="./redux.min.js"></script>
+<script src="./react-redux.min.js"></script>
+
+<link rel="stylesheet" href="./all.css">
+
+<script type="text/javascript">
+
+  if (typeof (Storage) !== "undefined") {
+    window.sessionCachedEnabled = true
+  } else {
+    
+    window.sessionCachedEnabled = false
+  }
+
+  window.pushNoti = function toastrNoti(message, duration, type) {
+    if (type === "error") {
+      iziToast.error({
+        title: 'Error',
+        message: message,
+        theme: 'dark',
+        backgroundColor: "#3e3e3e",
+        messageColor: "white",
+        titleColor: "#f44242",
+        position: 'bottomLeft',
+        timeout: duration,
+        class: 'toaster',
+      });
+
+    } else {
+      iziToast.success({
+        title: 'OK',
+        message: message,
+        theme: 'dark',
+        backgroundColor: "#3e3e3e",
+        messageColor: "white",
+        titleColor: "#1db954",
+        position: 'bottomLeft',
+        timeout: duration,
+        class: 'toaster',
+      });
+    }
+  }
+
+  window.toTitle = function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function (txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  }
+
+  window.saveCached = function saveCache(key, value) {
+    if (!window.sessionCachedEnabled) {
+      return
+    }
+    
+    window.localStorage[key] = value
+    window.localStorage[key + "-savetime"] = new Date().getTime()
+  }
+
+  window.getCached = function getCache(key, maxWaitTime) {
+    if (!window.sessionCachedEnabled) {
+      return null
+    }
+
+    if (window.localStorage[key + "-savetime"]) {
+      if (Number(window.localStorage[key + "-savetime"]) - new Date().getTime() < maxWaitTime * 1000) {
+        return window.localStorage[key]
+      }
+    }
+    return null
+  }
+
+  window.timeConverter = function tConverter(UNIX_timestamp) {
+    var a = new Date(UNIX_timestamp * 1000);
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var year = a.getFullYear();
+    var month = months[a.getMonth()];
+    var date = a.getDate();
+    var hour = a.getHours();
+    var min = a.getMinutes();
+    var sec = a.getSeconds();
+    var time = year + '-' + month + '-' + date + ' ' + hour + ':' + min + ':' + sec;
+    return time;
+  }
+
+  window.timeConverter2 = function tConverter(UNIX_timestamp) {
+    var a = new Date(UNIX_timestamp * 1000);
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var month = months[a.getMonth()];
+    var date = a.getDate();
+    var time = month + ' ' + date
+    return time;
+  }
+
+  window.formatDateYYYYMMDD = function (date) {
+    var d = new Date(date),
+      month = '' + (d.getMonth() + 1),
+      day = '' + d.getDate(),
+      year = d.getFullYear();
+
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+
+    return [year, month, day].join('-');
+  }
+
+  window.getCookie = function getcookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  window.setCookie = function setcookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
+
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+<script>
+
+</script>
+
+
+    <script src="./highcharts.js"></script>
+
+    <script src="./chart_theme.js"></script>
+    
+    <title>Finnhub Stock API - NVDA Chart</title>
+    <script type="text/javascript">
+        window.data = JSON.parse("{\u0022candle\u0022:[{\u0022close\u0022:108,\u0022time\u0022:\u00222025-03-01\u0022,\u0022timeStr\u0022:\u0022Mar 01, 2025\u0022,\u0022volume\u0022:1062418924},{\u0022close\u0022:108,\u0022time\u0022:\u00222025-04-01\u0022,\u0022timeStr\u0022:\u0022Apr 01, 2025\u0022,\u0022volume\u0022:6811006433},{\u0022close\u0022:135,\u0022time\u0022:\u00222025-05-01\u0022,\u0022timeStr\u0022:\u0022May 01, 2025\u0022,\u0022volume\u0022:4759246184},{\u0022close\u0022:157,\u0022time\u0022:\u00222025-06-01\u0022,\u0022timeStr\u0022:\u0022Jun 01, 2025\u0022,\u0022volume\u0022:3822309699},{\u0022close\u0022:177,\u0022time\u0022:\u00222025-07-01\u0022,\u0022timeStr\u0022:\u0022Jul 01, 2025\u0022,\u0022volume\u0022:3596804483},{\u0022close\u0022:174,\u0022time\u0022:\u00222025-08-01\u0022,\u0022timeStr\u0022:\u0022Aug 01, 2025\u0022,\u0022volume\u0022:3609134562},{\u0022close\u0022:186,\u0022time\u0022:\u00222025-09-01\u0022,\u0022timeStr\u0022:\u0022Sep 01, 2025\u0022,\u0022volume\u0022:3890495378},{\u0022close\u0022:202,\u0022time\u0022:\u00222025-10-01\u0022,\u0022timeStr\u0022:\u0022Oct 01, 2025\u0022,\u0022volume\u0022:4031017222},{\u0022close\u0022:177,\u0022time\u0022:\u00222025-11-01\u0022,\u0022timeStr\u0022:\u0022Nov 01, 2025\u0022,\u0022volume\u0022:4160148189},{\u0022close\u0022:186,\u0022time\u0022:\u00222025-12-01\u0022,\u0022timeStr\u0022:\u0022Dec 01, 2025\u0022,\u0022volume\u0022:3629693717},{\u0022close\u0022:191,\u0022time\u0022:\u00222026-01-01\u0022,\u0022timeStr\u0022:\u0022Jan 01, 2026\u0022,\u0022volume\u0022:3292228532},{\u0022close\u0022:177,\u0022time\u0022:\u00222026-02-01\u0022,\u0022timeStr\u0022:\u0022Feb 01, 2026\u0022,\u0022volume\u0022:3745445055},{\u0022close\u0022:178,\u0022time\u0022:\u00222026-03-01\u0022,\u0022timeStr\u0022:\u0022Mar 01, 2026\u0022,\u0022volume\u0022:3233013190}],\u0022target\u0022:{\u0022lastUpdated\u0022:\u00222026-02-21 00:00:00\u0022,\u0022numberAnalysts\u0022:62,\u0022symbol\u0022:\u0022NVDA\u0022,\u0022targetHigh\u0022:454.419,\u0022targetLow\u0022:139.38,\u0022targetMean\u0022:260.08439400000003,\u0022targetMedian\u0022:255},\u0022targetHigh\u0022:[[\u0022Mar 25, 2026\u0022,178.4755],[\u0022Mar 25, 2027\u0022,454]],\u0022targetLow\u0022:[[\u0022Mar 25, 2026\u0022,178.4755],[\u0022Mar 25, 2027\u0022,139]],\u0022targetMean\u0022:[[\u0022Mar 25, 2026\u0022,178.4755],[\u0022Mar 25, 2027\u0022,260]],\u0022timeStr-close\u0022:[[\u0022Mar 01, 2025\u0022,108.38],[\u0022Apr 01, 2025\u0022,108.92],[\u0022May 01, 2025\u0022,135.13],[\u0022Jun 01, 2025\u0022,157.99],[\u0022Jul 01, 2025\u0022,177.87],[\u0022Aug 01, 2025\u0022,174.18],[\u0022Sep 01, 2025\u0022,186.58],[\u0022Oct 01, 2025\u0022,202.49],[\u0022Nov 01, 2025\u0022,177],[\u0022Dec 01, 2025\u0022,186.5],[\u0022Jan 01, 2026\u0022,191.13],[\u0022Feb 01, 2026\u0022,177.19],[\u0022Mar 01, 2026\u0022,178.69],[\u0022Mar 25, 2026\u0022,178.4755]]}")
+        window.symbol = "NVDA"
+        window.theme = "dark"
+        window.series = ""
+        window.limit = ""
+        window.chart = ""
+        window.background = "#212529"
+        window.textColor = "white"
+    </script>
+    <style>
+        :root {
+            --color-primary: #1db954;
+            --color-background: #212529;
+            --color-text: white;
+            --color-backgroundContrast: white;
+        }
+
+        .credit-footer {
+             
+        }
+
+        a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+
+        *:focus, input, select {
+            outline: none;
+        }
+
+        .logo-block {
+            position: fixed;
+            right: 0;
+            bottom: 30px;
+            border-radius: 12px 0 0 12px;
+            transition: 0.5s;
+            box-shadow: -1px 0 3px 0 rgb(0 0 0 / 16%);
+            padding-right: 5px;
+            display: flex;
+            align-items: center;
+            background: hsla(0, 0%, 20%, 1);
+        }
+
+        .logo-block:hover {
+            background: var(--color-backgroundContrast);
+        }
+
+        .logo-block:hover span {
+            display: block;
+            text-decoration: none;
+        }
+
+        .logo-block span {
+            display: none;
+            color: var(--color-background);
+        }
+
+        .logo-block img {
+            width: 30px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body style="height: 100vh" data-new-gr-c-s-check-loaded="14.1278.0" data-gr-ext-installed="">
+<div id="root" style="height: 100%"><div style="width: 100%; height: 100%; background-color: rgb(33, 37, 41);"><div data-highcharts-chart="0" style="height: 95%; overflow: hidden;"><div id="highcharts-qy2s3k3-0" style="position: relative; overflow: hidden; width: 498px; height: 380px; text-align: left; line-height: normal; z-index: 0; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); user-select: none; touch-action: manipulation; outline: none; padding: 0px; font-family: &quot;Helvetica Neue&quot;, sans-serif;" dir="ltr" class="highcharts-container "><svg version="1.1" class="highcharts-root" style="font-family: &quot;Helvetica Neue&quot;, sans-serif; font-size: 1rem;" xmlns="http://www.w3.org/2000/svg" width="498" height="380" viewBox="0 0 498 380" role="img" aria-label="NVDA Stock Price Target"><desc>Created with Highcharts 12.5.0</desc><defs><filter id="highcharts-drop-shadow-0"><fedropshadow dx="1" dy="1" flood-color="#000000" flood-opacity="0.75" stdDeviation="2.5"></fedropshadow></filter><clippath id="highcharts-qy2s3k3-27-"><rect x="0" y="0" width="415" height="218" fill="none"></rect></clippath><clippath id="highcharts-qy2s3k3-30-"><path fill="none" d="M 214 0 L 0 0 L 0 218 L 214 218 Z"></path></clippath><clippath id="highcharts-qy2s3k3-31-"><path fill="none" d="M 415 0 L 214 0 L 214 218 L 415 218 Z"></path></clippath><clippath id="highcharts-qy2s3k3-34-"><path fill="none" d="M 214 0 L 0 0 L 0 218 L 214 218 Z"></path></clippath><clippath id="highcharts-qy2s3k3-35-"><path fill="none" d="M 415 0 L 214 0 L 214 218 L 415 218 Z"></path></clippath><clippath id="highcharts-qy2s3k3-38-"><path fill="none" d="M 214 0 L 0 0 L 0 218 L 214 218 Z"></path></clippath><clippath id="highcharts-qy2s3k3-39-"><path fill="none" d="M 415 0 L 214 0 L 214 218 L 415 218 Z"></path></clippath><clippath id="highcharts-qy2s3k3-42-"><path fill="none" d="M 214 0 L 0 0 L 0 218 L 214 218 Z"></path></clippath><clippath id="highcharts-qy2s3k3-43-"><path fill="none" d="M 415 0 L 214 0 L 214 218 L 415 218 Z"></path></clippath></defs><rect fill="#212529" class="highcharts-background" filter="none" x="0" y="0" width="498" height="380" rx="0" ry="0"></rect><rect fill="none" class="highcharts-plot-background" x="20" y="92" width="415" height="218" filter="none"></rect><g class="highcharts-plot-lines-0" data-z-index="0"><path fill="none" class="highcharts-plot-line " stroke="#999999" stroke-width="2" stroke-dasharray="8,6" d="M 234 92 L 234 310"></path></g><g class="highcharts-grid highcharts-xaxis-grid" data-z-index="1"><path fill="none" stroke="white" stroke-width="0" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 89.5 92 L 89.5 310" opacity="1"></path><path fill="none" stroke="white" stroke-width="0" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 189.5 92 L 189.5 310" opacity="1"></path><path fill="none" stroke="white" stroke-width="0" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 286.5 92 L 286.5 310" opacity="1"></path><path fill="none" stroke="white" stroke-width="0" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 386.5 92 L 386.5 310" opacity="1"></path></g><g class="highcharts-grid highcharts-yaxis-grid" data-z-index="1"><path fill="none" stroke="#707073" stroke-width="1" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 20 310.5 L 435 310.5" opacity="1"></path><path fill="none" stroke="#707073" stroke-width="1" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 20 266.5 L 435 266.5" opacity="1"></path><path fill="none" stroke="#707073" stroke-width="1" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 20 222.5 L 435 222.5" opacity="1"></path><path fill="none" stroke="#707073" stroke-width="1" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 20 179.5 L 435 179.5" opacity="1"></path><path fill="none" stroke="#707073" stroke-width="1" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 20 135.5 L 435 135.5" opacity="1"></path><path fill="none" stroke="#707073" stroke-width="1" stroke-dasharray="none" data-z-index="1" class="highcharts-grid-line" d="M 20 92.5 L 435 92.5" opacity="1"></path></g><rect fill="none" class="highcharts-plot-border" data-z-index="1" stroke="#606063" stroke-width="0" x="20" y="92" width="415" height="218"></rect><g class="highcharts-axis highcharts-xaxis" data-z-index="2"><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 89.5 310 L 89.5 320" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 189.5 310 L 189.5 320" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 286.5 310 L 286.5 320" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 386.5 310 L 386.5 320" opacity="1"></path><path fill="none" class="highcharts-axis-line" stroke="white" stroke-width="1" data-z-index="7" d="M 20 310.5 L 435 310.5"></path></g><g class="highcharts-axis highcharts-yaxis" data-z-index="2"><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 435 310.5 L 445 310.5" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 435 266.5 L 445 266.5" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 435 222.5 L 445 222.5" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 435 179.5 L 445 179.5" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 435 135.5 L 445 135.5" opacity="1"></path><path fill="none" class="highcharts-tick" stroke="#707073" stroke-width="1" d="M 435 92.5 L 445 92.5" opacity="1"></path><path fill="none" class="highcharts-axis-line" stroke="#707073" stroke-width="0" data-z-index="7" d="M 435 92 L 435 310"></path></g><g class="highcharts-series-group" data-z-index="3" filter="none"><g class="highcharts-series highcharts-series-0 highcharts-line-series highcharts-color-0" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="url(#highcharts-qy2s3k3-27-)"><path fill="none" d="M 4.0686274509804 170.74632 L 20.796406095595 170.51088 L 36.98457897748 159.08332 L 53.712357622094 149.11636 L 69.900530503979 140.44868 L 86.628309148593 142.05752 L 103.35608779321 136.65112 L 119.54426067509 129.71436 L 136.27203931971 140.828 L 152.46021220159 136.686 L 169.18799084621 134.66732 L 185.91576949082 140.74516 L 201.02473084725 140.09116 L 213.97526915275 140.184682" class="highcharts-graph" data-z-index="1" stroke="#1db954" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" visibility="hidden"></path><path fill="none" d="M 4.0686274509804 170.74632 L 20.796406095595 170.51088 L 36.98457897748 159.08332 L 53.712357622094 149.11636 L 69.900530503979 140.44868 L 86.628309148593 142.05752 L 103.35608779321 136.65112 L 119.54426067509 129.71436 L 136.27203931971 140.828 L 152.46021220159 136.686 L 169.18799084621 134.66732 L 185.91576949082 140.74516 L 201.02473084725 140.09116 L 213.97526915275 140.184682" class="highcharts-graph highcharts-zone-graph-0" data-z-index="1" stroke="#1db954" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" clip-path="url(#highcharts-qy2s3k3-30-)"></path><path fill="none" d="M 4.0686274509804 170.74632 L 20.796406095595 170.51088 L 36.98457897748 159.08332 L 53.712357622094 149.11636 L 69.900530503979 140.44868 L 86.628309148593 142.05752 L 103.35608779321 136.65112 L 119.54426067509 129.71436 L 136.27203931971 140.828 L 152.46021220159 136.686 L 169.18799084621 134.66732 L 185.91576949082 140.74516 L 201.02473084725 140.09116 L 213.97526915275 140.184682" class="highcharts-graph highcharts-zone-graph-1" data-z-index="1" stroke="#1db954" stroke-width="2" stroke-dasharray="8,6" filter="none" clip-path="url(#highcharts-qy2s3k3-31-)"></path><path fill="none" d="M 4.0686274509804 170.74632 L 20.796406095595 170.51088 L 36.98457897748 159.08332 L 53.712357622094 149.11636 L 69.900530503979 140.44868 L 86.628309148593 142.05752 L 103.35608779321 136.65112 L 119.54426067509 129.71436 L 136.27203931971 140.828 L 152.46021220159 136.686 L 169.18799084621 134.66732 L 185.91576949082 140.74516 L 201.02473084725 140.09116 L 213.97526915275 140.184682" data-z-index="2" class="highcharts-tracker-line" stroke-linecap="round" stroke-linejoin="round" stroke="rgba(192,192,192,0.0001)" stroke-width="22"></path></g><g class="highcharts-markers highcharts-series-0 highcharts-line-series highcharts-color-0 highcharts-tracker" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="none"><path fill="#1db954" d="M 4.5 174.74632 A 4 4 0 1 1 4.500199999999918 174.746319995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 20.5 174.51088 A 4 4 0 1 1 20.500199999999918 174.51087999499998 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 36.5 163.08332 A 4 4 0 1 1 36.500199999999914 163.08331999499998 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 53.5 153.11636 A 4 4 0 1 1 53.500199999999914 153.11635999499998 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 69.5 144.44868 A 4 4 0 1 1 69.50019999999992 144.448679995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 86.5 146.05752 A 4 4 0 1 1 86.50019999999992 146.057519995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 103.5 140.65112 A 4 4 0 1 1 103.50019999999992 140.651119995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 119.5 133.71436 A 4 4 0 1 1 119.50019999999992 133.714359995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 136.5 144.828 A 4 4 0 1 1 136.50019999999992 144.827999995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 152.5 140.686 A 4 4 0 1 1 152.50019999999992 140.685999995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 169.5 138.66732 A 4 4 0 1 1 169.50019999999992 138.66731999499999 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 185.5 144.74516 A 4 4 0 1 1 185.50019999999992 144.745159995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 201.5 144.09116 A 4 4 0 1 1 201.50019999999992 144.091159995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path><path fill="#1db954" d="M 213.5 144.184682 A 4 4 0 1 1 213.50019999999992 144.184681995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-0"></path></g><g class="highcharts-series highcharts-series-1 highcharts-line-series highcharts-color-1" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="url(#highcharts-qy2s3k3-27-)"><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 20.056" class="highcharts-graph" data-z-index="1" stroke="#f45b5b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" visibility="hidden"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 20.056" class="highcharts-graph highcharts-zone-graph-0" data-z-index="1" stroke="#f45b5b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" clip-path="url(#highcharts-qy2s3k3-34-)"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 20.056" class="highcharts-graph highcharts-zone-graph-1" data-z-index="1" stroke="#f45b5b" stroke-width="2" stroke-dasharray="8,6" filter="none" clip-path="url(#highcharts-qy2s3k3-35-)"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 20.056" data-z-index="2" class="highcharts-tracker-line" stroke-linecap="round" stroke-linejoin="round" stroke="rgba(192,192,192,0.0001)" stroke-width="22"></path></g><g class="highcharts-markers highcharts-series-1 highcharts-line-series highcharts-color-1 highcharts-tracker" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="none"><path fill="#f45b5b" d="M 213.5 144.184682 A 4 4 0 1 1 213.50019999999992 144.184681995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-1"></path><path fill="#f45b5b" d="M 410.5 24.056 A 4 4 0 1 1 410.5001999999999 24.055999995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-1"></path></g><g class="highcharts-series highcharts-series-2 highcharts-line-series highcharts-color-2" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="url(#highcharts-qy2s3k3-27-)"><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 104.64" class="highcharts-graph" data-z-index="1" stroke="#b98b1d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" visibility="hidden"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 104.64" class="highcharts-graph highcharts-zone-graph-0" data-z-index="1" stroke="#b98b1d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" clip-path="url(#highcharts-qy2s3k3-38-)"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 104.64" class="highcharts-graph highcharts-zone-graph-1" data-z-index="1" stroke="#b98b1d" stroke-width="2" stroke-dasharray="8,6" filter="none" clip-path="url(#highcharts-qy2s3k3-39-)"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 104.64" data-z-index="2" class="highcharts-tracker-line" stroke-linecap="round" stroke-linejoin="round" stroke="rgba(192,192,192,0.0001)" stroke-width="22"></path></g><g class="highcharts-markers highcharts-series-2 highcharts-line-series highcharts-color-2 highcharts-tracker" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="none"><path fill="#b98b1d" d="M 213.5 144.184682 A 4 4 0 1 1 213.50019999999992 144.184681995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-2"></path><path fill="#b98b1d" d="M 410.5 108.64 A 4 4 0 1 1 410.5001999999999 108.639999995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-2"></path></g><g class="highcharts-series highcharts-series-3 highcharts-line-series highcharts-color-3" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="url(#highcharts-qy2s3k3-27-)"><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 157.396" class="highcharts-graph" data-z-index="1" stroke="#3a1db9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" visibility="hidden"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 157.396" class="highcharts-graph highcharts-zone-graph-0" data-z-index="1" stroke="#3a1db9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="none" clip-path="url(#highcharts-qy2s3k3-42-)"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 157.396" class="highcharts-graph highcharts-zone-graph-1" data-z-index="1" stroke="#3a1db9" stroke-width="2" stroke-dasharray="8,6" filter="none" clip-path="url(#highcharts-qy2s3k3-43-)"></path><path fill="none" d="M 213.97526915275 140.184682 L 410.93137254902 157.396" data-z-index="2" class="highcharts-tracker-line" stroke-linecap="round" stroke-linejoin="round" stroke="rgba(192,192,192,0.0001)" stroke-width="22"></path></g><g class="highcharts-markers highcharts-series-3 highcharts-line-series highcharts-color-3 highcharts-tracker" data-z-index="0.1" opacity="1" transform="translate(20,92) scale(1 1)" clip-path="none"><path fill="#3a1db9" d="M 213.5 144.184682 A 4 4 0 1 1 213.50019999999992 144.184681995 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-3"></path><path fill="#3a1db9" d="M 410.5 161.396 A 4 4 0 1 1 410.5001999999999 161.39599999499998 Z" stroke="#333" stroke-width="0" opacity="1" class="highcharts-point highcharts-color-3"></path></g></g><text x="249" class="highcharts-title" data-z-index="4" style="font-size: 20px; font-weight: bold; fill: white;" text-align="center" y="55" text-anchor="middle" transform-origin="137.982421875 23" transform="translate(0,0) scale(1 1)">NVDA Stock Price Target</text><text x="249" class="highcharts-subtitle" data-z-index="4" style="font-size: 0.8em; text-transform: uppercase; fill: white;" text-align="center" y="76" text-anchor="middle" transform-origin="167.74610900878906 15" transform="translate(0,0) scale(1 1)">Past 12 Months with 12 Months Forecast</text><text x="20" text-anchor="start" class="highcharts-caption" data-z-index="4" style="font-size: 0.8em; fill: rgb(102, 102, 102);" text-align="left" y="352" transform-origin="20 15" transform="translate(0,0) scale(1 1)"></text><g class="highcharts-axis-labels highcharts-xaxis-labels" data-z-index="7"></g><g class="highcharts-axis-labels highcharts-yaxis-labels" data-z-index="7"><text x="450" style="cursor: default; font-size: 0.8em; fill: white;" text-anchor="start" transform="translate(0,0)" y="315" opacity="1">$0</text><text x="450" style="cursor: default; font-size: 0.8em; fill: white;" text-anchor="start" transform="translate(0,0)" y="271" opacity="1">$100</text><text x="450" style="cursor: default; font-size: 0.8em; fill: white;" text-anchor="start" transform="translate(0,0)" y="227" opacity="1">$200</text><text x="450" style="cursor: default; font-size: 0.8em; fill: white;" text-anchor="start" transform="translate(0,0)" y="184" opacity="1">$300</text><text x="450" style="cursor: default; font-size: 0.8em; fill: white;" text-anchor="start" transform="translate(0,0)" y="140" opacity="1">$400</text><text x="450" style="cursor: default; font-size: 0.8em; fill: white;" text-anchor="start" transform="translate(0,0)" y="97" opacity="1">$500</text></g></svg><div class="highcharts-axis-labels highcharts-xaxis-labels" style="position: absolute; left: 0px; top: 0px; opacity: 1;"><span style="position: absolute; font-family: &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.8em; white-space: nowrap; margin-left: 0px; margin-top: 0px; text-align: center; color: white; cursor: default; text-overflow: ellipsis; overflow: hidden; transform: rotate(0deg); transform-origin: 24px 12px; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; left: 65.9005px; top: 325px;" opacity="1">Jul 2025</span><span style="position: absolute; font-family: &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.8em; white-space: nowrap; margin-left: 0px; margin-top: 0px; text-align: center; color: white; cursor: default; text-overflow: ellipsis; overflow: hidden; transform: rotate(0deg); transform-origin: 26.5px 12px; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; left: 162.688px; top: 325px;" opacity="1">Jan 2026</span><span style="position: absolute; font-family: &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.8em; white-space: nowrap; margin-left: 0px; margin-top: 0px; text-align: center; color: white; cursor: default; text-overflow: ellipsis; overflow: hidden; transform: rotate(0deg); transform-origin: 24px 12px; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; left: 262.857px; top: 325px;" opacity="1">Jul 2026</span><span style="position: absolute; font-family: &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.8em; white-space: nowrap; margin-left: 0px; margin-top: 0px; text-align: center; color: white; cursor: default; text-overflow: ellipsis; overflow: hidden; transform: rotate(0deg); transform-origin: 26.5px 12px; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; left: 359.644px; top: 325px;" opacity="1">Jan 2027</span></div></div></div><div style="height: 5%;"><a class="logo-block d-flex" href="https://finnhub.io/docs/api/etfs-holdings" target="_blank" rel="noopener noreferrer"><img src="./logo-gradient2.png" alt="Finnhub"><span>By Finnhub</span></a></div></div></div>
+<script type="text/javascript" src="./price-target-chart.bundle.91031200ffeef6b13c6d.js"></script>
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"><template shadowrootmode="open"><style>
+      div.grammarly-desktop-integration {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select:none;
+        user-select:none;
+      }
+
+      div.grammarly-desktop-integration:before {
+        content: attr(data-content);
+      }
+    </style><div aria-label="grammarly-integration" role="group" tabindex="-1" class="grammarly-desktop-integration" data-content="{&quot;mode&quot;:&quot;full&quot;,&quot;isActive&quot;:true,&quot;isUserDisabled&quot;:false}"></div></template></grammarly-desktop-integration></html>

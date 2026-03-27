@@ -1,53 +1,55 @@
 @startuml
 !pragma layout smetana
-title AgenticNativePlatform - Current Runtime Architecture
+title AgenticNativePlatform - Runtime Flow With Flux Operator And Static Cluster Roots
 
 left to right direction
 skinparam shadowing false
 skinparam packageStyle rectangle
 skinparam componentStyle rectangle
-skinparam wrapWidth 180
+skinparam wrapWidth 160
+skinparam defaultTextAlignment center
 hide stereotype
 
 actor "External client" as Client
-actor "Operator" as Operator
 rectangle "Remote LLM providers\nGemini / OpenAI / Anthropic /\nBedrock / Vertex / others" as Providers
 rectangle "Optional external LM Studio" as LMStudio
 
+node "flux-system" {
+  component "Flux Operator" as FluxOperator
+  component "FluxInstance/flux" as FluxInstance
+  component "GitRepository/platform" as GitRepository
+  component "platform-infrastructure" as PlatformInfrastructure
+  component "platform-secrets" as PlatformSecrets
+  component "platform-applications" as PlatformApplications
+}
+
 node "Kubernetes cluster" {
   package "kgateway-system" {
-    component "kgateway controller" as KgatewayController
-    component "public-gateway\nEnvoy data plane" as PublicGateway
+    component "public-gateway" as PublicGateway
   }
 
   package "agentgateway-system" {
-    component "agentgateway controller" as AgentgatewayController
-    component "agentgateway-proxy\nGateway + Service :8080" as AgentgatewayProxy
-    component "AgentgatewayBackend\nlitellm-upstream" as LitellmBackend
-    component "AgentgatewayBackend\nkagent-tools-mcp-backend" as ToolsBackend
-    component "AgentgatewayPolicy\nrequestTimeout=300s" as BackendPolicy
+    component "agentgateway-proxy" as AgentgatewayProxy
+    component "litellm backend" as LitellmBackend
+    component "tools MCP backend" as ToolsBackend
   }
 
   package "kagent" {
-    component "kagent-controller\nDeployment + Service :8083" as KagentController
-    component "kagent-ui\nDeployment + Service :8080" as KagentUI
-    component "kagent-tools\nDeployment + Service :8084" as KagentTools
-    component "Agent\nk8s-a2a-agent" as A2AAgent
-    component "RemoteMCPServer\nkagent-tool-server" as RemoteMCP
+    component "kagent-controller" as KagentController
+    component "kagent-ui" as KagentUI
+    component "kagent-tools" as KagentTools
+    component "k8s-a2a-agent" as A2AAgent
+    component "RemoteMCPServer" as RemoteMCP
   }
 
   package "ai-gateway" {
-    component "litellm\nDeployment + Service :4000" as LiteLLM
-  }
-
-  package "kmcp-system" {
-    component "kmcp-controller-manager" as KMCPController
+    component "LiteLLM" as LiteLLM
   }
 
   package "ai-models" {
-    component "tei-embeddings\nDeployment + Service" as TEI
-    component "KServe controller + webhook" as KServe
-    component "Optional runtime overlay\nOllama or vLLM" as RuntimeOverlay
+    component "tei-embeddings" as TEI
+    component "KServe control plane" as KServe
+    component "Ollama or vLLM\noptional runtime path" as RuntimeOverlay
   }
 
   package "context" {
@@ -57,90 +59,67 @@ node "Kubernetes cluster" {
   }
 
   package "observability" {
-    component "Prometheus operator + Prometheus" as Prometheus
+    component "Prometheus" as Prometheus
     component "Grafana" as Grafana
     component "Loki" as Loki
   }
 
-  package "istio-system" {
-    component "istiod" as Istiod
-    component "istio-cni" as IstioCNI
-    component "ztunnel" as ZTunnel
-  }
-
-  package "cert-manager" {
-    component "cert-manager" as CertManager
-    component "cert-manager-webhook" as CertWebhook
-    component "cert-manager-cainjector" as CertCainjector
-  }
-
-  package "metallb-system\n(host-based profiles)" {
-    component "metallb controller + speaker" as MetalLB
-  }
-
-  package "optional sample path" {
-    component "MCPServer echo-mcp" as EchoMCP
+  package "platform" {
+    component "namespaces and wrappers\nfrom clusters/<topology>-<env>" as ClusterWrappers
   }
 }
 
-Client --> PublicGateway : HTTP /v1 and /mcp
-PublicGateway --> AgentgatewayProxy : routed traffic
+FluxOperator --> FluxInstance : lifecycle
+FluxInstance --> GitRepository : sync
+GitRepository --> PlatformInfrastructure
+PlatformInfrastructure --> PlatformSecrets : dependsOn
+PlatformSecrets --> PlatformApplications : dependsOn
+PlatformInfrastructure --> ClusterWrappers
 
-KagentUI --> KagentController : UI / API
-A2AAgent --> KagentController : agent API
+Client --> PublicGateway : HTTP /v1 and /mcp
+PublicGateway --> AgentgatewayProxy
+
+KagentUI --> KagentController : UI
+A2AAgent --> KagentController : A2A
 KagentController --> AgentgatewayProxy : /v1
 RemoteMCP --> AgentgatewayProxy : /mcp/kagent-tools
 
-AgentgatewayProxy --> LitellmBackend : /v1 route
-AgentgatewayProxy --> ToolsBackend : /mcp route
-BackendPolicy .. LitellmBackend
+AgentgatewayProxy --> LitellmBackend : /v1
+AgentgatewayProxy --> ToolsBackend : /mcp
 
 LitellmBackend --> LiteLLM
 ToolsBackend --> KagentTools
 
-LiteLLM --> Providers : default provider path
-LiteLLM --> LMStudio : when LMSTUDIO_ENABLED=true
-LiteLLM --> RuntimeOverlay : when RUNTIME=ollama or vllm
-KServe .. RuntimeOverlay : optional self-hosted serving control plane
+LiteLLM --> Providers : default path
+LiteLLM --> LMStudio : when enabled
+LiteLLM --> RuntimeOverlay : optional local path
+KServe .. RuntimeOverlay
 
 KagentController --> TEI : embeddings
-KagentController --> Qdrant : vector context
-KagentController --> Postgres : structured state
-KagentController --> Redis : cache / queue
+KagentController --> Qdrant : vectors
+KagentController --> Postgres : state
+KagentController --> Redis : cache
 
-KMCPController --> EchoMCP : optional sample MCPServer
+note top of FluxOperator
+Flux lifecycle is managed by Flux Operator.
+The sync entry point is a committed FluxInstance.
+end note
 
-note top of PublicGateway
-kgateway is the north-south entry point.
-Envoy is the active public data plane.
+note top of PlatformInfrastructure
+The static cluster root under clusters/<topology>-<env>
+fans out into staged Flux Kustomizations.
 end note
 
 note top of AgentgatewayProxy
-agentgateway is the protocol-aware AI gateway.
+AgentGateway stays on the hot path.
 /v1 goes to LiteLLM.
-/mcp goes to gateway-backed MCP targets.
+/mcp goes to MCP backends.
 end note
 
-note left of KagentController
-No direct kagent -> LiteLLM path.
-The controller points its OpenAI
-baseUrl at agentgateway-proxy /v1.
-end note
-
-note bottom of KServe
-KServe is installed in the serving stack,
-but it is not in the default /v1 hot path.
-end note
-
-note bottom of Qdrant
-Context services are present in
-platform-profile-full
-and platform-profile-fast-context.
-end note
-
-note bottom of Grafana
-Observability is present in
-platform-profile-full.
+note bottom of LiteLLM
+Default hot path:
+kagent -> agentgateway -> LiteLLM -> provider
+or optional local runtime
 end note
 
 @enduml
