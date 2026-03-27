@@ -24,4 +24,4 @@ spec:
     replicaCount: 1
     persistence:
       enabled: true
-      size: 4Gi
+      size: 3Gi
