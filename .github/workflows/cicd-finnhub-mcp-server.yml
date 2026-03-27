@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          go install github.com/kagent-dev/kmcp/cmd/kmcp@${KMCP_VERSION}
+          go install "github.com/kagent-dev/kmcp/cmd/kmcp@${KMCP_VERSION}"
           "$(go env GOPATH)/bin/kmcp" build \
             --project-dir "${PROJECT_DIR}" \
             --platform linux/amd64 \

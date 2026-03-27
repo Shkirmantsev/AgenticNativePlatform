@@ -67,8 +67,9 @@ jobs:
             -v "${PWD}:/repo" \
             --workdir /repo \
             "${IMAGE}" \
-            detect \
-            --source . \
+            dir \
+            --source /repo \
+            --config /repo/.gitleaks.toml \
             --no-banner \
             --redact \
             --exit-code 1

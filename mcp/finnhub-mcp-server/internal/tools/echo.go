@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -21,16 +22,13 @@ func Echo() MCPTool[EchoParams, EchoResult] {
 	return MCPTool[EchoParams, EchoResult]{
 		Name:        "echo",
 		Description: "Echoes a message back to the user.",
-		Handler: func(ctx context.Context, cc *mcp.ServerSession, params *mcp.CallToolParamsFor[EchoParams]) (*mcp.CallToolResultFor[EchoResult], error) {
-			echoMessage := "Echo: " + params.Arguments.Message
-			result := &mcp.CallToolResultFor[EchoResult]{
-				Content: []mcp.Content{
-					&mcp.TextContent{
-						Text: echoMessage,
-					},
-				},
-			}
-			return result, nil
+		Handler: func(ctx context.Context, req *mcp.CallToolRequest, params EchoParams) (*mcp.CallToolResult, EchoResult, error) {
+			_ = ctx
+			_ = req
+
+			return nil, EchoResult{
+				Echo: "Echo: " + params.Message,
+			}, nil
 		},
 	}
 }

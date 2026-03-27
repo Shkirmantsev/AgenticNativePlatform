@@ -1,0 +1,13 @@
+title = "AgenticNativePlatform Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Bundled Finnhub reference assets and scraped docs are not runtime secrets"
+paths = [
+  '''^mcp/finnhub-mcp-server/finnhub_api_files/''',
+  '''^mcp/finnhub-mcp-server/finnhub_api\.html$''',
+  '''^mcp/finnhub-mcp-server/remote-finnhub-swagger\.json$''',
+  '''^mcp/finnhub-mcp-server/finnhub-git-go-README \.md$''',
+]
