@@ -54,6 +54,8 @@ config: |
     use_chat_completions_url_for_anthropic_messages: true
   model_list:
     - model_name: default-gemini
+      rpm: 500
+      tpm: 50000
       litellm_params:
         model: gemini/gemini-3.1-flash-lite-preview
         api_key: os.environ/GOOGLE_API_KEY
