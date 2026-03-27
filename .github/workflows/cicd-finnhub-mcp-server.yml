@@ -8,6 +8,7 @@ on:
       - dev
     paths:
       - .github/workflows/cicd-finnhub-mcp-server.yml
+      - .gitleaks.toml
       - mcp/finnhub-mcp-server/**
       - apps/platform/kmcp/resources/finnhub-mcp-server.yaml
   pull_request:
@@ -16,6 +17,7 @@ on:
       - dev
     paths:
       - .github/workflows/cicd-finnhub-mcp-server.yml
+      - .gitleaks.toml
       - mcp/finnhub-mcp-server/**
       - apps/platform/kmcp/resources/finnhub-mcp-server.yaml
 
