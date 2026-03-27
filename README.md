@@ -379,7 +379,7 @@ The main user-facing parameters are:
 | `GRAFANA_ADMIN_USERNAME`, `GRAFANA_ADMIN_PASSWORD` | Grafana admin bootstrap credentials | observability secret render | `GRAFANA_ADMIN_PASSWORD=strong-secret` | real username/password |
 | `GRAFANA_SERVICE_ACCOUNT_TOKEN`, `GRAFANA_API_KEY` | Grafana MCP API credentials for kagent | Grafana MCP secret render in `kagent` namespace | `GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_...` | service account token preferred; optional for `make run-cluster-from-scratch`, which can mint one after Grafana boots |
 | `FLUX_OPERATOR_UI_LOCAL_PORT` | Local port override for Flux Operator UI port-forward | `make open-flux-operator-ui` | `make open-flux-operator-ui FLUX_OPERATOR_UI_LOCAL_PORT=19080` | valid local TCP port |
-| `KAGENT_UI_LOCAL_PORT`, `KAGENT_A2A_LOCAL_PORT`, `AGENTGATEWAY_LOCAL_PORT`, `LITELLM_LOCAL_PORT`, `GRAFANA_LOCAL_PORT`, `PROMETHEUS_LOCAL_PORT`, `QDRANT_LOCAL_PORT` | Local port overrides for port-forward targets | `open-*` targets | `make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16000` | valid local TCP ports |
+| `KAGENT_UI_LOCAL_PORT`, `KAGENT_A2A_LOCAL_PORT`, `AGENTGATEWAY_LOCAL_PORT`, `AGENTGATEWAY_ADMIN_UI_LOCAL_PORT`, `LITELLM_LOCAL_PORT`, `GRAFANA_LOCAL_PORT`, `PROMETHEUS_LOCAL_PORT`, `QDRANT_LOCAL_PORT` | Local port overrides for port-forward targets | `open-*` targets | `make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16001` or `make open-agentgateway-admin-ui AGENTGATEWAY_ADMIN_UI_LOCAL_PORT=15000` | valid local TCP ports |
 
 - `TOPOLOGY` defaults to `local`; supported values are `local`, `github-codespace`, `minipc`, `hybrid`, `hybrid-remote`
 - `RUNTIME`, `LMSTUDIO_ENABLED`, and `SECRETS_MODE` are operational selectors used by bootstrap and lifecycle targets
@@ -588,11 +588,12 @@ Main local URLs:
 - `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` for the sample A2A card
 - `http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json` for the `finnhub-agent` A2A card
 - `http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` for the `team-lead-agent-assist` A2A card
-- `http://localhost:15000/v1/models` for `agentgateway`
-- `http://localhost:15000/mcp/kagent-tools` for the bundled MCP route through `agentgateway`
-- `http://localhost:15000/finnhub/app` for the Finnhub MCP tool-browser web app through `agentgateway`
-- `http://localhost:15000/api/a2a/kagent/finnhub-agent/.well-known/agent.json` for the `finnhub-agent` A2A card through `agentgateway`
-- `http://localhost:15000/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` for the `team-lead-agent-assist` A2A card through `agentgateway`
+- `http://localhost:15000/ui/` for the AgentGateway Admin UI
+- `http://localhost:15001/v1/models` for `agentgateway`
+- `http://localhost:15001/mcp/kagent-tools` for the bundled MCP route through `agentgateway`
+- `http://localhost:15001/finnhub/app` for the Finnhub MCP tool-browser web app through `agentgateway`
+- `http://localhost:15001/api/a2a/kagent/finnhub-agent/.well-known/agent.json` for the `finnhub-agent` A2A card through `agentgateway`
+- `http://localhost:15001/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` for the `team-lead-agent-assist` A2A card through `agentgateway`
 - `http://localhost:4000/health/readiness` for LiteLLM readiness
 - `http://localhost:4000/v1/models` for LiteLLM
 - `http://localhost:3000` for Grafana
@@ -606,8 +607,9 @@ Local access commands:
 | --- | --- | --- | --- | --- |
 | `kagent` UI | `make open-kagent-ui` | `make close-kagent-ui` | `make check-kagent-ui` | `http://localhost:8080` |
 | `kagent` A2A card/API | `make open-kagent-a2a` | `make close-kagent-a2a` | `make test-a2a-agent`, `make test-finnhub-agent-card`, `make test-team-lead-agent-card`, `make test-a2a-delegation` | `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` |
-| AgentGateway | `make open-agentgateway` | `make close-agentgateway` | `make check-agentgateway`, `make check-agentgateway-openai`, `make test-agentgateway-openai` | `http://localhost:15000` |
-| Finnhub tool browser | `make open-agentgateway` | `make close-agentgateway` | `make test-finnhub-tool-browser` | `http://localhost:15000/finnhub/app` |
+| AgentGateway | `make open-agentgateway` | `make close-agentgateway` | `make check-agentgateway`, `make check-agentgateway-openai`, `make test-agentgateway-openai` | `http://localhost:15001` |
+| AgentGateway Admin UI | `make open-agentgateway-admin-ui` | `make close-agentgateway-admin-ui` | `make check-agentgateway-admin-ui` | `http://localhost:15000/ui/` |
+| Finnhub tool browser | `make open-agentgateway` | `make close-agentgateway` | `make test-finnhub-tool-browser` | `http://localhost:15001/finnhub/app` |
 | LiteLLM | `make open-litellm` | `make close-litellm` | `make check-litellm`, `make test-litellm` | `http://localhost:4000` |
 | Grafana | `make open-grafana` | `make close-grafana` | browser/login check | `http://localhost:3000` |
 | Prometheus | `make open-prometheus` | `make close-prometheus` | browser/ready check | `http://localhost:9090` |
@@ -619,13 +621,14 @@ Endpoint truth table:
 
 | URL | Expected behavior |
 | --- | --- |
-| `http://localhost:15000/` | no root route is expected |
-| `http://localhost:15000/v1/models` | AgentGateway OpenAI-compatible API |
-| `http://localhost:15000/mcp/kagent-tools` | bundled MCP route through AgentGateway |
-| `http://localhost:15000/finnhub/app` | Finnhub MCP web app through AgentGateway |
-| `http://localhost:15000/finnhub/app/api/tools` | Finnhub tool-browser catalog JSON through AgentGateway |
-| `http://localhost:15000/api/a2a/kagent/finnhub-agent/.well-known/agent.json` | Finnhub agent card through AgentGateway |
-| `http://localhost:15000/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` | Team lead agent card through AgentGateway |
+| `http://localhost:15000/ui/` | AgentGateway Admin UI via proxy pod admin port |
+| `http://localhost:15001/` | no root route is expected |
+| `http://localhost:15001/v1/models` | AgentGateway OpenAI-compatible API |
+| `http://localhost:15001/mcp/kagent-tools` | bundled MCP route through AgentGateway |
+| `http://localhost:15001/finnhub/app` | Finnhub MCP web app through AgentGateway |
+| `http://localhost:15001/finnhub/app/api/tools` | Finnhub tool-browser catalog JSON through AgentGateway |
+| `http://localhost:15001/api/a2a/kagent/finnhub-agent/.well-known/agent.json` | Finnhub agent card through AgentGateway |
+| `http://localhost:15001/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` | Team lead agent card through AgentGateway |
 | `http://localhost:4000/health/readiness` | LiteLLM readiness endpoint |
 | `http://localhost:4000/v1/models` | LiteLLM API |
 | `http://localhost:9080/` | Flux Operator web UI |
@@ -634,7 +637,7 @@ Manual curls:
 
 ```bash
 curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:4000/v1/models
-curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15000/v1/models
+curl -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-change-me}" http://localhost:15001/v1/models
 ```
 
 Operator shell and `make` defaults:
@@ -674,6 +677,7 @@ Close-target examples:
 make close-kagent-ui
 make close-kagent-a2a
 make close-agentgateway
+make open-agentgateway-admin-ui
 make close-litellm
 make close-grafana
 make close-prometheus
@@ -687,7 +691,8 @@ Port override examples:
 ```bash
 make open-kagent-ui KAGENT_UI_LOCAL_PORT=18080
 make open-kagent-a2a KAGENT_A2A_LOCAL_PORT=18083
-make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16000
+make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16001
+make open-agentgateway-admin-ui AGENTGATEWAY_ADMIN_UI_LOCAL_PORT=15000
 make open-litellm LITELLM_LOCAL_PORT=14000
 make open-grafana GRAFANA_LOCAL_PORT=13000
 make open-prometheus PROMETHEUS_LOCAL_PORT=19090

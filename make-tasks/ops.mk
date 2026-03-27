@@ -1,9 +1,9 @@
 .PHONY: diagnose-runtime-state recover-paused-workloads \
 	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove remove-cluster-only environment-destroy destroy-cluster-and-infra \
 	k9s-local \
-	port-forward-agentgateway port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui \
-	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-research-access close-research-access \
-	check-kagent-ui check-agentgateway check-agentgateway-openai check-litellm check-flux-operator-ui check-flux-stages \
+	port-forward-agentgateway port-forward-agentgateway-admin-ui port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui \
+	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-agentgateway-admin-ui close-agentgateway-admin-ui open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-research-access close-research-access \
+	check-kagent-ui check-agentgateway check-agentgateway-admin-ui check-agentgateway-openai check-litellm check-flux-operator-ui check-flux-stages \
 	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-finnhub-tool-browser test-a2a-delegation test-a2a-delegation-via-agentgateway test-agentgateway-gemini test-agentgateway-openai test-litellm
 
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
@@ -137,8 +137,11 @@ environment-destroy: ## Compatibility alias for destroy-cluster-and-infra
 k9s-local: require-kubeconfig ## Open k9s against the repo kubeconfig across all namespaces
 	k9s --kubeconfig "$(KUBECONFIG)" --all-namespaces
 
-port-forward-agentgateway: require-kubeconfig ## Port-forward AgentGateway to localhost:15000
+port-forward-agentgateway: require-kubeconfig ## Port-forward AgentGateway API to localhost:15001
 	$(KUBECTL) -n agentgateway-system port-forward svc/agentgateway-proxy $(AGENTGATEWAY_LOCAL_PORT):8080
+
+port-forward-agentgateway-admin-ui: require-kubeconfig ## Port-forward the AgentGateway Admin UI to localhost:15000
+	$(KUBECTL) -n agentgateway-system port-forward deployment/agentgateway-proxy $(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT):15000
 
 port-forward-kagent: require-kubeconfig ## Port-forward the kagent controller API to localhost:8083
 	$(KUBECTL) -n kagent port-forward svc/kagent-kagent-controller $(KAGENT_A2A_LOCAL_PORT):8083
@@ -173,11 +176,76 @@ open-kagent-a2a: require-kubeconfig ## Open the kagent controller API at http://
 close-kagent-a2a: ## Close the kagent controller API port-forward
 	$(call stop_port_forward,kagent-a2a)
 
-open-agentgateway: require-kubeconfig ## Open AgentGateway at http://localhost:15000
+open-agentgateway: require-kubeconfig ## Open AgentGateway at http://localhost:15001
 	$(call start_port_forward,agentgateway,http://localhost:$(AGENTGATEWAY_LOCAL_PORT),agentgateway-system,agentgateway-proxy,$(AGENTGATEWAY_LOCAL_PORT),8080,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/,200 301 302 303 307 308 401 403 404 405,)
 
 close-agentgateway: ## Close the AgentGateway port-forward
 	$(call stop_port_forward,agentgateway)
+
+open-agentgateway-admin-ui: require-kubeconfig ## Open the AgentGateway Admin UI at http://localhost:15000/ui/
+	@mkdir -p $(PORT_FORWARD_STATE_DIR)
+	@pid_file="$(PORT_FORWARD_STATE_DIR)/agentgateway-admin-ui.pid"; \
+	port_file="$(PORT_FORWARD_STATE_DIR)/agentgateway-admin-ui.port"; \
+	log_file="$(PORT_FORWARD_STATE_DIR)/agentgateway-admin-ui.log"; \
+	probe_url="http://localhost:$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT)/ui/"; \
+	accepted_codes="200 301 302 303 307 308"; \
+	if [ -f "$$pid_file" ] && kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	  kill "$$(cat "$$pid_file")" 2>/dev/null || true; \
+	  rm -f "$$pid_file" "$$port_file"; \
+	fi; \
+	if [ -f "$$pid_file" ] && ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	  rm -f "$$pid_file" "$$port_file"; \
+	fi; \
+	existing_pids="$$(ps -eo pid=,comm=,args= | awk -v resource="deployment/agentgateway-proxy" -v mapping="$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT):15000" '$$2=="kubectl" && $$0 ~ /port-forward/ && index($$0, resource) && index($$0, mapping) { print $$1 }')"; \
+	if [ -n "$$existing_pids" ]; then \
+	  echo "$$existing_pids" | xargs -r kill 2>/dev/null || true; \
+	  rm -f "$$pid_file" "$$port_file"; \
+	  sleep 1; \
+	fi; \
+	if command -v ss >/dev/null 2>&1 && ss -ltn "( sport = :$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT) )" | tail -n +2 | grep -q .; then \
+	  last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' "$$probe_url" 2>/dev/null || true )"; \
+	  case " $$accepted_codes " in \
+	    *" $$last_code "*) echo "agentgateway-admin-ui already available at http://localhost:$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT)/ui/"; exit 0 ;; \
+	  esac; \
+	  echo "agentgateway-admin-ui cannot open because localhost:$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT) is already in use"; \
+	  exit 1; \
+	fi; \
+	nohup $(KUBECTL) -n agentgateway-system port-forward deployment/agentgateway-proxy $(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT):15000 >"$$log_file" 2>&1 </dev/null & \
+	echo $$! >"$$pid_file"; \
+	echo "$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT)" >"$$port_file"; \
+	if ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	  echo "agentgateway-admin-ui failed to open"; \
+	  sed -n '1,40p' "$$log_file"; \
+	  rm -f "$$pid_file" "$$port_file"; \
+	  exit 1; \
+	fi; \
+	deadline=$$(( $$(date +%s) + $(HTTP_PROBE_TIMEOUT) )); \
+	ready=0; \
+	last_code="000"; \
+	while [ $$(date +%s) -le $$deadline ]; do \
+	  last_code="$$( $(CURL) -s -o /dev/null -w '%{http_code}' "$$probe_url" 2>/dev/null || true )"; \
+	  case " $$accepted_codes " in \
+	    *" $$last_code "*) ready=1; break ;; \
+	  esac; \
+	  if ! kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	    echo "agentgateway-admin-ui failed while waiting for $$probe_url"; \
+	    sed -n '1,40p' "$$log_file"; \
+	    rm -f "$$pid_file" "$$port_file"; \
+	    exit 1; \
+	  fi; \
+	  sleep $(HTTP_PROBE_INTERVAL); \
+	done; \
+	if [ "$$ready" -ne 1 ]; then \
+	  echo "agentgateway-admin-ui failed readiness check for $$probe_url (last status $$last_code)"; \
+	  sed -n '1,40p' "$$log_file"; \
+	  kill "$$(cat "$$pid_file")" 2>/dev/null || true; \
+	  rm -f "$$pid_file" "$$port_file"; \
+	  exit 1; \
+	fi; \
+	echo "agentgateway-admin-ui available at http://localhost:$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT)/ui/"
+
+close-agentgateway-admin-ui: ## Close the AgentGateway Admin UI port-forward
+	$(call stop_port_forward,agentgateway-admin-ui)
 
 open-litellm: require-kubeconfig ## Open LiteLLM at http://localhost:4000
 	$(call start_port_forward,litellm,http://localhost:$(LITELLM_LOCAL_PORT),ai-gateway,litellm,$(LITELLM_LOCAL_PORT),4000,http://localhost:$(LITELLM_LOCAL_PORT)/health/readiness,200,)
@@ -208,6 +276,9 @@ check-kagent-ui: ## Verify the local kagent UI endpoint
 
 check-agentgateway: ## Verify the local AgentGateway port-forward and HTTP liveness
 	$(call wait_for_http_status,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/,200 301 302 303 307 308 401 403 404 405,)
+
+check-agentgateway-admin-ui: ## Verify the local AgentGateway Admin UI endpoint
+	$(call wait_for_http_status,http://localhost:$(AGENTGATEWAY_ADMIN_UI_LOCAL_PORT)/ui/,200 301 302 303 307 308,)
 
 check-agentgateway-openai: ## Verify the local AgentGateway OpenAI-compatible API path
 	$(call wait_for_http_status,http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
@@ -308,7 +379,7 @@ test-finnhub-agent-card: ## Fetch the finnhub-agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json | jq .
 
 test-finnhub-tool-browser: ## Fetch the Finnhub tool-browser catalog through AgentGateway
-	curl -fsSL http://localhost:15000/finnhub/app/api/tools | jq '.count'
+	curl -fsSL http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/finnhub/app/api/tools | jq '.count'
 
 test-team-lead-agent-card: ## Fetch the team-lead-agent-assist card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json | jq .
