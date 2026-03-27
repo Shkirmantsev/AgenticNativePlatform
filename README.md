@@ -397,7 +397,7 @@ env:
   PROJECT_DIR: mcp/finnhub-mcp-server
   DOCKERFILE_PATH: mcp/finnhub-mcp-server/Dockerfile
   DEPLOYMENT_MANIFEST: apps/platform/kmcp/resources/finnhub-mcp-server.yaml
-  IMAGE_NAME: ghcr.io/shkirmantsev/agenticnativeplatform/finnhub-mcp-server
+  IMAGE_NAME: ghcr.io/shkirmantsev/finnhub-mcp-server
   HADOLINT_IMAGE: hadolint/hadolint:v2.14.0
   TRIVY_IMAGE: aquasec/trivy:0.69.3
 ```

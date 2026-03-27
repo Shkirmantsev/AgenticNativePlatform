@@ -121,7 +121,7 @@ kmcp build \
 The current repository deployment manifest expects:
 
 ```text
-ghcr.io/shkirmantsev/agenticnativeplatform/finnhub-mcp-server:0.1.0
+ghcr.io/shkirmantsev/finnhub-mcp-server:0.1.0
 ```
 
 If you already built a local image such as `finnhub-mcp-server:0.1.0`, you can retag and push it manually instead of rebuilding:
