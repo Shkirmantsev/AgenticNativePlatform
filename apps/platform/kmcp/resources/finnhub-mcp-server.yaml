@@ -17,7 +17,7 @@ spec:
     path: /mcp
     targetPort: 3000
   deployment:
-    cmd: ./server
+    cmd: ./finnhub-mcp-server
     args:
       - -transport
       - http
