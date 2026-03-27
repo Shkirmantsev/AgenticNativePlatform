@@ -34,11 +34,11 @@ resources:
   requests:
     cpu: "100m"
     memory: "512Mi"
-    ephemeral-storage: "256Mi"
+    ephemeral-storage: "230Mi"
   limits:
     cpu: "500m"
     memory: "1Gi"
-    ephemeral-storage: "800Mi"
+    ephemeral-storage: "720Mi"
 readinessProbe:
   httpGet:
     path: /health/readiness

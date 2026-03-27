@@ -15,7 +15,7 @@ podLabels:
   istio.io/dataplane-mode: none
 cache:
   mountPath: /data
-  sizeLimit: 2Gi
+  sizeLimit: 1.8Gi
 model: onnx-models/all-MiniLM-L6-v2-onnx
 extraArgs:
   - --auto-truncate
@@ -23,8 +23,8 @@ resources:
   requests:
     cpu: "250m"
     memory: "512Mi"
-    ephemeral-storage: "1Gi"
+    ephemeral-storage: "0.9Gi"
   limits:
     cpu: "1000m"
     memory: "2Gi"
-    ephemeral-storage: "4Gi"
+    ephemeral-storage: "3.6Gi"

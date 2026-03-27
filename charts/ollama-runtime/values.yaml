@@ -16,11 +16,11 @@ resources:
   requests:
     cpu: "500m"
     memory: "1Gi"
-    ephemeral-storage: "2Gi"
+    ephemeral-storage: "1.8Gi"
   limits:
     cpu: "2000m"
     memory: "4Gi"
-    ephemeral-storage: "10Gi"
+    ephemeral-storage: "9Gi"
 persistence:
   enabled: true
-  size: 20Gi
+  size: 18Gi
