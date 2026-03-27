@@ -17,3 +17,20 @@ spec:
   upgrade:
     remediation:
       retries: 3
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: ignored
+              spec:
+                template:
+                  metadata:
+                    labels:
+                      istio.io/dataplane-mode: none
+            target:
+              kind: Deployment
+              namespace: flux-system
+              labelSelector: app.kubernetes.io/name=flux-operator

@@ -279,5 +279,5 @@ spec:
             - Compare Kubernetes, Cilium, and Istio findings when debugging a networking issue.
             - Ask the observability specialist for metrics insight and the PromQL specialist for the exact query.
             - Coordinate a migration question that needs Argo Rollouts guidance plus Kubernetes context and summarize the recommended approach.
-            - Choose the appropriate Cilium specialist capability: policy design, lifecycle management, or deep debugging, then delegate accordingly.
+            - "Choose the appropriate Cilium specialist capability: policy design, lifecycle management, or deep debugging, then delegate accordingly."
             - Explain which specialist capabilities you selected for my request and why those were the right delegates.

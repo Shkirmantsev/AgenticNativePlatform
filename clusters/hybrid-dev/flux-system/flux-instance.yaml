@@ -11,6 +11,22 @@ spec:
   distribution:
     version: "__FLUX_VERSION__"
     registry: "ghcr.io/fluxcd"
+  kustomize:
+    patches:
+      - patch: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ignored
+          spec:
+            template:
+              metadata:
+                labels:
+                  istio.io/dataplane-mode: none
+        target:
+          kind: Deployment
+          namespace: flux-system
+          labelSelector: app.kubernetes.io/part-of=flux
   components:
     - source-controller
     - kustomize-controller
