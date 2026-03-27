@@ -35,6 +35,7 @@ spec:
         enable_api: true
     minio:
       enabled: true
+      mode: standalone
       replicas: 1
       drivesPerNode: 1
       persistence:

@@ -116,7 +116,7 @@ spec:
         enabled: true
     tools:
       grafana-mcp:
-        enabled: true
+        enabled: false
       querydoc:
         enabled: true
     grafana-mcp:
