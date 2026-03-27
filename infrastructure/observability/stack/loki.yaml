@@ -35,9 +35,15 @@ spec:
         enable_api: true
     minio:
       enabled: true
+      replicas: 1
+      drivesPerNode: 1
+      persistence:
+        size: 4Gi
     deploymentMode: SingleBinary
     singleBinary:
       replicas: 1
+      persistence:
+        size: 1Gi
     backend:
       replicas: 0
     read:

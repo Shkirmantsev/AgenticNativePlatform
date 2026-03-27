@@ -23,4 +23,4 @@ spec:
     architecture: standalone
     master:
       persistence:
-        size: 10Gi
+        size: 1200Mi
