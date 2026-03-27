@@ -842,6 +842,24 @@ Additional UI captures:
 - [make-open-kagent-ui6](.assets/kagent-ui6.png)
 - [make-open-kagent-ui7](.assets/kagent-ui7.png)
 
+
+<details>
+<summary><strong>Open Demo Video declarative agents</strong></summary>
+
+<div align="center">
+  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm" width="100%" controls autoplay loop muted>
+    Your browser does not support webm format
+  </video>
+</div>
+<div align="center">
+  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm" width="100%" controls autoplay loop muted>
+    Your browser does not support webm format
+  </video>
+</div>
+
+</details>
+
+
 ## Notes For OCI Migration
 
 - `clusters/`, `infrastructure/`, `apps/`, `values/`, and `secrets/` are separated so each tree can later be published as independent OCI artifacts
