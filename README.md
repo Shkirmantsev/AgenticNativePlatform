@@ -392,7 +392,7 @@ The `cicd-finnhub-mcp-server.yml` workflow already defines the project-specific 
 
 ```yaml
 env:
-  GO_VERSION: "1.25.0"
+  GO_VERSION: "1.25.8"
   KMCP_VERSION: "v0.2.7"
   PROJECT_DIR: mcp/finnhub-mcp-server
   DOCKERFILE_PATH: mcp/finnhub-mcp-server/Dockerfile

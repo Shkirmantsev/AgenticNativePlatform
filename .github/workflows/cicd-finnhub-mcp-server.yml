@@ -27,13 +27,14 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: "1.25.0"
+  GO_VERSION: "1.25.8"
   KMCP_VERSION: "v0.2.7"
   PROJECT_DIR: mcp/finnhub-mcp-server
   DOCKERFILE_PATH: mcp/finnhub-mcp-server/Dockerfile
   DEPLOYMENT_MANIFEST: apps/platform/kmcp/resources/finnhub-mcp-server.yaml
   IMAGE_NAME: ghcr.io/shkirmantsev/agenticnativeplatform/finnhub-mcp-server
   HADOLINT_IMAGE: hadolint/hadolint:v2.14.0
+  GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks:v8.29.0
   TRIVY_IMAGE: aquasec/trivy:0.69.3
 
 jobs:
@@ -103,9 +104,20 @@ jobs:
             hadolint "${DOCKERFILE_PATH}"
 
       - name: Scan repository for secrets with Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull "${GITLEAKS_IMAGE}"
+          docker run --rm \
+            -v "${PWD}:/repo" \
+            --workdir /repo \
+            "${GITLEAKS_IMAGE}" \
+            dir \
+            --config /repo/.gitleaks.toml \
+            --no-banner \
+            --redact \
+            --exit-code 1 \
+            /repo
 
       - name: Set up Go
         uses: actions/setup-go@v6.3.0
