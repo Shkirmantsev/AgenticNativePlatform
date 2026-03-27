@@ -23,7 +23,7 @@ spec:
       - http
       - -http-addr
       - :3000
-    image: ghcr.io/shkirmantsev/agenticnativeplatform/finnhub-mcp-server:0.1.0
+    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.1.0
     port: 3000
     secretRefs:
       - name: finnhub-mcp-server
