@@ -23,14 +23,15 @@ const (
 // the MCP protocol is served on MCPPath and the human-friendly tool browser is
 // served on WebAppPath.
 type Config struct {
-	APIKey         string
-	BaseURL        string
-	UserAgent      string
-	HTTPAddress    string
-	MCPPath        string
-	WebAppPath     string
-	RequestTimeout time.Duration
-	EnableRPCLogs  bool
+	APIKey           string
+	BaseURL          string
+	UserAgent        string
+	HTTPAddress      string
+	MCPPath          string
+	WebAppPath       string
+	PublicWebBaseURL string
+	RequestTimeout   time.Duration
+	EnableRPCLogs    bool
 }
 
 // LoadFromEnv builds a Config from environment variables.
@@ -44,19 +45,21 @@ type Config struct {
 //   - FINNHUB_REQUEST_TIMEOUT_SECONDS
 //   - FINNHUB_MCP_PATH
 //   - FINNHUB_WEB_APP_PATH
+//   - FINNHUB_PUBLIC_WEB_BASE_URL
 //   - FINNHUB_HTTP_ADDR
 //   - FINNHUB_ENABLE_RPC_LOGS
 func LoadFromEnv() (Config, error) {
 	timeoutSeconds := readInt("FINNHUB_REQUEST_TIMEOUT_SECONDS", int(defaultTimeout/time.Second))
 	cfg := Config{
-		APIKey:         strings.TrimSpace(os.Getenv("FINNHUB_API_TOKEN")),
-		BaseURL:        readString("FINNHUB_BASE_URL", defaultBaseURL),
-		UserAgent:      readString("FINNHUB_USER_AGENT", defaultUserAgent),
-		HTTPAddress:    readString("FINNHUB_HTTP_ADDR", defaultHTTPAddress),
-		MCPPath:        normalizePath(readString("FINNHUB_MCP_PATH", defaultMCPPath)),
-		WebAppPath:     normalizePath(readString("FINNHUB_WEB_APP_PATH", defaultWebAppPath)),
-		RequestTimeout: time.Duration(timeoutSeconds) * time.Second,
-		EnableRPCLogs:  readBool("FINNHUB_ENABLE_RPC_LOGS", false),
+		APIKey:           strings.TrimSpace(os.Getenv("FINNHUB_API_TOKEN")),
+		BaseURL:          readString("FINNHUB_BASE_URL", defaultBaseURL),
+		UserAgent:        readString("FINNHUB_USER_AGENT", defaultUserAgent),
+		HTTPAddress:      readString("FINNHUB_HTTP_ADDR", defaultHTTPAddress),
+		MCPPath:          normalizePath(readString("FINNHUB_MCP_PATH", defaultMCPPath)),
+		WebAppPath:       normalizePath(readString("FINNHUB_WEB_APP_PATH", defaultWebAppPath)),
+		PublicWebBaseURL: normalizeBaseURL(readString("FINNHUB_PUBLIC_WEB_BASE_URL", "")),
+		RequestTimeout:   time.Duration(timeoutSeconds) * time.Second,
+		EnableRPCLogs:    readBool("FINNHUB_ENABLE_RPC_LOGS", false),
 	}
 
 	if cfg.APIKey == "" {
@@ -112,4 +115,12 @@ func normalizePath(path string) string {
 		path = strings.TrimRight(path, "/")
 	}
 	return path
+}
+
+func normalizeBaseURL(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	return strings.TrimRight(value, "/")
 }

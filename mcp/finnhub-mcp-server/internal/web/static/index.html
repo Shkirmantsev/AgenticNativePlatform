@@ -139,6 +139,7 @@
       <div class="panel">
         <div class="section-title">Selected tool</div>
         <div id="selectedToolHeader" class="muted">Choose a tool from the left.</div>
+        <div id="elicitationNotice" class="field-hint"></div>
       </div>
 
       <div class="grid-two">
@@ -167,7 +168,14 @@
 
   <script>
     const basePath = {{ printf "%q" .BasePath }};
-    const state = { tools: [], selected: null, filters: { q: '', group: '' }, formValues: {} };
+    const initialPageState = readPageState();
+    const state = {
+      tools: [],
+      selected: null,
+      filters: { q: '', group: '' },
+      formValues: {},
+      page: initialPageState
+    };
 
     async function loadCatalog() {
       const response = await fetch(basePath + '/api/tools');
@@ -175,8 +183,11 @@
       state.tools = payload.tools || [];
       renderGroupOptions(payload.groups || []);
       renderToolList();
-      if (state.tools.length > 0) {
-        selectTool(state.tools[0].toolName);
+      const preferredTool = state.page.tool && state.tools.some(tool => tool.toolName === state.page.tool)
+        ? state.page.tool
+        : (state.tools[0] && state.tools[0].toolName);
+      if (preferredTool) {
+        selectTool(preferredTool);
       }
     }
 
@@ -229,16 +240,28 @@
 
     function buildInitialFormValues(tool) {
       if (!tool) return {};
-      return { ...(tool.exampleArguments || {}) };
+      const values = { ...(tool.exampleArguments || {}) };
+      if (state.page.tool === tool.toolName) {
+        Object.assign(values, state.page.args || {});
+      }
+      return values;
     }
 
     function renderSelectedTool() {
       const header = document.getElementById('selectedToolHeader');
       const details = document.getElementById('toolDetails');
+      const notice = document.getElementById('elicitationNotice');
       if (!state.selected) {
         header.textContent = 'Choose a tool from the left.';
         details.textContent = 'No tool selected yet.';
+        notice.textContent = '';
         return;
+      }
+
+      if (state.page.tool === state.selected.toolName && state.page.message) {
+        notice.textContent = state.page.message;
+      } else {
+        notice.textContent = '';
       }
 
       header.innerHTML = `
@@ -265,8 +288,10 @@
       const schema = state.selected.inputSchema || {};
       const properties = schema.properties || {};
       const required = new Set(schema.required || []);
+      const missing = selectedMissingFields();
 
       for (const [name, property] of Object.entries(properties)) {
+        if (missing.size > 0 && !missing.has(name)) continue;
         const wrapper = document.createElement('label');
         const title = document.createElement('div');
         title.innerHTML = `<strong>${escapeHtml(name)}</strong>${required.has(name) ? ' <span class="muted">required</span>' : ''}`;
@@ -338,6 +363,33 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+    }
+
+    function readPageState() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        tool: params.get('tool') || '',
+        message: params.get('message') || '',
+        args: parseJSONArg(params.get('args')),
+        missing: params.getAll('missing').filter(Boolean)
+      };
+    }
+
+    function parseJSONArg(value) {
+      if (!value) return {};
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (_error) {
+        return {};
+      }
+    }
+
+    function selectedMissingFields() {
+      if (!state.selected || state.page.tool !== state.selected.toolName) {
+        return new Set();
+      }
+      return new Set(state.page.missing || []);
     }
 
     document.getElementById('searchBox').addEventListener('input', event => {

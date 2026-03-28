@@ -216,6 +216,8 @@ jobs:
           context: ./${{ env.PROJECT_DIR }}
           file: ./${{ env.DOCKERFILE_PATH }}
           platforms: linux/amd64
+          build-args: |
+            VERSION=${{ needs.metadata.outputs.version }}
           load: true
           push: false
           tags: ${{ needs.metadata.outputs.image_ref }}
@@ -242,6 +244,8 @@ jobs:
           context: ./${{ env.PROJECT_DIR }}
           file: ./${{ env.DOCKERFILE_PATH }}
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=${{ needs.metadata.outputs.version }}
           push: true
           tags: ${{ needs.metadata.outputs.image_ref }}
           labels: |

@@ -53,7 +53,13 @@ func run(transportMode, httpAddressOverride string) error {
 
 	logger := newLogger()
 	finnhubClient := finnhub.NewClient(cfg.BaseURL, cfg.APIKey, cfg.UserAgent, cfg.RequestTimeout)
-	app := mcpserver.NewApplication(finnhubClient)
+	publicWebBaseURL := cfg.PublicWebBaseURL
+	if publicWebBaseURL == "" {
+		publicWebBaseURL = cfg.WebAppPath
+	}
+	app := mcpserver.NewApplication(finnhubClient, mcpserver.ApplicationOptions{
+		PublicWebBaseURL: publicWebBaseURL,
+	})
 	server := app.NewServer(logger)
 
 	switch strings.ToLower(strings.TrimSpace(transportMode)) {
@@ -85,7 +91,10 @@ func runHTTP(server *mcp.Server, app *mcpserver.Application, cfg config.Config, 
 	})
 
 	httpOptions := &mcp.StreamableHTTPOptions{
-		JSONResponse:   true,
+		// Prefer the default SSE-capable response mode. Inventory discovers this
+		// server through AgentGateway, and JSON-only streamable responses caused
+		// the follow-up initialized notification to arrive after the session had
+		// already expired.
 		SessionTimeout: 30 * time.Minute,
 		Logger:         logger,
 	}
@@ -111,7 +120,11 @@ func runHTTP(server *mcp.Server, app *mcpserver.Application, cfg config.Config, 
 		Addr:              cfg.HTTPAddress,
 		Handler:           requestLoggingMiddleware(logger, mux),
 		ReadHeaderTimeout: 10 * time.Second,
-		IdleTimeout:       2 * time.Minute,
+		// Streamable HTTP clients keep a hanging GET open for server events.
+		// A short HTTP idle timeout closes that stream before the MCP session is
+		// done, which breaks follow-up initialized/tools calls through
+		// AgentGateway and Inventory discovery.
+		IdleTimeout: 0,
 	}
 
 	logger.Info("starting streamable HTTP server", "addr", cfg.HTTPAddress, "mcpPath", cfg.MCPPath, "webAppPath", cfg.WebAppPath)

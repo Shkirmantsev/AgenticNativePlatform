@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"finnhub-mcp-server/internal/finnhub"
 
@@ -113,10 +114,12 @@ func (a *Application) fillMissingArguments(
 		return arguments, nil
 	}
 
-	if supportsElicitation(request) {
+	message := fmt.Sprintf("Provide the missing inputs for %s.", endpoint.ToolName)
+
+	if supportsFormElicitation(request) {
 		elicitResult, err := request.Session.Elicit(ctx, &mcp.ElicitParams{
 			Mode:    "form",
-			Message: fmt.Sprintf("Provide the missing inputs for %s.", endpoint.ToolName),
+			Message: message,
 			RequestedSchema: map[string]any{
 				"type":                 "object",
 				"additionalProperties": false,
@@ -125,6 +128,30 @@ func (a *Application) fillMissingArguments(
 		})
 		if err != nil {
 			return nil, fmt.Errorf("elicitation failed for %s: %w", endpoint.ToolName, err)
+		}
+		switch strings.ToLower(elicitResult.Action) {
+		case "accept":
+			for key, value := range elicitResult.Content {
+				arguments[key] = value
+			}
+			missingProperties, missingMessages = missingInputSchema(endpoint, arguments)
+			if len(missingProperties) == 0 {
+				return arguments, nil
+			}
+		case "decline", "cancel":
+			return nil, fmt.Errorf("required inputs were not provided for %s", endpoint.ToolName)
+		}
+	}
+
+	if supportsURLElicitation(request) {
+		elicitResult, err := request.Session.Elicit(ctx, &mcp.ElicitParams{
+			Mode:          "url",
+			Message:       message,
+			URL:           a.buildElicitationURL(endpoint, arguments, missingProperties, message),
+			ElicitationID: fmt.Sprintf("%s-%d", endpoint.ToolName, time.Now().UnixNano()),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("url elicitation failed for %s: %w", endpoint.ToolName, err)
 		}
 		switch strings.ToLower(elicitResult.Action) {
 		case "accept":
@@ -483,13 +510,13 @@ func buildClarificationPlan(goal, contextText string, knownInputs map[string]any
 	}
 
 	return map[string]any{
-		"goal":                  goal,
-		"context":               contextText,
-		"knownInputs":           knownInputs,
+		"goal":                   goal,
+		"context":                contextText,
+		"knownInputs":            knownInputs,
 		"clarificationQuestions": questions,
-		"sequence":              sequence,
-		"toolNames":             joinToolNames(items),
-		"tools":                 items,
+		"sequence":               sequence,
+		"toolNames":              joinToolNames(items),
+		"tools":                  items,
 	}
 }
 

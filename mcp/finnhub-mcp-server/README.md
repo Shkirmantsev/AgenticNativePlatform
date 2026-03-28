@@ -68,6 +68,7 @@ Optional:
 - `FINNHUB_REQUEST_TIMEOUT_SECONDS` default: `20`
 - `FINNHUB_MCP_PATH` default: `/mcp`
 - `FINNHUB_WEB_APP_PATH` default: `/app`
+- `FINNHUB_PUBLIC_WEB_BASE_URL` default: empty. Set this when URL-mode elicitation should open the web app through a gateway path such as `http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/finnhub/app`.
 - `FINNHUB_HTTP_ADDR` default: `:8080`
 - `FINNHUB_ENABLE_RPC_LOGS` default: `false`
 
@@ -94,8 +95,12 @@ Then open:
 ## Docker build
 
 ```bash
-docker build -t finnhub-mcp-server:0.1.0 .
+docker build -t finnhub-mcp-server:0.4.0 .
 ```
+
+The Docker build stamps the MCP implementation version into the binary from
+`kmcp.yaml`. Plain local `go run` / `go test` builds default to `dev` unless
+you override the linker variable explicitly.
 
 ## Build with a fully qualified GHCR image name
 
@@ -104,7 +109,7 @@ If you want the image name to match the Kubernetes manifest and GitHub Container
 ```bash
 kmcp build \
   --project-dir mcp/finnhub-mcp-server \
-  --tag ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0
+  --tag ghcr.io/<github-owner>/finnhub-mcp-server:0.4.0
 ```
 
 To push it to GitHub Container Registry:
@@ -114,23 +119,23 @@ echo "$GHCR_TOKEN" | docker login ghcr.io -u <github-username> --password-stdin
 
 kmcp build \
   --project-dir mcp/finnhub-mcp-server \
-  --tag ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0 \
+  --tag ghcr.io/<github-owner>/finnhub-mcp-server:0.4.0 \
   --push
 ```
 
 The current repository deployment manifest expects:
 
 ```text
-ghcr.io/shkirmantsev/finnhub-mcp-server:0.1.0
+ghcr.io/shkirmantsev/finnhub-mcp-server:0.4.0
 ```
 
-If you already built a local image such as `finnhub-mcp-server:0.1.0`, you can retag and push it manually instead of rebuilding:
+If you already built a local image such as `finnhub-mcp-server:0.4.0`, you can retag and push it manually instead of rebuilding:
 
 ```bash
-docker tag finnhub-mcp-server:0.1.0 \
-  ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0
+docker tag finnhub-mcp-server:0.4.0 \
+  ghcr.io/<github-owner>/finnhub-mcp-server:0.4.0
 
-docker push ghcr.io/<github-owner>/<github-repo>/finnhub-mcp-server:0.1.0
+docker push ghcr.io/<github-owner>/finnhub-mcp-server:0.4.0
 ```
 
 If you publish under a different registry path or tag, update the image in `apps/platform/kmcp/resources/finnhub-mcp-server.yaml` to match.
@@ -144,6 +149,7 @@ The web app is intentionally simple and operational:
 - inspect input schema and example arguments
 - click a tool to select it for the next step
 - fill known arguments in the form
+- open directly into a tool-specific elicitation view through `?tool=...&missing=...&args=...`
 - copy the generated MCP call JSON payload
 
 ## Design notes
@@ -154,7 +160,11 @@ The project now uses a small explicit HTTP client instead of depending directly 
 
 ### Elicitation behavior
 
-When a user or model calls a tool without all required fields, the tool attempts MCP elicitation first. If the client does not support elicitation, the tool returns a clear tool-visible error describing the missing fields and an example argument payload.
+When a user or model calls a tool without all required fields, the tool attempts MCP elicitation first.
+
+- if the client supports form elicitation, the server requests a focused form containing only the missing fields
+- if the client supports URL-mode elicitation but not form mode, the server provides a web-app URL that opens the Finnhub tool picker in an elicitation-focused state
+- if the client does not support elicitation, the tool returns a clear tool-visible error describing the missing fields and an example argument payload
 
 ### Sampling behavior
 

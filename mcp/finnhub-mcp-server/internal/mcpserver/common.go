@@ -75,12 +75,30 @@ func jsonText(value any) string {
 	return string(body)
 }
 
-func supportsElicitation(request *mcp.CallToolRequest) bool {
+func elicitationCapabilities(request *mcp.CallToolRequest) *mcp.ElicitationCapabilities {
 	if request == nil || request.Session == nil {
-		return false
+		return nil
 	}
 	params := request.Session.InitializeParams()
-	return params != nil && params.Capabilities != nil && params.Capabilities.Elicitation != nil
+	if params == nil || params.Capabilities == nil {
+		return nil
+	}
+	return params.Capabilities.Elicitation
+}
+
+func supportsFormElicitation(request *mcp.CallToolRequest) bool {
+	capabilities := elicitationCapabilities(request)
+	if capabilities == nil {
+		return false
+	}
+	// The SDK treats an elicitation capability without explicit form/url modes
+	// as form-capable for backward compatibility.
+	return !(capabilities.Form == nil && capabilities.URL != nil)
+}
+
+func supportsURLElicitation(request *mcp.CallToolRequest) bool {
+	capabilities := elicitationCapabilities(request)
+	return capabilities != nil && capabilities.URL != nil
 }
 
 func supportsSampling(request *mcp.CallToolRequest) bool {

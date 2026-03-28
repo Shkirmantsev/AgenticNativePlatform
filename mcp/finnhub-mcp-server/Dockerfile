@@ -1,4 +1,5 @@
 FROM --platform=$BUILDPLATFORM golang:1.25.8-alpine AS builder
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 WORKDIR /src
 
@@ -8,7 +9,14 @@ RUN go mod download
 COPY . .
 ARG TARGETOS
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags='-s -w' -o /out/finnhub-mcp-server ./cmd/server
+ARG VERSION
+RUN VERSION="${VERSION:-$(sed -n 's/^version:[[:space:]]*//p' kmcp.yaml | head -n 1 | tr -d '\"' | xargs)}" && \
+    if [ -z "${VERSION}" ]; then VERSION=dev; fi && \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath \
+      -ldflags "-s -w -X finnhub-mcp-server/internal/mcpserver.ImplementationVersion=${VERSION}" \
+      -o /out/finnhub-mcp-server \
+      ./cmd/server
 
 FROM alpine:3.21
 

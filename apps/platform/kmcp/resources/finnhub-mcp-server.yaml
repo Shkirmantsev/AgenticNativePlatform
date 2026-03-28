@@ -23,7 +23,9 @@ spec:
       - http
       - -http-addr
       - :3000
-    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.1.0
+    env:
+      FINNHUB_PUBLIC_WEB_BASE_URL: http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/finnhub/app
+    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.4.0
     port: 3000
     secretRefs:
       - name: finnhub-mcp-server
