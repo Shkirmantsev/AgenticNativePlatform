@@ -159,7 +159,7 @@ port-forward-flux-operator-ui: require-kubeconfig ## Port-forward the Flux Opera
 	$(KUBECTL) -n flux-system port-forward svc/flux-operator $(FLUX_OPERATOR_UI_LOCAL_PORT):9080
 
 port-forward-agentregistry-inventory: require-kubeconfig ## Port-forward Agent Registry Inventory to localhost:18081
-	$(KUBECTL) -n agentregistry port-forward svc/agentregistry-inventory-api $(AGENTREGISTRY_INVENTORY_LOCAL_PORT):8080
+	$(KUBECTL) -n agentregistry port-forward svc/$(AGENTREGISTRY_INVENTORY_SERVICE) $(AGENTREGISTRY_INVENTORY_LOCAL_PORT):8080
 
 open-kagent-ui: require-kubeconfig ## Open the kagent UI at http://localhost:8080
 	$(call start_port_forward,kagent-ui,http://localhost:$(KAGENT_UI_LOCAL_PORT),kagent,kagent-kagent-ui,$(KAGENT_UI_LOCAL_PORT),8080,http://localhost:$(KAGENT_UI_LOCAL_PORT)/,200 301 302 303 307 308,)
@@ -269,7 +269,7 @@ open-flux-operator-ui: require-kubeconfig ## Open the Flux Operator web UI at ht
 	$(call start_port_forward,flux-operator-ui,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT),flux-system,flux-operator,$(FLUX_OPERATOR_UI_LOCAL_PORT),9080,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT)/,200,)
 
 open-agentregistry-inventory: require-kubeconfig ## Open Agent Registry Inventory at http://localhost:18081
-	$(call start_port_forward,agentregistry-inventory,http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT),agentregistry,agentregistry-inventory-api,$(AGENTREGISTRY_INVENTORY_LOCAL_PORT),8080,http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/,200 301 302 303 307 308,)
+	$(call start_port_forward,agentregistry-inventory,http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT),agentregistry,$(AGENTREGISTRY_INVENTORY_SERVICE),$(AGENTREGISTRY_INVENTORY_LOCAL_PORT),8080,http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/,200 301 302 303 307 308,)
 
 check-kagent-ui: ## Verify the local kagent UI endpoint
 	$(call wait_for_http_status,http://localhost:$(KAGENT_UI_LOCAL_PORT)/,200 301 302 303 307 308,)
@@ -333,6 +333,7 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	@set +e; \
 	failures=0; \
 	attempted=0; \
+	inventory_present=0; \
 	printf '%-18s %s\n' "Endpoint" "Result"; \
 	for spec in \
 	  "open-kagent-ui|kagent|kagent-kagent-ui" \
@@ -343,11 +344,17 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	  "open-grafana|observability|observability-kube-prometheus-stack-grafana" \
 	  "open-prometheus|observability|observability-kube-prometh-prometheus" \
 	  "open-qdrant|context|context-qdrant" \
-	  "open-agentregistry-inventory|agentregistry|agentregistry-inventory-api" \
+	  "open-agentregistry-inventory|agentregistry|$(AGENTREGISTRY_INVENTORY_SERVICE)" \
 	  "open-flux-operator-ui|flux-system|flux-operator"; do \
 	  IFS='|' read -r target namespace service <<<"$$spec"; \
 	  label="$${target#open-}"; \
+	  if [ "$$label" = "agentregistry-inventory" ]; then \
+	    inventory_present=1; \
+	  fi; \
 	  if ! $(KUBECTL) -n "$$namespace" get svc "$$service" >/dev/null 2>&1; then \
+	    if [ "$$label" = "agentregistry-inventory" ]; then \
+	      inventory_present=0; \
+	    fi; \
 	    printf '%-18s %s\n' "$$label" "skipped"; \
 	    continue; \
 	  fi; \
@@ -367,9 +374,14 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	echo "A2A agent cards via AgentGateway:"; \
 	echo "  http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/finnhub-agent/.well-known/agent.json"; \
 	echo "  http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json"; \
-	echo "Inventory UI and API:"; \
-	echo "  http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/"; \
-	echo "  http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/v0/servers"; \
+	if [ "$$inventory_present" -eq 1 ]; then \
+	  echo "Inventory UI and API:"; \
+	  echo "  http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/"; \
+	  echo "  http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/v0/servers"; \
+	else \
+	  echo "Inventory UI and API:"; \
+	  echo "  skipped because Service/agentregistry/$(AGENTREGISTRY_INVENTORY_SERVICE) was not present"; \
+	fi; \
 	test $$attempted -gt 0; \
 	test $$failures -eq 0
 
