@@ -860,6 +860,11 @@ Additional UI captures:
 </details>
 
 
+## Enterprise MCP on Kubernetes: Implementable Production Use Cases with Sampling and Elicitation
+
+[MCP_Research](.assets/research/merged-enterprise-mcp-research.md).
+
+
 ## Notes For OCI Migration
 
 - `clusters/`, `infrastructure/`, `apps/`, `values/`, and `secrets/` are separated so each tree can later be published as independent OCI artifacts
