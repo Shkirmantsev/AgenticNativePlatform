@@ -30,6 +30,10 @@ trap cleanup EXIT
 
 kubectl -n "${STATE_NAMESPACE}" get configmap "${STATE_CONFIGMAP}" -o jsonpath='{.data.replicas\.tsv}' >"${tmp_file}"
 
+# Older snapshots could concatenate records when command substitution stripped
+# the final newline from one resource list before the next list was appended.
+perl -0pi -e 's/([0-9]+)(deployment|statefulset)\t/$1\n$2\t/g' "${tmp_file}"
+
 if [[ ! -s "${tmp_file}" ]]; then
   echo "Saved pause state is empty in ConfigMap/${STATE_NAMESPACE}/${STATE_CONFIGMAP}; skipping replica restore."
   exit 0
@@ -44,8 +48,14 @@ if [[ "${saved_rows}" -gt 0 && "${saved_nonzero_rows}" -eq 0 ]]; then
 fi
 
 restored=0
-while IFS=$'\t' read -r resource namespace name replicas; do
-  [[ -n "${resource}" && -n "${namespace}" && -n "${name}" && -n "${replicas}" ]] || continue
+line_number=0
+while IFS=$'\t' read -r resource namespace name replicas extra_fields; do
+  line_number=$((line_number + 1))
+  [[ -n "${resource}${namespace}${name}${replicas}${extra_fields}" ]] || continue
+  if [[ -n "${extra_fields}" || -z "${resource}" || -z "${namespace}" || -z "${name}" || ! "${replicas}" =~ ^[0-9]+$ ]]; then
+    echo "Malformed pause snapshot row ${line_number} in ConfigMap/${STATE_NAMESPACE}/${STATE_CONFIGMAP}: ${resource}\t${namespace}\t${name}\t${replicas}${extra_fields:+\t${extra_fields}}" >&2
+    exit 1
+  fi
   kubectl get namespace "${namespace}" >/dev/null 2>&1 || continue
   kubectl -n "${namespace}" get "${resource}" "${name}" >/dev/null 2>&1 || continue
 

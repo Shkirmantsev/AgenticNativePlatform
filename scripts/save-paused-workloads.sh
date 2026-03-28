@@ -39,7 +39,9 @@ for namespace in ${PAUSE_NAMESPACES}; do
     echo "Failed to list deployments in namespace/${namespace}: ${deployment_rows}" >&2
     exit 1
   fi
-  printf '%s' "${deployment_rows}" >>"${tmp_file}"
+  if [[ -n "${deployment_rows}" ]]; then
+    printf '%s\n' "${deployment_rows}" >>"${tmp_file}"
+  fi
 
   if ! statefulset_rows="$(
     kubectl -n "${namespace}" get statefulset \
@@ -49,7 +51,9 @@ for namespace in ${PAUSE_NAMESPACES}; do
     echo "Failed to list statefulsets in namespace/${namespace}: ${statefulset_rows}" >&2
     exit 1
   fi
-  printf '%s' "${statefulset_rows}" >>"${tmp_file}"
+  if [[ -n "${statefulset_rows}" ]]; then
+    printf '%s\n' "${statefulset_rows}" >>"${tmp_file}"
+  fi
 done
 
 sort -u "${tmp_file}" -o "${tmp_file}"
