@@ -848,19 +848,14 @@ Additional UI captures:
 <details>
 <summary><strong>Open Demo Video declarative agents</strong></summary>
 
-<div align="center">
-  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/Demonstrate_opened_endpoints_10mb.webm" width="100%" controls autoplay loop muted>
-    Your browser does not support webm format
-  </video>
-</div>
-<div align="center">
-  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm" width="100%" controls autoplay loop muted>
-    Your browser does not support webm format
-  </video>
-</div>
+GitHub repository README rendering strips embedded `<video>` tags. Click a preview image to open the matching `.webm` release asset.
 
-1. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/Demonstrate_opened_endpoints_10mb.webm
-2. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm
+[![Preview: opened endpoints](.assets/make-open-research-access.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/Demonstrate_opened_endpoints_10mb.webm)
+
+[![Preview: declarative agent](.assets/kagent-ui1.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm)
+
+1. [Demo: opened endpoints](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/Demonstrate_opened_endpoints_10mb.webm)
+2. [Demo: declarative agent](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm)
 
 </details>
 
@@ -875,25 +870,17 @@ Additional UI captures:
 <summary><strong>Open Demo Video | building custom MCP server with elicitation, embedded web APP and 
 sampling</strong></summary>
 
-<div align="center">
-  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/finnhub-agent-go.webm" width="100%" controls autoplay loop muted>
-    Your browser does not support webm format
-  </video>
-</div>
-<div align="center">
-  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Inspector-custom-mcp_10mb.webm" width="100%" controls autoplay loop muted>
-    Your browser does not support webm format
-  </video>
-</div>
-<div align="center">
-  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Elicitation_and_Sampling_webApp.webm" width="100%" controls autoplay loop muted>
-    Your browser does not support webm format
-  </video>
-</div>
+GitHub repository README rendering strips embedded `<video>` tags. Click a preview image to open the matching `.webm` release asset.
 
-1. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/finnhub-agent-go.webm
-2. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Inspector-custom-mcp_10mb.webm
-3. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Elicitation_and_Sampling_webApp.webm
+[![Preview: Finnhub agent in Go](.assets/make-open-research-access.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/finnhub-agent-go.webm)
+
+[![Preview: Inspector custom MCP](.assets/kagent-ui2.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Inspector-custom-mcp_10mb.webm)
+
+[![Preview: elicitation, sampling, and embedded web app](.assets/kagent-ui3.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Elicitation_and_Sampling_webApp.webm)
+
+1. [Demo: Finnhub agent in Go](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/finnhub-agent-go.webm)
+2. [Demo: Inspector custom MCP](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Inspector-custom-mcp_10mb.webm)
+3. [Demo: elicitation, sampling, and embedded web app](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Elicitation_and_Sampling_webApp.webm)
 
 </details>
 
