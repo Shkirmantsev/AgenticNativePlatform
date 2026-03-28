@@ -849,7 +849,7 @@ Additional UI captures:
 <summary><strong>Open Demo Video declarative agents</strong></summary>
 
 <div align="center">
-  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm" width="100%" controls autoplay loop muted>
+  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/Demonstrate_opened_endpoints_10mb.webm" width="100%" controls autoplay loop muted>
     Your browser does not support webm format
   </video>
 </div>
@@ -858,6 +858,9 @@ Additional UI captures:
     Your browser does not support webm format
   </video>
 </div>
+
+1. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/Demonstrate_opened_endpoints_10mb.webm
+2. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.2.0/demo-declarative-agent_10mb.webm
 
 </details>
 
@@ -887,6 +890,10 @@ sampling</strong></summary>
     Your browser does not support webm format
   </video>
 </div>
+
+1. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/finnhub-agent-go.webm
+2. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Inspector-custom-mcp_10mb.webm
+3. https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Elicitation_and_Sampling_webApp.webm
 
 </details>
 
