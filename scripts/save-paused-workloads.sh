@@ -13,8 +13,10 @@ if [[ -z "${PAUSE_NAMESPACES}" ]]; then
 fi
 
 tmp_file="$(mktemp)"
+existing_tmp_file="$(mktemp)"
 cleanup() {
   rm -f "${tmp_file}"
+  rm -f "${existing_tmp_file}"
 }
 trap cleanup EXIT
 
@@ -51,6 +53,16 @@ for namespace in ${PAUSE_NAMESPACES}; do
 done
 
 sort -u "${tmp_file}" -o "${tmp_file}"
+
+current_nonzero_rows="$(awk -F $'\t' '$4+0 > 0 {count++} END {print count+0}' "${tmp_file}")"
+if kubectl -n "${STATE_NAMESPACE}" get configmap "${STATE_CONFIGMAP}" >/dev/null 2>&1; then
+  kubectl -n "${STATE_NAMESPACE}" get configmap "${STATE_CONFIGMAP}" -o jsonpath='{.data.replicas\.tsv}' >"${existing_tmp_file}" || true
+  existing_nonzero_rows="$(awk -F $'\t' '$4+0 > 0 {count++} END {print count+0}' "${existing_tmp_file}")"
+  if [[ "${current_nonzero_rows}" -eq 0 && "${existing_nonzero_rows}" -gt 0 ]]; then
+    echo "Current pause snapshot contains only 0 replica targets; preserving existing ConfigMap/${STATE_NAMESPACE}/${STATE_CONFIGMAP} to avoid overwriting the last known good state." >&2
+    exit 0
+  fi
+fi
 
 kubectl -n "${STATE_NAMESPACE}" create configmap "${STATE_CONFIGMAP}" \
   --from-file=replicas.tsv="${tmp_file}" \

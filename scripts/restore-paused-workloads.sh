@@ -35,6 +35,14 @@ if [[ ! -s "${tmp_file}" ]]; then
   exit 0
 fi
 
+saved_rows="$(awk 'END {print NR+0}' "${tmp_file}")"
+saved_nonzero_rows="$(awk -F $'\t' '$4+0 > 0 {count++} END {print count+0}' "${tmp_file}")"
+if [[ "${saved_rows}" -gt 0 && "${saved_nonzero_rows}" -eq 0 ]]; then
+  echo "Saved pause state in ConfigMap/${STATE_NAMESPACE}/${STATE_CONFIGMAP} contains only 0 replica targets; refusing restore because the snapshot appears stale." >&2
+  echo "Bring the workloads back to the intended replica counts once, then run make cluster-pause again to refresh the snapshot." >&2
+  exit 2
+fi
+
 restored=0
 while IFS=$'\t' read -r resource namespace name replicas; do
   [[ -n "${resource}" && -n "${namespace}" && -n "${name}" && -n "${replicas}" ]] || continue

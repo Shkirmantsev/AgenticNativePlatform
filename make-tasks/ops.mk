@@ -38,31 +38,16 @@ diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace
 recover-paused-workloads: require-kubeconfig ## Restore paused workloads, force a fresh reconcile, and print runtime status
 	@if $(KUBECTL) -n flux-system get configmap "$(PAUSE_STATE_CONFIGMAP)" >/dev/null 2>&1; then \
 	  echo "Restoring saved replica targets from ConfigMap/flux-system/$(PAUSE_STATE_CONFIGMAP)"; \
-	  PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh; \
-	fi
-	@fallback_needed=0; \
-	for ns in $(PAUSE_NAMESPACES); do \
-	  $(KUBECTL) get ns $$ns >/dev/null 2>&1 || continue; \
-	  for kind in deployment statefulset; do \
-	    zero_names="$$( $(KUBECTL) -n $$ns get $$kind -o jsonpath='{range .items[?(@.spec.replicas==0)]}{.metadata.name}{"\n"}{end}' 2>/dev/null )"; \
-	    if [ -n "$$zero_names" ]; then \
-	      fallback_needed=1; \
-	    fi; \
-	  done; \
-	done; \
-	if [ "$$fallback_needed" -eq 1 ]; then \
-	  echo "Saved pause state left workloads at 0 replicas; scaling zero-replica workloads in $(PAUSE_NAMESPACES) back to 1 as a fallback."; \
-	  for ns in $(PAUSE_NAMESPACES); do \
-	    $(KUBECTL) get ns $$ns >/dev/null 2>&1 || continue; \
-	    for kind in deployment statefulset; do \
-	      zero_names="$$( $(KUBECTL) -n $$ns get $$kind -o jsonpath='{range .items[?(@.spec.replicas==0)]}{.metadata.name}{"\n"}{end}' 2>/dev/null )"; \
-	      [ -n "$$zero_names" ] || continue; \
-	      for name in $$zero_names; do \
-	        echo "Scaling $$kind/$$ns/$$name -> 1"; \
-	        $(KUBECTL) -n $$ns scale $$kind/$$name --replicas=1; \
-	      done; \
-	    done; \
-	  done; \
+	  set +e; \
+	  PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh; \
+	  restore_status=$$?; \
+	  set -e; \
+	  if [ "$$restore_status" -eq 2 ]; then \
+	    echo "Pause snapshot is stale; recovering paused workloads to 1 replica so Flux/Helm can converge from Git state."; \
+	    PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" bash ./scripts/recover-zeroed-paused-workloads.sh; \
+	  elif [ "$$restore_status" -ne 0 ]; then \
+	    exit "$$restore_status"; \
+	  fi; \
 	fi
 	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 	@$(MAKE) diagnose-runtime-state TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
@@ -96,7 +81,16 @@ cluster-resume: require-cluster-api ## Resume platform workloads from Git desire
 	done
 	@$(FLUX) reconcile source git $(FLUX_SYNC_SOURCE_NAME) -n flux-system || true
 	@$(FLUX) reconcile kustomization platform-infrastructure -n flux-system --with-source || true
-	@PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh
+	@set +e; \
+	PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" PAUSE_STATE_CONFIGMAP="$(PAUSE_STATE_CONFIGMAP)" STATE_NAMESPACE=flux-system ./scripts/restore-paused-workloads.sh; \
+	restore_status=$$?; \
+	set -e; \
+	if [ "$$restore_status" -eq 2 ]; then \
+	  echo "Pause snapshot is stale; recovering paused workloads to 1 replica so Flux/Helm can converge from Git state."; \
+	  PAUSE_NAMESPACES="$(PAUSE_NAMESPACES)" bash ./scripts/recover-zeroed-paused-workloads.sh; \
+	elif [ "$$restore_status" -ne 0 ]; then \
+	  exit "$$restore_status"; \
+	fi
 	@token="$$(date -u +"%Y-%m-%dT%H:%M:%SZ")"; \
 	for hr in $$($(KUBECTL) -n flux-system get helmrelease -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do \
 	  $(KUBECTL) -n flux-system annotate --overwrite helmrelease $$hr \
