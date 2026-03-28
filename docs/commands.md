@@ -82,10 +82,13 @@ kubectl kustomize clusters/local-dev/secrets
 
 ```bash
 make open-research-access
+make open-agentgateway-admin-ui
+make open-agentregistry-inventory
 make check-kagent-ui
 make check-agentgateway
 make check-agentgateway-openai
 make check-litellm
+make check-agentregistry-inventory
 make open-flux-operator-ui
 make check-flux-operator-ui
 ```

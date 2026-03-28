@@ -8,3 +8,4 @@
 - [ADR-0006: Canonical LLM routing](0006-canonical-llm-routing.md)
 - [ADR-0007: GitOps repo and secrets modes](0007-gitops-repo-and-secrets-modes.md)
 - [ADR-0008: Packaging and demo assets](0008-packaging-and-demo-assets.md)
+- [ADR-0009: Integrate Agent Registry Inventory as an internal Flux-sourced control plane](0009-agentregistry-inventory-control-plane.md)

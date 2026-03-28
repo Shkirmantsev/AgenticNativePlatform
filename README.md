@@ -44,9 +44,27 @@ The runtime model in the repository is currently:
 - `kgateway` is the public north-south entry point
 - `agentgateway` is the protocol-aware AI gateway
 - `kagent` uses `agentgateway` for both `/v1` and `/mcp`
+- `agentregistry-inventory` is the internal control-plane registry for discovered agents, MCP servers, skills, and models
 - `/v1` flows to `LiteLLM`, then to remote providers or optional local runtimes
 - `/mcp` flows to gateway-backed MCP targets such as `kagent-tools`
 - `KServe` remains part of the serving stack, but is not forced into the default `/v1` hot path
+
+<details>
+<summary><strong>Open Inventory control-plane integration</strong></summary>
+
+The Inventory integration in this repository is intentionally conservative:
+
+- upstream project author: Den Vasyliev
+- upstream source repository: `https://github.com/den-vasyliev/agentregistry-inventory`
+- Flux tracks branch `main` via `GitRepository/flux-system/agentregistry-inventory`
+- the Helm release packages the upstream chart from `./charts/agentregistry`
+- it installs in namespace `agentregistry`
+- the only repo-local Inventory custom resource is the staged `DiscoveryConfig`
+- it stays internal-only by default with a `ClusterIP` service and `make open-agentregistry-inventory`
+- it ships a default local `DiscoveryConfig` that catalogs `kagent` `Agent`, `MCPServer`, `RemoteMCPServer`, and `ModelConfig` resources
+- it is not added to the public `kgateway` listener by default, so existing topologies do not gain a new external surface during bootstrap
+
+</details>
 
 <details>
 <summary><strong>Open architecture notes and text fallback</strong></summary>
@@ -72,6 +90,12 @@ Canonical MCP pattern in this repository:
 
 ```text
 kagent -> RemoteMCPServer -> agentgateway -> MCP target
+```
+
+Inventory control-plane path:
+
+```text
+agentregistry-inventory -> discovers kagent Agents / MCPServer / RemoteMCPServer / ModelConfig
 ```
 
 Detailed split SVG views:
@@ -113,6 +137,7 @@ AgenticNativePlatform/
 - `ansible/`: host bootstrap, k3s install/export, one-time SOPS age bootstrap
 - `bootstrap/flux-operator/`: declarative Flux Operator install artifacts
 - `clusters/<topology>-<env>/`: committed cluster-specific bases, Flux templates, and mode-specific sync roots
+- `charts/`: repo-local and vendored Helm charts used by Flux `HelmRelease` resources
 - `infrastructure/`: sources, controllers, network, observability, security, storage
 - `apps/`: platform and application manifests
 - `values/`: non-secret Git-authored values and rendered ConfigMaps
@@ -379,7 +404,7 @@ The main user-facing parameters are:
 | `GRAFANA_ADMIN_USERNAME`, `GRAFANA_ADMIN_PASSWORD` | Grafana admin bootstrap credentials | observability secret render | `GRAFANA_ADMIN_PASSWORD=strong-secret` | real username/password |
 | `GRAFANA_SERVICE_ACCOUNT_TOKEN`, `GRAFANA_API_KEY` | Grafana MCP API credentials for kagent | Grafana MCP secret render in `kagent` namespace | `GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_...` | service account token preferred; optional for `make run-cluster-from-scratch`, which can mint one after Grafana boots |
 | `FLUX_OPERATOR_UI_LOCAL_PORT` | Local port override for Flux Operator UI port-forward | `make open-flux-operator-ui` | `make open-flux-operator-ui FLUX_OPERATOR_UI_LOCAL_PORT=19080` | valid local TCP port |
-| `KAGENT_UI_LOCAL_PORT`, `KAGENT_A2A_LOCAL_PORT`, `AGENTGATEWAY_LOCAL_PORT`, `AGENTGATEWAY_ADMIN_UI_LOCAL_PORT`, `LITELLM_LOCAL_PORT`, `GRAFANA_LOCAL_PORT`, `PROMETHEUS_LOCAL_PORT`, `QDRANT_LOCAL_PORT` | Local port overrides for port-forward targets | `open-*` targets | `make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16001` or `make open-agentgateway-admin-ui AGENTGATEWAY_ADMIN_UI_LOCAL_PORT=15000` | valid local TCP ports |
+| `KAGENT_UI_LOCAL_PORT`, `KAGENT_A2A_LOCAL_PORT`, `AGENTGATEWAY_LOCAL_PORT`, `AGENTGATEWAY_ADMIN_UI_LOCAL_PORT`, `LITELLM_LOCAL_PORT`, `GRAFANA_LOCAL_PORT`, `PROMETHEUS_LOCAL_PORT`, `QDRANT_LOCAL_PORT`, `AGENTREGISTRY_INVENTORY_LOCAL_PORT` | Local port overrides for port-forward targets | `open-*` targets | `make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16001` or `make open-agentregistry-inventory AGENTREGISTRY_INVENTORY_LOCAL_PORT=19081` | valid local TCP ports |
 
 - `TOPOLOGY` defaults to `local`; supported values are `local`, `github-codespace`, `minipc`, `hybrid`, `hybrid-remote`
 - `RUNTIME`, `LMSTUDIO_ENABLED`, and `SECRETS_MODE` are operational selectors used by bootstrap and lifecycle targets
@@ -599,6 +624,8 @@ Main local URLs:
 - `http://localhost:3000` for Grafana
 - `http://localhost:9090` for Prometheus
 - `http://localhost:6333/dashboard` for Qdrant
+- `http://localhost:18081` for Agent Registry Inventory
+- `http://localhost:18081/v0/servers` for the Inventory public catalog API
 - `http://localhost:9080` for the Flux Operator web UI
 
 Local access commands:
@@ -614,6 +641,7 @@ Local access commands:
 | Grafana | `make open-grafana` | `make close-grafana` | browser/login check | `http://localhost:3000` |
 | Prometheus | `make open-prometheus` | `make close-prometheus` | browser/ready check | `http://localhost:9090` |
 | Qdrant | `make open-qdrant` | `make close-qdrant` | dashboard/manual check | `http://localhost:6333/dashboard` |
+| Agent Registry Inventory | `make open-agentregistry-inventory` | `make close-agentregistry-inventory` | `make check-agentregistry-inventory` | `http://localhost:18081` |
 | Flux Operator UI | `make open-flux-operator-ui` | `make close-flux-operator-ui` | `make check-flux-operator-ui` | `http://localhost:9080` |
 | All core research endpoints | `make open-research-access` | `make close-research-access` | summary printed by target | multiple |
 
@@ -631,6 +659,8 @@ Endpoint truth table:
 | `http://localhost:15001/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` | Team lead agent card through AgentGateway |
 | `http://localhost:4000/health/readiness` | LiteLLM readiness endpoint |
 | `http://localhost:4000/v1/models` | LiteLLM API |
+| `http://localhost:18081/` | Agent Registry Inventory UI |
+| `http://localhost:18081/v0/servers` | Agent Registry Inventory public catalog API |
 | `http://localhost:9080/` | Flux Operator web UI |
 
 Manual curls:
@@ -662,12 +692,14 @@ Single-target examples:
 make open-kagent-ui
 make open-kagent-a2a
 make open-agentgateway
+make open-agentgateway-admin-ui
 make test-a2a-delegation
 make test-a2a-delegation-via-agentgateway
 make open-litellm
 make open-grafana
 make open-prometheus
 make open-qdrant
+make open-agentregistry-inventory
 make open-flux-operator-ui
 ```
 
@@ -677,11 +709,12 @@ Close-target examples:
 make close-kagent-ui
 make close-kagent-a2a
 make close-agentgateway
-make open-agentgateway-admin-ui
+make close-agentgateway-admin-ui
 make close-litellm
 make close-grafana
 make close-prometheus
 make close-qdrant
+make close-agentregistry-inventory
 make close-flux-operator-ui
 make close-research-access
 ```
@@ -697,6 +730,7 @@ make open-litellm LITELLM_LOCAL_PORT=14000
 make open-grafana GRAFANA_LOCAL_PORT=13000
 make open-prometheus PROMETHEUS_LOCAL_PORT=19090
 make open-qdrant QDRANT_LOCAL_PORT=16333
+make open-agentregistry-inventory AGENTREGISTRY_INVENTORY_LOCAL_PORT=19081
 make open-flux-operator-ui FLUX_OPERATOR_UI_LOCAL_PORT=19080
 ```
 
@@ -707,6 +741,7 @@ make check-kagent-ui
 make check-agentgateway
 make check-agentgateway-openai
 make check-litellm
+make check-agentregistry-inventory
 make check-flux-operator-ui
 ```
 

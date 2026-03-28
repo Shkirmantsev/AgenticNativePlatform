@@ -13,6 +13,7 @@ resources:
   - ../../../apps/ai-gateway/litellm
   - ../../../apps/ai-gateway/kagent/core
   - ../../../apps/platform/kmcp/core
+  - ../../../apps/platform/agentregistry-inventory/core
   - ../../../infrastructure/controllers/kserve
   - ../../../apps/ai-models/tei
   - ../../../apps/context/qdrant

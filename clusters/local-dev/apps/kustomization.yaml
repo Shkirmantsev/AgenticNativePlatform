@@ -5,4 +5,5 @@ resources:
   - ../../../infrastructure/network/kgateway/resources
   - ../../../apps/ai-gateway/agentgateway/resources
   - ../../../apps/ai-gateway/kagent/resources
+  - ../../../apps/platform/agentregistry-inventory/resources
   - ../../../apps/platform/kmcp/resources

@@ -1,0 +1,21 @@
+apiVersion: agentregistry.dev/v1alpha1
+kind: DiscoveryConfig
+metadata:
+  name: agentregistry-inventory
+  namespace: agentregistry
+spec:
+  environments:
+    - name: in-cluster
+      discoveryEnabled: true
+      deployEnabled: false
+      namespaces:
+        - kagent
+      resourceTypes:
+        - MCPServer
+        - Agent
+        - ModelConfig
+        - RemoteMCPServer
+      cluster:
+        name: in-cluster
+        useWorkloadIdentity: false
+      a2aEndpoint: http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080

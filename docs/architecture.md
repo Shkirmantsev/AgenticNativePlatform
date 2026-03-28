@@ -14,6 +14,7 @@ Those stages compose the shared top-level trees:
 
 - `infrastructure/`
 - `apps/`
+- `charts/`
 - `values/`
 - `secrets/`
 
@@ -32,6 +33,13 @@ kagent
   -> agentgateway /v1
   -> agentgateway /mcp
   -> RemoteMCPServer
+```
+
+```text
+agentregistry-inventory
+  -> discovers kagent Agents, MCPServer, RemoteMCPServer, and ModelConfig resources
+  -> serves internal UI and API over ClusterIP + port-forward
+  -> stays off the default public gateway path
 ```
 
 ## Topologies
