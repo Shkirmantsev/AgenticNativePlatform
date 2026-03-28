@@ -843,6 +843,8 @@ Additional UI captures:
 - [make-open-kagent-ui7](.assets/kagent-ui7.png)
 
 
+## Demo Video declarative agents
+
 <details>
 <summary><strong>Open Demo Video declarative agents</strong></summary>
 
@@ -859,6 +861,34 @@ Additional UI captures:
 
 </details>
 
+
+## Enterprise MCP on Kubernetes: Implementable Production Use Cases with Sampling and Elicitation
+
+[MCP_Research](.assets/research/merged-enterprise-mcp-research.md).
+
+## Demo Video MCP Inspector and building MCP with elicitation, embedded web APP and sampling
+
+<details>
+<summary><strong>Open Demo Video | building custom MCP server with elicitation, embedded web APP and 
+sampling</strong></summary>
+
+<div align="center">
+  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/finnhub-agent-go.webm" width="100%" controls autoplay loop muted>
+    Your browser does not support webm format
+  </video>
+</div>
+<div align="center">
+  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Inspector-custom-mcp_10mb.webm" width="100%" controls autoplay loop muted>
+    Your browser does not support webm format
+  </video>
+</div>
+<div align="center">
+  <video src="https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.3.0/Elicitation_and_Sampling_webApp.webm" width="100%" controls autoplay loop muted>
+    Your browser does not support webm format
+  </video>
+</div>
+
+</details>
 
 ## Notes For OCI Migration
 
