@@ -42,6 +42,11 @@ node "Kubernetes cluster" {
     component "RemoteMCPServer" as RemoteMCP
   }
 
+  package "agentregistry" {
+    component "agentregistry-inventory" as Inventory
+    component "DiscoveryConfig/local" as InventoryDiscovery
+  }
+
   package "ai-gateway" {
     component "LiteLLM" as LiteLLM
   }
@@ -75,6 +80,7 @@ GitRepository --> PlatformInfrastructure
 PlatformInfrastructure --> PlatformSecrets : dependsOn
 PlatformSecrets --> PlatformApplications : dependsOn
 PlatformInfrastructure --> ClusterWrappers
+PlatformInfrastructure --> Inventory : reconciles HelmRelease
 
 Client --> PublicGateway : HTTP /v1 and /mcp
 PublicGateway --> AgentgatewayProxy
@@ -83,6 +89,10 @@ KagentUI --> KagentController : UI
 A2AAgent --> KagentController : A2A
 KagentController --> AgentgatewayProxy : /v1
 RemoteMCP --> AgentgatewayProxy : /mcp/kagent-tools
+Inventory --> InventoryDiscovery : default local discovery
+Inventory --> KagentController : catalogs runtime resources
+Inventory --> RemoteMCP : catalogs RemoteMCPServer
+Inventory --> A2AAgent : catalogs Agents
 
 AgentgatewayProxy --> LitellmBackend : /v1
 AgentgatewayProxy --> ToolsBackend : /mcp
@@ -120,6 +130,12 @@ note bottom of LiteLLM
 Default hot path:
 kagent -> agentgateway -> LiteLLM -> provider
 or optional local runtime
+end note
+
+note bottom of Inventory
+Internal-only by default.
+UI and API are reached through port-forward.
+Discovery catalogs local kagent resources.
 end note
 
 @enduml

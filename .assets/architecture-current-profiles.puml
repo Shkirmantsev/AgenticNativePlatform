@@ -17,6 +17,7 @@ package "Repository source of truth" {
   component "clusters/" as RepoClusters
   component "infrastructure/" as RepoInfrastructure
   component "apps/" as RepoApps
+  component "charts/\nrepo-local and vendored" as RepoCharts
   component "values/\nnon-secret only" as RepoValues
   component "secrets/\nSOPS roots by topology" as RepoSecrets
 }
@@ -48,6 +49,7 @@ node "flux-system" {
 Operator --> RepoClusters : edit
 Operator --> RepoInfrastructure : edit
 Operator --> RepoApps : edit
+Operator --> RepoCharts : edit
 Operator --> RepoValues : edit
 Operator --> RepoSecrets : edit
 Operator --> RemoteRepo : commit and push
@@ -77,6 +79,7 @@ PlatformSecrets --> ClusterSecrets
 PlatformApplications --> ClusterApps
 
 ClusterInfrastructure --> RepoInfrastructure
+ClusterInfrastructure --> RepoCharts
 ClusterInfrastructure --> RepoValues
 ClusterSecrets --> RepoSecrets
 ClusterApps --> RepoApps
@@ -94,6 +97,11 @@ end note
 note bottom of PlatformApplications
 Staging keeps controllers and CRDs ahead of
 dependent secrets and application objects.
+end note
+
+note bottom of RepoCharts
+Vendored and repo-local Helm charts stay in Git so
+Flux can package them from the same source of truth.
 end note
 
 @enduml

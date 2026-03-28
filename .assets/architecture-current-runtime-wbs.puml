@@ -27,6 +27,10 @@
 **** remote provider default path
 **** optional external LM Studio path
 **** optional in-cluster runtime path
+*** agentregistry-inventory
+**** internal control-plane catalog
+**** default access via port-forward
+**** not on the default public gateway path
 
 ** 3. Cluster components
 *** platform plumbing
@@ -56,6 +60,9 @@
 **** Qdrant
 **** PostgreSQL
 **** Redis
+*** agentregistry
+**** agentregistry-inventory
+**** DiscoveryConfig/local
 *** observability
 **** Prometheus
 **** Grafana
@@ -79,4 +86,8 @@
 **** kagent-controller -> Qdrant
 **** kagent-controller -> PostgreSQL
 **** kagent-controller -> Redis
+*** Inventory path
+**** agentregistry-inventory -> catalogs kagent Agents
+**** agentregistry-inventory -> catalogs MCPServer and RemoteMCPServer
+**** operator -> port-forward -> inventory UI and public catalog API
 @endwbs

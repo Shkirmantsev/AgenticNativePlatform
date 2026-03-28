@@ -8,6 +8,7 @@
 **** values/*
 **** secrets/*
 **** charts/*
+***** includes vendored upstream control-plane charts
 *** Operator workflow
 **** edits committed manifests in repo
 **** commits and pushes to remote Git repository
@@ -45,6 +46,7 @@
 *** platform-infrastructure
 **** reads clusters/<topology>-<env>/infrastructure
 **** composes infrastructure/
+**** composes repo-local and vendored charts via HelmRelease
 **** composes values/
 *** platform-secrets
 **** dependsOn platform-infrastructure
@@ -67,9 +69,14 @@
 **** ai-gateway
 **** ai-models
 **** context
+**** platform/agentregistry-inventory
+*** charts/
+**** repo-local charts
+**** vendored upstream charts
 *** values/
 **** non-secret only
 **** future OCI artifact candidate
+**** includes agentregistry inventory values ConfigMap
 *** secrets/
 **** SOPS by topology
 **** separate from non-secret values
