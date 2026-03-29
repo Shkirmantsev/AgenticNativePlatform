@@ -38,7 +38,7 @@ spec:
     targets:
       - name: finnhub-mcp-server
         static:
-          host: finnhub-mcp-server.kagent.svc.cluster.local
+          host: finnhub-mcp-backend.kagent.svc.cluster.local
           port: 3000
           path: /mcp
           protocol: StreamableHTTP

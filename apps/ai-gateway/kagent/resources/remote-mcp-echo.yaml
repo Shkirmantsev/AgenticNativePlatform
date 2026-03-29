@@ -4,6 +4,7 @@ metadata:
   name: echo-mcp-server
   namespace: kagent
 spec:
-  description: Echo MCP server exposed through agentgateway.
+  description: Echo MCP server exposed through AgentGateway at /mcp/echo-mcp.
   protocol: STREAMABLE_HTTP
+  terminateOnClose: true
   url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/echo-mcp"

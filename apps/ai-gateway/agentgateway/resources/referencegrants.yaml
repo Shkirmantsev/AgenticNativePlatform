@@ -41,4 +41,4 @@ spec:
   to:
     - group: ""
       kind: Service
-      name: finnhub-mcp-server
+      name: finnhub-mcp-backend

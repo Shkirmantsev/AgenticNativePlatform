@@ -1,10 +1,10 @@
 apiVersion: kagent.dev/v1alpha1
 kind: MCPServer
 metadata:
-  name: finnhub-mcp-server
+  name: finnhub-mcp-backend
   namespace: kagent
   labels:
-    app.kubernetes.io/name: finnhub-mcp-server
+    app.kubernetes.io/name: finnhub-mcp-backend
     app.kubernetes.io/component: mcp
     app.kubernetes.io/part-of: agentic-native-platform
     kagent.dev/discovery: "disabled"
@@ -23,6 +23,11 @@ spec:
       - http
       - -http-addr
       - :3000
+    labels:
+      app.kubernetes.io/name: finnhub-mcp-backend
+      app.kubernetes.io/component: mcp
+      app.kubernetes.io/part-of: agentic-native-platform
+      istio.io/dataplane-mode: none
     env:
       FINNHUB_PUBLIC_WEB_BASE_URL: http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/finnhub/app
     image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.4.0

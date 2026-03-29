@@ -6,4 +6,5 @@ metadata:
 spec:
   description: kagent bundled tool server exposed through agentgateway.
   protocol: STREAMABLE_HTTP
+  terminateOnClose: true
   url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/kagent-tools"
