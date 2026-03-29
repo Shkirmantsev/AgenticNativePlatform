@@ -56,18 +56,6 @@ spec:
   values:
     tag: "0.7.23"
     controller:
-      initContainers:
-        - name: wait-for-agentgateway
-          image: busybox:1.36
-          imagePullPolicy: IfNotPresent
-          command:
-            - /bin/sh
-            - -ec
-            - |
-              until nc -z agentgateway-proxy.agentgateway-system.svc.cluster.local 8080; do
-                echo "waiting for agentgateway-proxy:8080"
-                sleep 2
-              done
       image:
         tag: "0.7.23"
       agentImage:

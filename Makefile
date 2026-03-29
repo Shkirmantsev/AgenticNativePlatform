@@ -73,7 +73,7 @@ KUBECTL ?= kubectl --kubeconfig "$(KUBECONFIG)"
 FLUX ?= flux --kubeconfig "$(KUBECONFIG)"
 
 PAUSE_NAMESPACES ?= ai-gateway ai-models context
-PLATFORM_KUSTOMIZATIONS ?= platform-infrastructure platform-secrets platform-applications
+PLATFORM_KUSTOMIZATIONS ?= platform-infrastructure platform-secrets platform-runtime platform-applications
 
 define wait_for_http_status
 	@url="$(1)"; accepted_codes="$(2)"; header="$(3)"; deadline=$$(( $$(date +%s) + $(HTTP_PROBE_TIMEOUT) )); last_code="000"; \

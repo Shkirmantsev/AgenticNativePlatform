@@ -142,7 +142,7 @@ reconcile: require-kubeconfig ## Reconcile the Flux Git source and staged platfo
 	    reconcile.fluxcd.io/forceAt="$$token" \
 	    reconcile.fluxcd.io/resetAt="$$token" || true; \
 	done
-	@for k in platform-secrets platform-applications; do \
+	@for k in platform-secrets platform-runtime platform-applications; do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) reconcile kustomization $$k -n flux-system --with-source || true; \
 	done

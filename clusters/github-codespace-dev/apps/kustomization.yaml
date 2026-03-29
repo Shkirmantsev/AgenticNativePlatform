@@ -1,9 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../../infrastructure/network/kgateway/resources
-  - ../../../apps/ai-gateway/agentgateway/resources
-  - ../../../apps/ai-gateway/kagent/resources
-  - ../../../apps/platform/agentregistry-inventory/resources
-  - ../../../apps/platform/mcp-governance/resources
-  - ../../../apps/platform/kmcp/resources
+  - applications-remotes.yaml
+  - applications-core.yaml

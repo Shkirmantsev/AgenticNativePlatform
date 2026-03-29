@@ -98,7 +98,7 @@ cluster-resume: require-cluster-api ## Resume platform workloads from Git desire
 	    reconcile.fluxcd.io/forceAt="$$token" \
 	    reconcile.fluxcd.io/resetAt="$$token" || true; \
 	done
-	@for k in platform-secrets platform-applications; do \
+	@for k in platform-secrets platform-runtime platform-applications; do \
 	  $(KUBECTL) -n flux-system get kustomization $$k >/dev/null 2>&1 || continue; \
 	  $(FLUX) reconcile kustomization $$k -n flux-system --with-source || true; \
 	done
@@ -310,7 +310,7 @@ check-agentregistry-inventory: ## Verify the local Agent Registry Inventory endp
 
 check-flux-stages: require-kubeconfig ## Show and validate readiness for the staged Flux Kustomizations
 	@failed=0; \
-	for stage in platform-infrastructure platform-secrets platform-applications; do \
+	for stage in platform-infrastructure platform-secrets platform-runtime platform-applications; do \
 	  json="$$( $(KUBECTL) -n flux-system get kustomization $$stage -o json 2>&1 )"; \
 	  status=$$?; \
 	  if [ "$$status" -ne 0 ]; then \

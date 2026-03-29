@@ -2,7 +2,7 @@
 
 This bundle is intentionally optional.
 
-It deploys the sample `MCPServer` from `../kmcp-resources`, but it is not part of the default staged application path.
+It mirrors the sample `MCPServer` from `../kmcp/resources` for isolated rendering and experiments.
 
 The sample uses KMCP native package deployment for the official MCP reference package:
 

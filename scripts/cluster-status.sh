@@ -7,7 +7,7 @@ KUBECONFIG_PATH="${KUBECONFIG_PATH:-}"
 STATE_NAMESPACE="${STATE_NAMESPACE:-flux-system}"
 STATE_CONFIGMAP="${PAUSE_STATE_CONFIGMAP:-cluster-pause-state}"
 PAUSE_NAMESPACES="${PAUSE_NAMESPACES:-}"
-PLATFORM_KUSTOMIZATIONS="${PLATFORM_KUSTOMIZATIONS:-platform-infrastructure platform-secrets platform-applications}"
+PLATFORM_KUSTOMIZATIONS="${PLATFORM_KUSTOMIZATIONS:-platform-infrastructure platform-secrets platform-runtime platform-applications}"
 FLUX_SYNC_SOURCE_NAME="${FLUX_SYNC_SOURCE_NAME:-flux-system}"
 
 print_default_status() {

@@ -12,7 +12,7 @@ spec:
   # secret stage. Keep the dependency explicit now that secrets can reconcile
   # in parallel with infrastructure.
   dependsOn:
-    - name: platform-infrastructure
+    - name: platform-runtime
     - name: platform-secrets
   sourceRef:
     kind: GitRepository
