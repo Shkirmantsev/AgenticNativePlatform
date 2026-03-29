@@ -98,7 +98,7 @@ func runHTTP(server *mcp.Server, app *mcpserver.Application, cfg config.Config, 
 		SessionTimeout: 30 * time.Minute,
 		Logger:         logger,
 	}
-	mux.Handle(cfg.MCPPath, mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
+	mux.Handle(cfg.MCPPath, newAgentGatewayCompatibleStreamableHandler(func(*http.Request) *mcp.Server {
 		return server
 	}, httpOptions))
 
