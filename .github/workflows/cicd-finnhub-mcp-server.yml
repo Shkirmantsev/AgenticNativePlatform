@@ -6,20 +6,10 @@ on:
     branches:
       - main
       - dev
-    paths:
-      - .github/workflows/cicd-finnhub-mcp-server.yml
-      - .gitleaks.toml
-      - mcp/finnhub-mcp-server/**
-      - apps/platform/kmcp/resources/finnhub-mcp-server.yaml
   pull_request:
     branches:
       - main
       - dev
-    paths:
-      - .github/workflows/cicd-finnhub-mcp-server.yml
-      - .gitleaks.toml
-      - mcp/finnhub-mcp-server/**
-      - apps/platform/kmcp/resources/finnhub-mcp-server.yaml
 
 concurrency:
   group: cicd-finnhub-mcp-server-${{ github.ref }}
@@ -41,15 +31,27 @@ env:
 
 jobs:
   metadata:
-    name: Resolve build metadata
+    name: Quick preflight and build metadata
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       image_ref: ${{ steps.version.outputs.image_ref }}
       should_publish: ${{ steps.publish_guard.outputs.should_publish }}
+      has_relevant_changes: ${{ steps.changes.outputs.finnhub }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Detect Finnhub workflow changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            finnhub:
+              - '.github/workflows/cicd-finnhub-mcp-server.yml'
+              - '.gitleaks.toml'
+              - 'mcp/finnhub-mcp-server/**'
+              - 'apps/platform/kmcp/resources/finnhub-mcp-server.yaml'
 
       - name: Read version from kmcp.yaml
         id: version
@@ -82,10 +84,23 @@ jobs:
 
           echo "should_publish=${should_publish}" >> "${GITHUB_OUTPUT}"
 
+      - name: Write preflight summary
+        shell: bash
+        run: |
+          {
+            echo "Finnhub workflow preflight"
+            echo "- relevant changes detected: ${{ steps.changes.outputs.finnhub }}"
+            echo "- publish allowed on this event: ${{ steps.publish_guard.outputs.should_publish }}"
+            if [[ "${{ steps.changes.outputs.finnhub }}" != "true" ]]; then
+              echo "- heavy Finnhub jobs skipped because this commit did not touch the Finnhub workflow, project, gitleaks config, or deployment manifest"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
   quality:
     name: Lint, secret scan and Go validation
     runs-on: ubuntu-latest
     needs: metadata
+    if: needs.metadata.outputs.has_relevant_changes == 'true'
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -171,7 +186,7 @@ jobs:
     needs:
       - metadata
       - quality
-    if: needs.metadata.outputs.should_publish == 'true'
+    if: needs.metadata.outputs.has_relevant_changes == 'true' && needs.metadata.outputs.should_publish == 'true'
     timeout-minutes: 30
     permissions:
       contents: read
