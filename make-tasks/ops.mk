@@ -173,8 +173,8 @@ open-kagent-ui: require-kubeconfig ## Open the kagent UI at http://localhost:808
 close-kagent-ui: ## Close the kagent UI port-forward
 	$(call stop_port_forward,kagent-ui)
 
-open-kagent-a2a: require-kubeconfig ## Open the kagent controller API at http://localhost:8083
-	$(call start_port_forward,kagent-a2a,http://localhost:$(KAGENT_A2A_LOCAL_PORT),kagent,kagent-kagent-controller,$(KAGENT_A2A_LOCAL_PORT),8083,http://localhost:$(KAGENT_A2A_LOCAL_PORT)/health,200,)
+open-kagent-a2a: require-kubeconfig ## Open the sample kagent A2A card at http://localhost:8083/api/a2a/kagent/k8s-agent/.well-known/agent.json
+	$(call start_port_forward,kagent-a2a,http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/k8s-agent/.well-known/agent.json,kagent,kagent-kagent-controller,$(KAGENT_A2A_LOCAL_PORT),8083,http://localhost:$(KAGENT_A2A_LOCAL_PORT)/health,200,)
 
 close-kagent-a2a: ## Close the kagent controller API port-forward
 	$(call stop_port_forward,kagent-a2a)

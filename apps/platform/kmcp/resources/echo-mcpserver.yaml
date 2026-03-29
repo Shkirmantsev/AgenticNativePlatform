@@ -23,6 +23,7 @@ spec:
       app.kubernetes.io/name: echo-mcp
       app.kubernetes.io/component: mcp
       app.kubernetes.io/part-of: agentic-native-platform
+      istio.io/dataplane-mode: none
     resources:
       requests:
         cpu: "50m"

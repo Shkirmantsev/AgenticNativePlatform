@@ -10,4 +10,6 @@ The sample uses KMCP native package deployment for the official MCP reference pa
 @modelcontextprotocol/server-everything@2026.1.26
 ```
 
-The `MCPServer` resource runs it via `npx` with `transportType: stdio`, and KMCP exposes it over streamable HTTP for AgentGateway and `RemoteMCPServer` consumers.
+The `MCPServer` resource runs it via `npx` with `transportType: http` and the package's `streamableHttp` mode, and KMCP exposes it on `/mcp` for AgentGateway and `RemoteMCPServer` consumers.
+
+The generated pod is also opted out of Istio ambient with `istio.io/dataplane-mode: none`; in this repo, leaving the sample backend in ambient caused AgentGateway `initialize` requests to fail with upstream connection errors even though direct port-forward access still worked.
