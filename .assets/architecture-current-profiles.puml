@@ -22,6 +22,12 @@ package "Repository source of truth" {
   component "secrets/\nSOPS roots by topology" as RepoSecrets
 }
 
+package "Shared platform integration example" {
+  component "values/common/mcp-governance" as MCPGValues
+  component "apps/platform/mcp-governance/core" as MCPGCore
+  component "apps/platform/mcp-governance/resources" as MCPGResources
+}
+
 package "Local workstation bootstrap" {
   component "bootstrap-hosts" as BootstrapHosts
   component "local OCI cache\nhost-level pull-through" as LocalOciCache
@@ -94,6 +100,12 @@ ClusterInfrastructure --> RepoCharts
 ClusterInfrastructure --> RepoValues
 ClusterSecrets --> RepoSecrets
 ClusterApps --> RepoApps
+RepoValues --> MCPGValues
+RepoApps --> MCPGCore
+RepoApps --> MCPGResources
+PlatformInfrastructure --> MCPGValues : composes values ConfigMap
+PlatformInfrastructure --> MCPGCore : composes HelmRelease
+PlatformApplications --> MCPGResources : composes policy and evaluation
 
 note bottom of RepoClusters
 Committed cluster roots are now the GitOps
@@ -113,6 +125,11 @@ end note
 note bottom of RepoCharts
 Vendored and repo-local Helm charts stay in Git so
 Flux can package them from the same source of truth.
+end note
+
+note bottom of MCPGResources
+MCP Governance is staged across infrastructure and applications:
+Helm release first, then cluster-scoped policy resources.
 end note
 
 note bottom of LocalOciCache

@@ -44,9 +44,11 @@ The runtime model in the repository is currently:
 - `kgateway` is the public north-south entry point
 - `agentgateway` is the protocol-aware AI gateway
 - `kagent` uses `agentgateway` for both `/v1` and `/mcp`
+- `mcpg` adds an internal MCP governance control plane and dashboard in `mcp-governance-system`
 - `agentregistry-inventory` is the internal control-plane registry for discovered agents, MCP servers, skills, and models
 - `/v1` flows to `LiteLLM`, then to remote providers or optional local runtimes
 - `/mcp` flows to gateway-backed MCP targets such as `kagent-tools`
+- `mcpg` evaluates the MCP surface through cluster-scoped `MCPGovernancePolicy` and `GovernanceEvaluation` resources staged after the platform controllers are installed
 - `KServe` remains part of the serving stack, but is not forced into the default `/v1` hot path
 
 <details>
@@ -90,6 +92,13 @@ Canonical MCP pattern in this repository:
 
 ```text
 kagent -> RemoteMCPServer -> agentgateway -> MCP target
+```
+
+MCP governance path:
+
+```text
+mcpg controller -> scans agentgateway / kagent / agentregistry resources
+mcpg dashboard  -> internal-only access via port-forward
 ```
 
 Inventory control-plane path:

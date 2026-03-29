@@ -15,6 +15,7 @@ The platform uses:
 - non-secret configuration under `values/`
 - topology-scoped SOPS roots under `secrets/`
 - an internal Agent Registry Inventory control plane under `agentregistry` for cataloging kagent/KMCP runtime resources
+- an internal MCP Governance control plane under `mcp-governance-system` for policy-driven evaluation of the MCP surface
 - a local-only workstation OCI pull-through cache that `bootstrap-hosts` installs before `k3s` starts so repeated local rebuilds can reuse image layers
 
 ## Architecture Summary
@@ -36,6 +37,11 @@ The stage ordering is intentionally:
 - `platform-infrastructure`: controllers, CRDs, namespaces, and shared platform releases
 - `platform-secrets`: runtime secrets and decrypted SOPS content
 - `platform-applications`: application-level resources that need both the platform and the secret stage
+
+Platform integrations can split across stages when they install both controllers and dependent resources. In the current repository, `mcp-governance` follows that pattern:
+
+- `platform-infrastructure` installs the `mcp-governance` Helm release and non-secret values
+- `platform-applications` applies the cluster-scoped `MCPGovernancePolicy` and `GovernanceEvaluation` resources
 
 `platform-secrets` does not wait for `platform-infrastructure` readiness because several infrastructure Helm releases consume secrets during install. `platform-applications` waits for both stages explicitly.
 

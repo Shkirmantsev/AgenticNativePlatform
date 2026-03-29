@@ -47,6 +47,13 @@ node "Kubernetes cluster" {
     component "DiscoveryConfig/local" as InventoryDiscovery
   }
 
+  package "mcp-governance-system" {
+    component "mcp-governance-controller" as MCPGController
+    component "mcp-governance-dashboard" as MCPGDashboard
+    component "MCPGovernancePolicy" as MCPGPolicy
+    component "GovernanceEvaluation" as MCPGEvaluation
+  }
+
   package "ai-gateway" {
     component "LiteLLM" as LiteLLM
   }
@@ -81,6 +88,9 @@ PlatformInfrastructure --> PlatformSecrets : dependsOn
 PlatformSecrets --> PlatformApplications : dependsOn
 PlatformInfrastructure --> ClusterWrappers
 PlatformInfrastructure --> Inventory : reconciles HelmRelease
+PlatformInfrastructure --> MCPGController : reconciles HelmRelease
+PlatformApplications --> MCPGPolicy : applies policy CR
+PlatformApplications --> MCPGEvaluation : applies evaluation CR
 
 Client --> PublicGateway : HTTP /v1 and /mcp
 PublicGateway --> AgentgatewayProxy
@@ -93,6 +103,12 @@ Inventory --> InventoryDiscovery : default local discovery
 Inventory --> KagentController : catalogs runtime resources
 Inventory --> RemoteMCP : catalogs RemoteMCPServer
 Inventory --> A2AAgent : catalogs Agents
+MCPGEvaluation --> MCPGPolicy : policyRef
+MCPGController --> MCPGPolicy : enforces checks
+MCPGController --> MCPGEvaluation : runs evaluations
+MCPGController --> AgentgatewayProxy : scans MCP gateway posture
+MCPGController --> KagentController : scans agents and MCP resources
+MCPGController --> Inventory : scans registry metadata
 
 AgentgatewayProxy --> LitellmBackend : /v1
 AgentgatewayProxy --> ToolsBackend : /mcp
@@ -136,6 +152,12 @@ note bottom of Inventory
 Internal-only by default.
 UI and API are reached through port-forward.
 Discovery catalogs local kagent resources.
+end note
+
+note bottom of MCPGController
+Internal MCP governance control plane.
+Dashboard is port-forwarded by default.
+Policy and evaluation resources stay cluster-scoped.
 end note
 
 @enduml

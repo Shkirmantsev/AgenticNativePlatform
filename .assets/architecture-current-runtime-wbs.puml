@@ -31,6 +31,9 @@
 **** internal control-plane catalog
 **** default access via port-forward
 **** not on the default public gateway path
+*** MCP Governance dashboard
+**** internal-only access via port-forward
+**** backed by mcp-governance controller scans
 
 ** 3. Cluster components
 *** platform plumbing
@@ -63,6 +66,11 @@
 *** agentregistry
 **** agentregistry-inventory
 **** DiscoveryConfig/local
+*** mcp-governance-system
+**** mcp-governance-controller
+**** mcp-governance-dashboard
+**** MCPGovernancePolicy
+**** GovernanceEvaluation
 *** observability
 **** Prometheus
 **** Grafana
@@ -90,4 +98,8 @@
 **** agentregistry-inventory -> catalogs kagent Agents
 **** agentregistry-inventory -> catalogs MCPServer and RemoteMCPServer
 **** operator -> port-forward -> inventory UI and public catalog API
+*** Governance path
+**** mcp-governance-controller -> scans agentgateway, kagent, and agentregistry resources
+**** GovernanceEvaluation -> policyRef -> MCPGovernancePolicy
+**** operator -> port-forward -> mcpg dashboard
 @endwbs

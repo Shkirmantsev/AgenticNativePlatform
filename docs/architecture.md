@@ -23,6 +23,7 @@ Staging semantics:
 - `platform-infrastructure` installs controllers, CRDs, and shared platform releases
 - `platform-secrets` supplies runtime secrets and SOPS-decrypted objects without waiting for infrastructure readiness
 - `platform-applications` waits for both stages explicitly
+- `mcpg` follows the split platform pattern: its `HelmRelease` and values land in `platform-infrastructure`, while cluster-scoped `MCPGovernancePolicy` and `GovernanceEvaluation` objects land in `platform-applications`
 
 ## Platform path
 
@@ -39,6 +40,13 @@ kagent
   -> agentgateway /v1
   -> agentgateway /mcp
   -> RemoteMCPServer
+```
+
+```text
+mcpg
+  -> watches agentgateway, kagent, and agentregistry resources
+  -> evaluates MCP posture with cluster-scoped governance policy and evaluation resources
+  -> exposes an internal dashboard in mcp-governance-system
 ```
 
 ```text

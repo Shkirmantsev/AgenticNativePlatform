@@ -92,32 +92,39 @@
   <path class="arrow" d="M742 315 L820 315 L820 293 L872 293" />
   <path class="arrow" d="M742 315 L796 315 L796 381 L872 381" />
 
-  <rect class="node-accent" x="76" y="566" width="244" height="72" />
-  <text class="text" x="198" y="595" text-anchor="middle">
-    <tspan x="198" dy="0">kagent namespace</tspan>
-    <tspan x="198" dy="20">controller, UI, kagent-tools,</tspan>
-    <tspan x="198" dy="20">A2A agent, RemoteMCPServer</tspan>
+  <rect class="node-accent" x="54" y="566" width="210" height="72" />
+  <text class="text" x="159" y="595" text-anchor="middle">
+    <tspan x="159" dy="0">kagent namespace</tspan>
+    <tspan x="159" dy="20">controller, UI, kagent-tools,</tspan>
+    <tspan x="159" dy="20">A2A agent, RemoteMCPServer</tspan>
   </text>
 
-  <rect class="node-accent" x="370" y="566" width="228" height="72" />
-  <text class="text" x="484" y="595" text-anchor="middle">
-    <tspan x="484" dy="0">agentgateway-system</tspan>
-    <tspan x="484" dy="20">agentgateway controller,</tspan>
-    <tspan x="484" dy="20">Gateway, backends, policy</tspan>
+  <rect class="node-accent" x="288" y="566" width="190" height="72" />
+  <text class="text" x="383" y="595" text-anchor="middle">
+    <tspan x="383" dy="0">agentgateway-system</tspan>
+    <tspan x="383" dy="20">agentgateway controller,</tspan>
+    <tspan x="383" dy="20">Gateway, backends, policy</tspan>
   </text>
 
-  <rect class="node-runtime" x="648" y="566" width="228" height="72" />
-  <text class="text" x="762" y="595" text-anchor="middle">
-    <tspan x="762" dy="0">ai-models</tspan>
-    <tspan x="762" dy="20">KServe control plane,</tspan>
-    <tspan x="762" dy="20">tei-embeddings, runtime overlays</tspan>
+  <rect class="node-runtime" x="502" y="566" width="190" height="72" />
+  <text class="text" x="597" y="595" text-anchor="middle">
+    <tspan x="597" dy="0">ai-models</tspan>
+    <tspan x="597" dy="20">KServe control plane,</tspan>
+    <tspan x="597" dy="20">tei-embeddings, runtime overlays</tspan>
   </text>
 
-  <rect class="node" x="926" y="566" width="258" height="72" />
-  <text class="text" x="1055" y="595" text-anchor="middle">
-    <tspan x="1055" dy="0">context</tspan>
-    <tspan x="1055" dy="20">Qdrant, PostgreSQL, Redis</tspan>
-    <tspan x="1055" dy="20">used by the agent stack</tspan>
+  <rect class="node" x="716" y="566" width="210" height="72" />
+  <text class="text" x="821" y="595" text-anchor="middle">
+    <tspan x="821" dy="0">context</tspan>
+    <tspan x="821" dy="20">Qdrant, PostgreSQL, Redis</tspan>
+    <tspan x="821" dy="20">used by the agent stack</tspan>
+  </text>
+
+  <rect class="node-ops" x="950" y="566" width="248" height="72" />
+  <text class="text" x="1074" y="595" text-anchor="middle">
+    <tspan x="1074" dy="0">mcp-governance-system</tspan>
+    <tspan x="1074" dy="20">controller, dashboard,</tspan>
+    <tspan x="1074" dy="20">policy and evaluation flow</tspan>
   </text>
 
   <rect class="node-ops" x="76" y="684" width="244" height="72" />
@@ -148,9 +155,10 @@
     <tspan x="1055" dy="20">echo-mcp when enabled</tspan>
   </text>
 
-  <path class="arrow-soft" d="M320 602 L370 602" />
-  <path class="arrow-soft" d="M598 602 L648 602" />
-  <path class="arrow-soft" d="M876 602 L926 602" />
+  <path class="arrow-soft" d="M264 602 L288 602" />
+  <path class="arrow-soft" d="M478 602 L502 602" />
+  <path class="arrow-soft" d="M692 602 L716 602" />
+  <path class="arrow-soft" d="M926 602 L950 602" />
 
   <rect class="node" x="82" y="914" width="184" height="74" />
   <text class="text" x="174" y="943" text-anchor="middle">
@@ -176,8 +184,8 @@
   <rect class="node-accent" x="822" y="892" width="184" height="118" />
   <text class="text" x="914" y="929" text-anchor="middle">
     <tspan x="914" dy="0">Staged roots</tspan>
-    <tspan x="914" dy="22">platform-bootstrap</tspan>
-    <tspan x="914" dy="20">platform-infrastructure</tspan>
+    <tspan x="914" dy="22">platform-infrastructure</tspan>
+    <tspan x="914" dy="20">platform-secrets</tspan>
     <tspan x="914" dy="20">platform-applications</tspan>
   </text>
 
@@ -194,6 +202,7 @@
   <path class="arrow" d="M772 951 L822 951" />
   <path class="arrow" d="M1006 951 L1048 951" />
 
-  <text class="small" x="78" y="1048">Optional Flux child roots: `platform-ops-ui` for Weave GitOps UI and `platform-samples` for the sample echo MCP bundle.</text>
-  <text class="small" x="78" y="1072">Current workspace default resolves to `platform-profile-workspace`, which currently aliases `platform-profile-fast-serving`.</text>
+  <text class="small" x="78" y="1048">`mcp-governance` is split across stages: the Helm release and values enter `platform-infrastructure`, while the cluster-scoped policy and evaluation resources enter `platform-applications`.</text>
+  <text class="small" x="78" y="1072">Optional Flux child roots: `platform-ops-ui` for Weave GitOps UI and `platform-samples` for the sample echo MCP bundle.</text>
+  <text class="small" x="78" y="1096">Current workspace default resolves to `platform-profile-workspace`, which currently aliases `platform-profile-fast-serving`.</text>
 </svg>
