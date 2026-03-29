@@ -124,6 +124,9 @@ destroy-cluster-and-infra: ## Remove the cluster and also destroy Terraform/Open
 	@if [ "$(TOPOLOGY)" != "github-codespace" ]; then \
 	  $(MAKE) terraform-destroy TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN); \
 	fi
+	@if [ "$(TOPOLOGY)" = "local" ] && [ "$(KEEP_LOCAL_OCI_CACHE)" != "true" ]; then \
+	  $(MAKE) uninstall-local-oci-cache TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"; \
+	fi
 
 environment-destroy: ## Compatibility alias for destroy-cluster-and-infra
 	@$(MAKE) destroy-cluster-and-infra TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"

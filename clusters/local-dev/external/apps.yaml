@@ -8,7 +8,11 @@ spec:
   prune: true
   wait: true
   timeout: 12m
+  # Applications need both the infrastructure controllers/CRDs and the
+  # secret stage. Keep the dependency explicit now that secrets can reconcile
+  # in parallel with infrastructure.
   dependsOn:
+    - name: platform-infrastructure
     - name: platform-secrets
   sourceRef:
     kind: GitRepository

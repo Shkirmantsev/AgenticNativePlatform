@@ -199,6 +199,7 @@ Defaults used by the short form:
 - `SECRETS_MODE=external`
 - `LMSTUDIO_ENABLED=false`
 - `IAC_TOOL=tofu`
+- `LOCAL_OCI_CACHE_ENABLED=true` for `TOPOLOGY=local`
 
 ## Quick Lifecycle Commands
 
@@ -230,11 +231,19 @@ make remove-cluster-only TOPOLOGY=$TOPOLOGY
 make cluster-remove TOPOLOGY=$TOPOLOGY
 ```
 
+For `TOPOLOGY=local`, `make remove-cluster-only` also keeps the host-level OCI pull-through cache so the next `k3s` install can reuse cached image layers.
+
 Remove the cluster and topology infrastructure:
 
 ```bash
 make destroy-cluster-and-infra TOPOLOGY=$TOPOLOGY TF_BIN=tofu
 make environment-destroy TOPOLOGY=$TOPOLOGY TF_BIN=tofu
+```
+
+For `TOPOLOGY=local`, `make destroy-cluster-and-infra` removes that OCI cache by default. If you want a full cluster teardown but want to keep the cached images on disk for the next rebuild:
+
+```bash
+make environment-destroy TOPOLOGY=local TF_BIN=tofu KEEP_LOCAL_OCI_CACHE=true
 ```
 
 ### First-run note: why bootstrap may stop on local GitOps diffs
@@ -259,6 +268,8 @@ Practical rule:
 
 For the single-node `local` topology, avoid switching the workstation between Wi-Fi and Ethernet while `k3s` is running or while a fresh bootstrap is still converging. The control-plane can keep the old workstation IP as the node `InternalIP`, which breaks cluster-internal API access even though `kubectl` on `127.0.0.1:6443` still works.
 
+The local topology now also installs a small host-level OCI pull-through cache before `k3s` is created. `k3s` uses it as a registry mirror for the main registries used by this repo (`docker.io`, `ghcr.io`, `public.ecr.aws`, `cr.kgateway.dev`, `cr.agentgateway.dev`, and `cr.kagent.dev`). That means a later `make repair-local-k3s-network TOPOLOGY=local` or `make cluster-remove TOPOLOGY=local` followed by reinstall can usually reuse cached image layers instead of downloading them again from the internet.
+
 This repo now fails fast on that condition during cluster-aware `make` targets. If you see a local k3s node-IP drift error, repair the runtime first:
 
 ```bash
@@ -270,10 +281,7 @@ If the cluster runtime is back and you only need to resume GitOps/bootstrap step
 
 ```bash
 make repair-local-k3s-network TOPOLOGY=local
-make install-flux-local TOPOLOGY=local
-make sops-bootstrap-cluster TOPOLOGY=local ENV=dev
-make bootstrap-flux-instance TOPOLOGY=local ENV=dev
-make reconcile
+make recover-local-gitops TOPOLOGY=local ENV=dev SECRETS_MODE=sops
 ```
 
 <details>
@@ -350,6 +358,21 @@ make reconcile
 make verify
 make cluster-status
 ```
+
+</details>
+
+<details>
+<summary><strong>Open local OCI cache notes</strong></summary>
+
+The local topology enables a host-level OCI pull-through cache by default because repeated `k3s` reinstalls on a laptop otherwise re-pull a large part of the platform.
+
+- install path: `make bootstrap-hosts TOPOLOGY=local`
+- manual refresh: `make install-local-oci-cache TOPOLOGY=local`
+- manual removal: `make uninstall-local-oci-cache TOPOLOGY=local`
+- data root: `/var/lib/agentic-native-platform/oci-cache`
+- disable for a run: `make ... TOPOLOGY=local LOCAL_OCI_CACHE_ENABLED=false`
+
+The cache accelerates repeated container image pulls. It does not change the GitOps source of truth and does not try to preserve a broken running cluster after a workstation IP switch; use `make repair-local-k3s-network TOPOLOGY=local` for that case.
 
 </details>
 

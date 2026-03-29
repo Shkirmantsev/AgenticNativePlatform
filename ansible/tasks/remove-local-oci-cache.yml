@@ -1,0 +1,42 @@
+---
+# Remove the workstation-local cache explicitly on full environment teardown.
+# We keep this separate from k3s uninstall so `cluster-remove` can preserve
+# cached layers for the next local reinstall.
+- name: Stop and disable the OCI cache services
+  systemd:
+    name: "anp-local-oci-cache@{{ item.name }}"
+    enabled: false
+    state: stopped
+  loop: "{{ local_oci_cache_instances }}"
+  ignore_errors: true
+
+- name: Remove per-registry OCI cache configs
+  file:
+    path: "{{ local_oci_cache_config_dir }}/{{ item.name }}.yml"
+    state: absent
+  loop: "{{ local_oci_cache_instances }}"
+
+- name: Remove the OCI cache systemd unit
+  file:
+    path: /etc/systemd/system/anp-local-oci-cache@.service
+    state: absent
+
+- name: Reload systemd after removing the OCI cache unit
+  systemd:
+    daemon_reload: true
+
+- name: Remove the OCI registry package
+  apt:
+    name: docker-registry
+    state: absent
+    purge: true
+
+- name: Remove the OCI cache config directory
+  file:
+    path: "{{ local_oci_cache_config_dir }}"
+    state: absent
+
+- name: Remove the OCI cache data root
+  file:
+    path: "{{ local_oci_cache_root }}"
+    state: absent

@@ -10,11 +10,12 @@ Use this skill for Kubernetes cluster management, workload operations, and troub
 ## Workflow
 
 1. Use `kubectl` for standard operations.
-2. If available, use Kubernetes MCP tools for deeper cluster insight.
-3. Read [upstream-current.md](./references/upstream-current.md) when the task touches version-sensitive Kubernetes, HPA behavior, or AgentGateway-on-Kubernetes.
-4. Use `https://agentgateway.dev/docs/kubernetes/latest/` for AgentGateway-on-Kubernetes setup, configuration, and runtime troubleshooting.
-5. Use official Kubernetes docs (`https://kubernetes.io/docs`) and `kubectl` help for core API behavior.
-6. For troubleshooting, inspect events, pod status, `describe`, and logs before suggesting architectural changes.
+2. For follow-up repo troubleshooting, read the latest relevant entries in `tmp/agent-handoff.md` before starting new cluster triage so prior findings and failed paths are not repeated.
+3. If available, use Kubernetes MCP tools for deeper cluster insight.
+4. Read [upstream-current.md](./references/upstream-current.md) when the task touches version-sensitive Kubernetes, HPA behavior, or AgentGateway-on-Kubernetes.
+5. Use `https://agentgateway.dev/docs/kubernetes/latest/` for AgentGateway-on-Kubernetes setup, configuration, and runtime troubleshooting.
+6. Use official Kubernetes docs (`https://kubernetes.io/docs`) and `kubectl` help for core API behavior.
+7. For troubleshooting, inspect events, pod status, `describe`, and logs before suggesting architectural changes.
 
 ## Tooling
 

@@ -3,6 +3,13 @@
 - name: Bootstrap Ubuntu hosts for k3s
   hosts: all
   become: true
+  vars_files:
+    - ../vars/local-oci-cache.yml
+  vars:
+    topology: "{{ lookup('env', 'TOPOLOGY') | default('local', true) }}"
+    local_oci_cache_enabled: "{{ topology == 'local' and (lookup('env', 'LOCAL_OCI_CACHE_ENABLED') | default('true', true) | bool) }}"
+    local_oci_cache_root: "{{ lookup('env', 'LOCAL_OCI_CACHE_ROOT') | default('/var/lib/agentic-native-platform/oci-cache', true) }}"
+    local_oci_cache_config_dir: /etc/agentic-native-platform/oci-cache
   tasks:
     - name: Install base packages
       apt:
@@ -55,3 +62,7 @@
 
     - name: Apply sysctl settings
       command: sysctl --system
+
+    - name: Configure the local OCI pull-through cache
+      import_tasks: ../tasks/setup-local-oci-cache.yml
+      when: local_oci_cache_enabled

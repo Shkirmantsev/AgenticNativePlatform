@@ -1,0 +1,16 @@
+#
+# Per-upstream pull-through cache instance.
+# Keep the listener on localhost so only local k3s/containerd uses it.
+#
+version: 0.1
+log:
+  level: info
+storage:
+  filesystem:
+    rootdirectory: {{ local_oci_cache_root }}/{{ item.name }}
+  delete:
+    enabled: true
+http:
+  addr: 127.0.0.1:{{ item.port }}
+proxy:
+  remoteurl: {{ item.remote_url }}

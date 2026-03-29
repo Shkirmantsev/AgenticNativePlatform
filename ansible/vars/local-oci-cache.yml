@@ -1,0 +1,35 @@
+---
+# Local workstation-only registry mirrors.
+# Each pull-through cache instance handles one upstream registry because
+# distribution's proxy mode does not multiplex multiple remotes.
+local_oci_cache_instances:
+  - name: docker-io
+    port: 5001
+    remote_url: https://registry-1.docker.io
+    mirror_registries:
+      - docker.io
+  - name: ghcr-io
+    port: 5002
+    remote_url: https://ghcr.io
+    mirror_registries:
+      - ghcr.io
+  - name: public-ecr-aws
+    port: 5003
+    remote_url: https://public.ecr.aws
+    mirror_registries:
+      - public.ecr.aws
+  - name: cr-kgateway-dev
+    port: 5004
+    remote_url: https://cr.kgateway.dev
+    mirror_registries:
+      - cr.kgateway.dev
+  - name: cr-agentgateway-dev
+    port: 5005
+    remote_url: https://cr.agentgateway.dev
+    mirror_registries:
+      - cr.agentgateway.dev
+  - name: cr-kagent-dev
+    port: 5006
+    remote_url: https://cr.kagent.dev
+    mirror_registries:
+      - cr.kagent.dev

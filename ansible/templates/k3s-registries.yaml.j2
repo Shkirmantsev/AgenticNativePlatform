@@ -1,0 +1,17 @@
+# Local single-node k3s mirror config.
+# Keep mirrors on localhost so the cache survives `k3s` reinstall but does not
+# become a dependency for non-local topologies.
+mirrors:
+{% for instance in local_oci_cache_instances %}
+{% for registry in instance.mirror_registries %}
+  "{{ registry }}":
+    endpoint:
+      - "http://127.0.0.1:{{ instance.port }}"
+{% endfor %}
+{% endfor %}
+configs:
+{% for instance in local_oci_cache_instances %}
+  "127.0.0.1:{{ instance.port }}":
+    tls:
+      insecure_skip_verify: true
+{% endfor %}

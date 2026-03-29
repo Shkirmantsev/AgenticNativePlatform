@@ -18,6 +18,12 @@ Those stages compose the shared top-level trees:
 - `values/`
 - `secrets/`
 
+Staging semantics:
+
+- `platform-infrastructure` installs controllers, CRDs, and shared platform releases
+- `platform-secrets` supplies runtime secrets and SOPS-decrypted objects without waiting for infrastructure readiness
+- `platform-applications` waits for both stages explicitly
+
 ## Platform path
 
 ```text
@@ -49,6 +55,8 @@ agentregistry-inventory
 - `minipc`
 - `hybrid`
 - `hybrid-remote`
+
+For `local`, the host bootstrap path also installs a workstation-local OCI pull-through cache before `k3s` starts. `k3s` uses localhost mirrors from `registries.yaml`, so repeated local rebuilds can reuse pulled image layers even when the cluster itself was removed and recreated.
 
 Cluster roots are committed as:
 

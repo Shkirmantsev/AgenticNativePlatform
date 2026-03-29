@@ -1,5 +1,5 @@
 .PHONY: tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
-	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s repair-local-k3s-network \
+	bootstrap-hosts install-local-oci-cache uninstall-local-oci-cache install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s repair-local-k3s-network \
 	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote cluster-up-github-codespace
 
 tools-install-local: ## Install local operator tools (age, sops, kubectl, helm, flux, optional k9s, Terraform/OpenTofu)
@@ -20,6 +20,20 @@ terraform-destroy: render-terraform-tfvars ## Destroy Terraform/OpenTofu artifac
 
 bootstrap-hosts: ## Prepare the selected hosts for k3s
 	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/bootstrap-hosts.yml
+
+install-local-oci-cache: ## Install or refresh the local OCI pull-through cache used by the local topology
+	@if [ "$(TOPOLOGY)" != "local" ]; then \
+	  echo "install-local-oci-cache is only supported for TOPOLOGY=local." >&2; \
+	  exit 1; \
+	fi
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/install-local-oci-cache.yml
+
+uninstall-local-oci-cache: ## Remove the local OCI pull-through cache service and cached layers from the workstation
+	@if [ "$(TOPOLOGY)" != "local" ]; then \
+	  echo "uninstall-local-oci-cache is only supported for TOPOLOGY=local." >&2; \
+	  exit 1; \
+	fi
+	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/uninstall-local-oci-cache.yml
 
 install-k3s-server: ## Install the k3s server on the control-plane host
 	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/install-k3s-server.yml

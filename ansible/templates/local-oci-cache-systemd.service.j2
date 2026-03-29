@@ -1,0 +1,14 @@
+[Unit]
+Description=Agentic Native Platform local OCI cache (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -lc 'set -euo pipefail; registry_bin="$$(command -v docker-registry || command -v registry)"; exec "$$registry_bin" serve "{{ local_oci_cache_config_dir }}/%i.yml"'
+Restart=always
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

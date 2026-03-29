@@ -1,0 +1,52 @@
+---
+# Install a tiny host-level OCI pull-through cache before k3s starts.
+# That keeps repeated local cluster rebuilds fast without changing the repo's
+# GitOps source of truth or adding an in-cluster registry dependency.
+- name: Install the OCI registry package
+  apt:
+    name: docker-registry
+    update_cache: true
+    state: present
+
+- name: Create the OCI cache config directory
+  file:
+    path: "{{ local_oci_cache_config_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create the OCI cache data root
+  file:
+    path: "{{ local_oci_cache_root }}"
+    state: directory
+    mode: '0755'
+
+- name: Create per-registry OCI cache directories
+  file:
+    path: "{{ local_oci_cache_root }}/{{ item.name }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ local_oci_cache_instances }}"
+
+- name: Install the OCI cache systemd unit
+  template:
+    src: ../templates/local-oci-cache-systemd.service.j2
+    dest: /etc/systemd/system/anp-local-oci-cache@.service
+    mode: '0644'
+
+- name: Render per-registry OCI cache configs
+  template:
+    src: ../templates/local-oci-cache-config.yml.j2
+    dest: "{{ local_oci_cache_config_dir }}/{{ item.name }}.yml"
+    mode: '0644'
+  loop: "{{ local_oci_cache_instances }}"
+
+- name: Reload systemd after OCI cache changes
+  systemd:
+    daemon_reload: true
+
+- name: Enable and start the OCI cache services
+  systemd:
+    name: "anp-local-oci-cache@{{ item.name }}"
+    enabled: true
+    state: started
+  loop: "{{ local_oci_cache_instances }}"

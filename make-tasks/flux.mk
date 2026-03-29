@@ -1,6 +1,6 @@
 .PHONY: run-cluster-from-scratch \
-	flux-values render-cluster-root ensure-generated-flux-clean install-flux-operator install-flux-local install-flux \
-	bootstrap-flux-instance bootstrap-flux-git reconcile verify cluster-status
+	flux-values render-cluster-root check-sops-secret-root ensure-generated-flux-clean install-flux-operator install-flux-local install-flux \
+	bootstrap-flux-instance bootstrap-flux-git recover-local-gitops reconcile verify cluster-status
 
 run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, auto-provision the Grafana MCP token, and reconcile from the current repo state
 	@$(MAKE) tools-install-local IAC_TOOL=$(IAC_TOOL) INSTALL_K9S=$(INSTALL_K9S)
@@ -11,6 +11,7 @@ run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, appl
 	  $(MAKE) install-flux TOPOLOGY=$(TOPOLOGY) KUBE_CONTEXT="$(KUBE_CONTEXT)"; \
 	fi
 	@if [ "$(SECRETS_MODE)" = "sops" ]; then \
+	  $(MAKE) check-sops-secret-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
 	  $(MAKE) sops-bootstrap-cluster TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
 	else \
 	  $(MAKE) apply-plaintext-secrets TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
@@ -26,6 +27,15 @@ flux-values: ## Validate that Git-authored non-secret values exist for the selec
 
 render-cluster-root: ## Validate the declarative mode-specific cluster root under clusters/<topology>-<env>/<secrets-mode>
 	@test -f "clusters/$(TOPOLOGY)-$(ENV)/$(SECRETS_MODE)/kustomization.yaml" || (echo "Missing declarative cluster root: clusters/$(TOPOLOGY)-$(ENV)/$(SECRETS_MODE)" >&2; exit 1)
+
+check-sops-secret-root: ## Fail early when SECRETS_MODE=sops has no committed encrypted secrets for the selected topology
+	@count="$$(find "secrets/$(TOPOLOGY)" -maxdepth 1 -type f -name '*.sops.yaml' | wc -l | tr -d ' ')"; \
+	if [ "$$count" -eq 0 ]; then \
+	  echo "SECRETS_MODE=sops requires committed encrypted secrets under secrets/$(TOPOLOGY)/." >&2; \
+	  echo "Run 'make encrypt-secrets TOPOLOGY=$(TOPOLOGY) ENV=$(ENV)', commit the resulting secrets/$(TOPOLOGY) files, and push before bootstrapping Flux." >&2; \
+	  echo "If you want local-only bootstrap secrets instead, use SECRETS_MODE=external." >&2; \
+	  exit 1; \
+	fi
 
 ensure-generated-flux-clean: flux-values render-cluster-root ## Fail before cluster install continues if tracked GitOps inputs need commit/push
 	@changed="$$(git status --porcelain -- "values/$(TOPOLOGY)" "clusters/$(TOPOLOGY)-$(ENV)")"; \
@@ -104,6 +114,21 @@ bootstrap-flux-instance: require-kubeconfig render-cluster-root ## Apply a FluxI
 	@$(KUBECTL) -n flux-system wait --for=condition=ready fluxinstance/flux --timeout=$(PLATFORM_ROOT_TIMEOUT)
 
 bootstrap-flux-git: bootstrap-flux-instance ## Deprecated alias for the FluxInstance-based bootstrap flow
+
+recover-local-gitops: require-kubeconfig ## Reinstall Flux Operator, restore the selected secret bootstrap mode, apply FluxInstance, and reconcile after local k3s repair
+	@if [ "$(TOPOLOGY)" != "local" ]; then \
+	  echo "recover-local-gitops is only supported for TOPOLOGY=local." >&2; \
+	  exit 1; \
+	fi
+	@$(MAKE) install-flux-local TOPOLOGY=$(TOPOLOGY)
+	@if [ "$(SECRETS_MODE)" = "sops" ]; then \
+	  $(MAKE) check-sops-secret-root TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
+	  $(MAKE) sops-bootstrap-cluster TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
+	else \
+	  $(MAKE) apply-plaintext-secrets TOPOLOGY=$(TOPOLOGY) ENV=$(ENV); \
+	fi
+	@$(MAKE) bootstrap-flux-instance TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
+	@$(MAKE) reconcile TOPOLOGY=$(TOPOLOGY) ENV=$(ENV) RUNTIME=$(RUNTIME) SECRETS_MODE=$(SECRETS_MODE) LMSTUDIO_ENABLED=$(LMSTUDIO_ENABLED)
 
 reconcile: require-kubeconfig ## Reconcile the Flux Git source and staged platform kustomizations if present
 	@$(FLUX) reconcile source git $(FLUX_SYNC_SOURCE_NAME) -n flux-system || true

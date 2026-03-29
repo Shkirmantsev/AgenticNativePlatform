@@ -6,11 +6,6 @@ KUBECONFIG_PATH="${KUBECONFIG:-}"
 REQUEST_TIMEOUT="${KUBE_API_REQUEST_TIMEOUT:-10s}"
 ENV_NAME="${ENV:-dev}"
 SECRETS_MODE_NAME="${SECRETS_MODE:-external}"
-if [[ "${SECRETS_MODE_NAME}" == "sops" ]]; then
-  secrets_recovery_target="sops-bootstrap-cluster"
-else
-  secrets_recovery_target="apply-plaintext-secrets"
-fi
 
 if [[ "${TOPOLOGY_NAME}" != "local" ]]; then
   exit 0
@@ -67,10 +62,7 @@ Recommended recovery:
 
 If you only need the cluster runtime back and will bootstrap GitOps separately:
 1. make repair-local-k3s-network TOPOLOGY=local
-2. make install-flux-local TOPOLOGY=local
-3. make ${secrets_recovery_target} TOPOLOGY=local ENV=${ENV_NAME}
-4. make bootstrap-flux-instance TOPOLOGY=local ENV=${ENV_NAME}
-5. make reconcile
+2. make recover-local-gitops TOPOLOGY=local ENV=${ENV_NAME} SECRETS_MODE=${SECRETS_MODE_NAME}
 EOF
 
 exit 1

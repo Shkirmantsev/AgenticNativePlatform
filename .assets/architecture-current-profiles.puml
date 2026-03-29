@@ -22,6 +22,12 @@ package "Repository source of truth" {
   component "secrets/\nSOPS roots by topology" as RepoSecrets
 }
 
+package "Local workstation bootstrap" {
+  component "bootstrap-hosts" as BootstrapHosts
+  component "local OCI cache\nhost-level pull-through" as LocalOciCache
+  component "/etc/rancher/k3s/registries.yaml" as K3sRegistries
+}
+
 package "Committed cluster roots" {
   component "clusters/local-dev" as ClusterLocal
   component "clusters/github-codespace-dev" as ClusterCodespace
@@ -53,6 +59,7 @@ Operator --> RepoCharts : edit
 Operator --> RepoValues : edit
 Operator --> RepoSecrets : edit
 Operator --> RemoteRepo : commit and push
+Operator --> BootstrapHosts : run for local topology
 
 RepoClusters --> ClusterLocal
 RepoClusters --> ClusterCodespace
@@ -70,9 +77,13 @@ ClusterFluxInstance --> FluxInstance : rendered and applied
 FluxInstance --> GitRepository : sync.kind=GitRepository
 RemoteRepo --> GitRepository : remote source of truth
 
+BootstrapHosts --> LocalOciCache : installs before k3s
+BootstrapHosts --> K3sRegistries : renders mirror config
+K3sRegistries --> LocalOciCache : localhost mirror endpoints
+
 GitRepository --> PlatformInfrastructure
-PlatformInfrastructure --> PlatformSecrets : dependsOn
-PlatformSecrets --> PlatformApplications : dependsOn
+PlatformInfrastructure --> PlatformApplications : apps need controllers and CRDs
+PlatformSecrets --> PlatformApplications : apps need secrets
 
 PlatformInfrastructure --> ClusterInfrastructure
 PlatformSecrets --> ClusterSecrets
@@ -102,6 +113,12 @@ end note
 note bottom of RepoCharts
 Vendored and repo-local Helm charts stay in Git so
 Flux can package them from the same source of truth.
+end note
+
+note bottom of LocalOciCache
+Local topology only.
+The cache lives outside the k3s data dir so repeated
+cluster reinstalls can reuse image layers.
 end note
 
 @enduml

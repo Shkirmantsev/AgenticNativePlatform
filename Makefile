@@ -12,6 +12,9 @@ ENV ?= dev
 RUNTIME ?= none
 SECRETS_MODE ?= external
 LMSTUDIO_ENABLED ?= false
+LOCAL_OCI_CACHE_ENABLED ?= $(if $(filter local,$(TOPOLOGY)),true,false)
+KEEP_LOCAL_OCI_CACHE ?= false
+LOCAL_OCI_CACHE_ROOT ?= /var/lib/agentic-native-platform/oci-cache
 INSTALL_K9S ?= true
 IAC_TOOL ?= tofu
 TF_BIN ?= $(if $(filter tofu,$(IAC_TOOL)),tofu,terraform)
@@ -60,6 +63,12 @@ HTTP_PROBE_INTERVAL ?= 1
 CURL ?= curl
 export KUBECONFIG
 export LITELLM_MASTER_KEY
+export TOPOLOGY
+export ENV
+export SECRETS_MODE
+export LOCAL_OCI_CACHE_ENABLED
+export KEEP_LOCAL_OCI_CACHE
+export LOCAL_OCI_CACHE_ROOT
 KUBECTL ?= kubectl --kubeconfig "$(KUBECONFIG)"
 FLUX ?= flux --kubeconfig "$(KUBECONFIG)"
 
