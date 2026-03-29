@@ -58,11 +58,9 @@ Why this blocks recovery:
 
 Recommended recovery:
 1. make repair-local-k3s-network TOPOLOGY=local
-2. make run-cluster-from-scratch TOPOLOGY=local ENV=${ENV_NAME} SECRETS_MODE=${SECRETS_MODE_NAME}
 
-If you only need the cluster runtime back and will bootstrap GitOps separately:
-1. make repair-local-k3s-network TOPOLOGY=local
-2. make recover-local-gitops TOPOLOGY=local ENV=${ENV_NAME} SECRETS_MODE=${SECRETS_MODE_NAME}
+If you need to rerun only the GitOps/bootstrap portion after the runtime repair:
+1. make recover-local-gitops TOPOLOGY=local ENV=${ENV_NAME} SECRETS_MODE=${SECRETS_MODE_NAME}
 EOF
 
 exit 1

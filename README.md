@@ -270,17 +270,15 @@ For the single-node `local` topology, avoid switching the workstation between Wi
 
 The local topology now also installs a small host-level OCI pull-through cache before `k3s` is created. `k3s` uses it as a registry mirror for the main registries used by this repo (`docker.io`, `ghcr.io`, `public.ecr.aws`, `cr.kgateway.dev`, `cr.agentgateway.dev`, and `cr.kagent.dev`). That means a later `make repair-local-k3s-network TOPOLOGY=local` or `make cluster-remove TOPOLOGY=local` followed by reinstall can usually reuse cached image layers instead of downloading them again from the internet.
 
-This repo now fails fast on that condition during cluster-aware `make` targets. If you see a local k3s node-IP drift error, repair the runtime first:
+This repo now fails fast on that condition during cluster-aware `make` targets. If you see a local k3s node-IP drift error, the repair target reinstalls `k3s`, refreshes the local OCI cache path when enabled, and restores the local GitOps-managed cluster state:
 
 ```bash
 make repair-local-k3s-network TOPOLOGY=local
-make run-cluster-from-scratch TOPOLOGY=local ENV=dev SECRETS_MODE=sops
 ```
 
-If the cluster runtime is back and you only need to resume GitOps/bootstrap steps, reinstall Flux Operator first, then restore the selected secret bootstrap mode, then apply the `FluxInstance`:
+If you need to rerun only the GitOps/bootstrap portion after the runtime repair, use:
 
 ```bash
-make repair-local-k3s-network TOPOLOGY=local
 make recover-local-gitops TOPOLOGY=local ENV=dev SECRETS_MODE=sops
 ```
 
