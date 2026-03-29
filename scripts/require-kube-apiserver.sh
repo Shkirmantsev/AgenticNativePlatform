@@ -19,3 +19,5 @@ if ! output="$(
   fi
   exit 1
 fi
+
+./scripts/check-local-k3s-network.sh "${1:-this operation}"

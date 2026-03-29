@@ -255,6 +255,27 @@ Practical rule:
 - no local-only tracked GitOps diffs: bootstrap continues
 - tracked GitOps diffs present: commit and push first, then rerun `make run-cluster-from-scratch` or `make bootstrap-flux-instance`
 
+### Local workstation note: network-interface changes can invalidate the cluster
+
+For the single-node `local` topology, avoid switching the workstation between Wi-Fi and Ethernet while `k3s` is running or while a fresh bootstrap is still converging. The control-plane can keep the old workstation IP as the node `InternalIP`, which breaks cluster-internal API access even though `kubectl` on `127.0.0.1:6443` still works.
+
+This repo now fails fast on that condition during cluster-aware `make` targets. If you see a local k3s node-IP drift error, repair the runtime first:
+
+```bash
+make repair-local-k3s-network TOPOLOGY=local
+make run-cluster-from-scratch TOPOLOGY=local ENV=dev SECRETS_MODE=sops
+```
+
+If the cluster runtime is back and you only need to resume GitOps/bootstrap steps, reinstall Flux Operator first, then restore the selected secret bootstrap mode, then apply the `FluxInstance`:
+
+```bash
+make repair-local-k3s-network TOPOLOGY=local
+make install-flux-local TOPOLOGY=local
+make sops-bootstrap-cluster TOPOLOGY=local ENV=dev
+make bootstrap-flux-instance TOPOLOGY=local ENV=dev
+make reconcile
+```
+
 <details>
 <summary><strong>Open what the quick start does</strong></summary>
 

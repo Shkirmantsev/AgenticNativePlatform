@@ -1,5 +1,5 @@
 .PHONY: tools-install-local render-terraform-tfvars terraform-init terraform-apply terraform-destroy \
-	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s \
+	bootstrap-hosts install-k3s-server join-workers label-llm-nodes kubeconfig uninstall-k3s repair-local-k3s-network \
 	cluster-up-local cluster-up-minipc cluster-up-hybrid cluster-up-hybrid-remote cluster-up-github-codespace
 
 tools-install-local: ## Install local operator tools (age, sops, kubectl, helm, flux, optional k9s, Terraform/OpenTofu)
@@ -36,6 +36,15 @@ kubeconfig: ## Export kubeconfig from the control-plane host to .kube/generated
 
 uninstall-k3s: ## Uninstall k3s from all hosts in the selected topology inventory
 	ansible-playbook $(ANSIBLE_BECOME_FLAGS) -i $(ANSIBLE_INVENTORY) ansible/playbooks/uninstall-k3s.yml
+
+repair-local-k3s-network: ## Reinstall the local k3s control-plane after workstation IP/interface changes and refresh kubeconfig
+	@if [ "$(TOPOLOGY)" != "local" ]; then \
+	  echo "repair-local-k3s-network is only supported for TOPOLOGY=local." >&2; \
+	  exit 1; \
+	fi
+	@$(MAKE) uninstall-k3s TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+	@$(MAKE) install-k3s-server TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
+	@$(MAKE) kubeconfig TOPOLOGY=$(TOPOLOGY) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 
 cluster-up-local: ## Bootstrap a single-node local topology
 	$(MAKE) terraform-init TOPOLOGY=local TF_BIN=$(TF_BIN)

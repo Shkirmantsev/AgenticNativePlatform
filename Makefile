@@ -189,7 +189,7 @@ require-kubeconfig:
 	@test -f "$(KUBECONFIG)" || (echo "Missing kubeconfig: $(KUBECONFIG). Run 'make kubeconfig TOPOLOGY=$(TOPOLOGY)' first." >&2; exit 1)
 
 require-cluster-api: require-kubeconfig
-	@./scripts/require-kube-apiserver.sh "$@"
+	@TOPOLOGY="$(TOPOLOGY)" ENV="$(ENV)" SECRETS_MODE="$(SECRETS_MODE)" ./scripts/require-kube-apiserver.sh "$@"
 
 validate-config: ## Run local Helm and Kustomize validation for committed config
 	@./scripts/validate-config.sh
