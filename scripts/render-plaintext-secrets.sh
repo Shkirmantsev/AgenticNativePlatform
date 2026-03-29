@@ -15,6 +15,7 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
   source "${ROOT_DIR}/.env"
 fi
 : "${GOOGLE_API_KEY:=replace-me}"
+: "${MCP_GOVERNANCE_GOOGLE_API_KEY:=${GOOGLE_API_KEY}}"
 : "${OPENAI_API_KEY:=}"
 : "${ANTHROPIC_API_KEY:=}"
 : "${AWS_ACCESS_KEY_ID:=}"
@@ -75,6 +76,18 @@ type: Opaque
 stringData:
   FINNHUB_API_TOKEN: ${FINNHUB_API_TOKEN}
 EOF
+cat > "${OUT_DIR}/mcp-governance-ai-secrets.yaml" <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-governance-ai-secrets
+  namespace: mcp-governance-system
+  labels:
+    reconcile.fluxcd.io/watch: Enabled
+type: Opaque
+stringData:
+  google-api-key: ${MCP_GOVERNANCE_GOOGLE_API_KEY}
+EOF
 cat > "${OUT_DIR}/platform-postgres-auth.yaml" <<EOF
 apiVersion: v1
 kind: Secret
@@ -126,6 +139,7 @@ resources:
   - litellm-provider-secrets.yaml
   - kagent-agentgateway.yaml
   - finnhub-mcp-server.yaml
+  - mcp-governance-ai-secrets.yaml
   - platform-postgres-auth.yaml
   - observability-grafana-admin.yaml
   - kagent-grafana-mcp.yaml

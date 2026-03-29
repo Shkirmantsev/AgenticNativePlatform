@@ -1,0 +1,75 @@
+apiVersion: governance.mcp.io/v1alpha1
+kind: MCPGovernancePolicy
+metadata:
+  name: platform-mcp-governance-policy
+spec:
+  requireAgentGateway: true
+  requireJWTAuth: true
+  requireRBAC: true
+  requireCORS: true
+  requireTLS: true
+  requirePromptGuard: true
+  requireRateLimit: true
+  requireHardenedDeployment: true
+  scanInterval: "10m"
+  maxToolsWarning: 10
+  maxToolsCritical: 15
+  scoringWeights:
+    agentGatewayIntegration: 20
+    authentication: 15
+    authorization: 15
+    corsPolicy: 10
+    tlsEncryption: 10
+    promptGuard: 10
+    rateLimit: 5
+    toolScope: 5
+    hardenedDeployment: 10
+  severityPenalties:
+    critical: 40
+    high: 25
+    medium: 15
+    low: 5
+  targetNamespaces:
+    - agentgateway-system
+    - kagent
+    - agentregistry
+  excludeNamespaces:
+    - kube-system
+    - kube-public
+    - kube-node-lease
+    - local-path-storage
+    - flux-system
+    - cert-manager
+    - metallb-system
+    - istio-system
+    - kgateway-system
+    - ai-gateway
+    - ai-models
+    - context
+    - observability
+    - kserve
+    - kmcp-system
+    - mcp-governance-system
+  aiAgent:
+    enabled: true
+    provider: gemini
+    model: gemini-2.5-flash
+    scanInterval: "30m"
+    scanEnabled: true
+  verifiedCatalogScoring:
+    securityWeight: 50
+    trustWeight: 30
+    complianceWeight: 20
+    verifiedThreshold: 70
+    unverifiedThreshold: 50
+    checkMaxScores:
+      PUB-001: 10
+      PUB-002: 10
+      PUB-003: 10
+      SEC-001: 15
+      SEC-002: 10
+      DEP-001: 5
+      DEP-002: 10
+      DEP-003: 5
+      TOOL-001: 15
+      USE-001: 10

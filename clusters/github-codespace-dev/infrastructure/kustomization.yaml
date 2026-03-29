@@ -14,6 +14,8 @@ resources:
   - ../../../apps/ai-gateway/kagent/core
   - ../../../apps/platform/kmcp/core
   - ../../../apps/platform/agentregistry-inventory/core
+  - ../../../values/common/mcp-governance
+  - ../../../apps/platform/mcp-governance/core
   - ../../../infrastructure/controllers/kserve
   - ../../../apps/ai-models/tei
   - ../../../values/common/litellm

@@ -1,9 +1,9 @@
 .PHONY: diagnose-runtime-state recover-paused-workloads \
 	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove remove-cluster-only environment-destroy destroy-cluster-and-infra \
 	k9s-local \
-	port-forward-agentgateway port-forward-agentgateway-admin-ui port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui port-forward-agentregistry-inventory \
-	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-agentgateway-admin-ui close-agentgateway-admin-ui open-litellm close-litellm open-grafana close-grafana open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-agentregistry-inventory close-agentregistry-inventory open-research-access close-research-access \
-	check-kagent-ui check-agentgateway check-agentgateway-admin-ui check-agentgateway-openai check-litellm check-flux-operator-ui check-agentregistry-inventory check-flux-stages \
+	port-forward-agentgateway port-forward-agentgateway-admin-ui port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-mcpg port-forward-prometheus port-forward-qdrant port-forward-flux-operator-ui port-forward-agentregistry-inventory \
+	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-agentgateway-admin-ui close-agentgateway-admin-ui open-litellm close-litellm open-grafana close-grafana open-mcpg close-mcpg open-prometheus close-prometheus open-qdrant close-qdrant open-flux-operator-ui close-flux-operator-ui open-agentregistry-inventory close-agentregistry-inventory open-research-access close-research-access \
+	check-kagent-ui check-agentgateway check-agentgateway-admin-ui check-agentgateway-openai check-litellm check-mcpg check-flux-operator-ui check-agentregistry-inventory check-flux-stages \
 	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-finnhub-tool-browser test-a2a-delegation test-a2a-delegation-via-agentgateway test-agentgateway-gemini test-agentgateway-openai test-litellm
 
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
@@ -149,6 +149,9 @@ port-forward-litellm: require-kubeconfig ## Port-forward LiteLLM to localhost:40
 port-forward-grafana: require-kubeconfig ## Port-forward Grafana to localhost:3000
 	$(KUBECTL) -n observability port-forward svc/observability-kube-prometheus-stack-grafana $(GRAFANA_LOCAL_PORT):80
 
+port-forward-mcpg: require-kubeconfig ## Port-forward the MCP Governance dashboard to localhost:13000
+	$(KUBECTL) -n mcp-governance-system port-forward svc/mcp-governance-dashboard $(MCPG_LOCAL_PORT):3000
+
 port-forward-prometheus: require-kubeconfig ## Port-forward Prometheus to localhost:9090
 	$(KUBECTL) -n observability port-forward svc/observability-kube-prometh-prometheus $(PROMETHEUS_LOCAL_PORT):9090
 
@@ -256,6 +259,12 @@ open-grafana: require-kubeconfig ## Open Grafana at http://localhost:3000
 close-grafana: ## Close the Grafana port-forward
 	$(call stop_port_forward,grafana)
 
+open-mcpg: require-kubeconfig ## Open the MCP Governance dashboard at http://localhost:13000
+	$(call start_port_forward,mcpg,http://localhost:$(MCPG_LOCAL_PORT),mcp-governance-system,mcp-governance-dashboard,$(MCPG_LOCAL_PORT),3000,http://localhost:$(MCPG_LOCAL_PORT)/,200 301 302 303 307 308,)
+
+close-mcpg: ## Close the MCP Governance dashboard port-forward
+	$(call stop_port_forward,mcpg)
+
 open-prometheus: require-kubeconfig ## Open Prometheus at http://localhost:9090
 	$(call start_port_forward,prometheus,http://localhost:$(PROMETHEUS_LOCAL_PORT),observability,observability-kube-prometh-prometheus,$(PROMETHEUS_LOCAL_PORT),9090,http://localhost:$(PROMETHEUS_LOCAL_PORT)/-/ready,200,)
 
@@ -286,6 +295,9 @@ check-agentgateway-openai: ## Verify the local AgentGateway OpenAI-compatible AP
 check-litellm: ## Verify the local LiteLLM readiness and API endpoints
 	$(call wait_for_http_status,http://localhost:$(LITELLM_LOCAL_PORT)/health/readiness,200,)
 	$(call wait_for_http_status,http://localhost:$(LITELLM_LOCAL_PORT)/v1/models,200 401,Authorization: Bearer $(LITELLM_MASTER_KEY))
+
+check-mcpg: ## Verify the local MCP Governance dashboard endpoint
+	$(call wait_for_http_status,http://localhost:$(MCPG_LOCAL_PORT)/,200 301 302 303 307 308,)
 
 check-flux-operator-ui: ## Verify the local Flux Operator web UI endpoint
 	$(call wait_for_http_status,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT)/,200,)
@@ -342,6 +354,7 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	  "open-agentgateway-admin-ui|agentgateway-system|agentgateway-proxy" \
 	  "open-litellm|ai-gateway|litellm" \
 	  "open-grafana|observability|observability-kube-prometheus-stack-grafana" \
+	  "open-mcpg|mcp-governance-system|mcp-governance-dashboard" \
 	  "open-prometheus|observability|observability-kube-prometh-prometheus" \
 	  "open-qdrant|context|context-qdrant" \
 	  "open-agentregistry-inventory|agentregistry|$(AGENTREGISTRY_INVENTORY_SERVICE)" \
@@ -374,6 +387,8 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	echo "A2A agent cards via AgentGateway:"; \
 	echo "  http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/finnhub-agent/.well-known/agent.json"; \
 	echo "  http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json"; \
+	echo "MCP Governance dashboard:"; \
+	echo "  http://localhost:$(MCPG_LOCAL_PORT)/"; \
 	if [ "$$inventory_present" -eq 1 ]; then \
 	  echo "Inventory UI and API:"; \
 	  echo "  http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/"; \
@@ -392,6 +407,7 @@ close-research-access: ## Close all background localhost research endpoints
 	$(MAKE) close-agentgateway-admin-ui
 	$(MAKE) close-litellm
 	$(MAKE) close-grafana
+	$(MAKE) close-mcpg
 	$(MAKE) close-prometheus
 	$(MAKE) close-qdrant
 	$(MAKE) close-agentregistry-inventory

@@ -60,3 +60,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: kmcp-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mcp-governance-system

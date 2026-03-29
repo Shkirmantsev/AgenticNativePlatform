@@ -107,3 +107,17 @@ spec:
   url: oci://ghcr.io/kagent-dev/kmcp/helm/kmcp
   ref:
     tag: 0.2.7
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: mcp-governance-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/techwithhuz/charts/mcp-governance
+  ref:
+    tag: 0.21.0
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy

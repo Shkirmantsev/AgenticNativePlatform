@@ -1,0 +1,7 @@
+apiVersion: governance.mcp.io/v1alpha1
+kind: GovernanceEvaluation
+metadata:
+  name: platform-mcp-governance-evaluation
+spec:
+  policyRef: platform-mcp-governance-policy
+  evaluationScope: cluster
