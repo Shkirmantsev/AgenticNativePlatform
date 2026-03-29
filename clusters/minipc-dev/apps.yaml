@@ -9,6 +9,7 @@ spec:
   wait: true
   timeout: 12m
   dependsOn:
+    - name: platform-infrastructure
     - name: platform-secrets
   sourceRef:
     kind: GitRepository

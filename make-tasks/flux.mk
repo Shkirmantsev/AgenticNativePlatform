@@ -2,7 +2,7 @@
 	flux-values render-cluster-root check-sops-secret-root ensure-generated-flux-clean install-flux-operator install-flux-local install-flux \
 	bootstrap-flux-instance bootstrap-flux-git recover-local-gitops reconcile verify cluster-status
 
-run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, auto-provision the Grafana MCP token, and reconcile from the current repo state
+run-cluster-from-scratch: ## Bootstrap the selected topology, install Flux, apply secrets, bootstrap GitOps, auto-provision Grafana MCP, and reconcile from the current repo state
 	@$(MAKE) tools-install-local IAC_TOOL=$(IAC_TOOL) INSTALL_K9S=$(INSTALL_K9S)
 	@$(MAKE) cluster-up-$(TOPOLOGY) TOPOLOGY=$(TOPOLOGY) TF_BIN=$(TF_BIN) ANSIBLE_INVENTORY="$(ANSIBLE_INVENTORY)" ANSIBLE_BECOME_FLAGS="$(ANSIBLE_BECOME_FLAGS)"
 	@if [ "$(TOPOLOGY)" = "local" ] || [ "$(TOPOLOGY)" = "github-codespace" ]; then \

@@ -9,10 +9,13 @@ resources:
   - ../../../infrastructure/network/istio
   - ../../../infrastructure/network/metallb
   - ../../../infrastructure/network/kgateway/core
+  - ../../../infrastructure/network/kgateway/resources
   - ../../../apps/ai-gateway/agentgateway/core
+  - ../../../apps/ai-gateway/agentgateway/resources
   - ../../../apps/ai-gateway/litellm
   - ../../../apps/ai-gateway/kagent/core
   - ../../../apps/platform/kmcp/core
+  - ../../../apps/platform/kmcp/resources
   - ../../../apps/platform/agentregistry-inventory/core
   - ../../../values/common/mcp-governance
   - ../../../apps/platform/mcp-governance/core
