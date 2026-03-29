@@ -81,6 +81,8 @@ make close-research-access
 Useful endpoints:
 
 - `http://localhost:8080` kagent UI
+- `http://localhost:8083/health` kagent controller health
+- `http://localhost:8083/api/a2a/kagent/k8s-agent/.well-known/agent.json` sample k8s-agent card
 - `http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json` finnhub-agent card
 - `http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` team-lead-agent-assist card
 - `http://localhost:15000/ui/` AgentGateway Admin UI

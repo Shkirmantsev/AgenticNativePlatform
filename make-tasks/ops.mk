@@ -174,7 +174,7 @@ close-kagent-ui: ## Close the kagent UI port-forward
 	$(call stop_port_forward,kagent-ui)
 
 open-kagent-a2a: require-kubeconfig ## Open the kagent controller API at http://localhost:8083
-	$(call start_port_forward,kagent-a2a,http://localhost:$(KAGENT_A2A_LOCAL_PORT),kagent,kagent-kagent-controller,$(KAGENT_A2A_LOCAL_PORT),8083,http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json,200,)
+	$(call start_port_forward,kagent-a2a,http://localhost:$(KAGENT_A2A_LOCAL_PORT),kagent,kagent-kagent-controller,$(KAGENT_A2A_LOCAL_PORT),8083,http://localhost:$(KAGENT_A2A_LOCAL_PORT)/health,200,)
 
 close-kagent-a2a: ## Close the kagent controller API port-forward
 	$(call stop_port_forward,kagent-a2a)
@@ -384,7 +384,7 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	done; \
 	echo; \
 	echo "A2A agent cards via kagent controller:"; \
-	echo "  http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json"; \
+	echo "  http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/k8s-agent/.well-known/agent.json"; \
 	echo "  http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/finnhub-agent/.well-known/agent.json"; \
 	echo "  http://localhost:$(KAGENT_A2A_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json"; \
 	echo "A2A agent cards via AgentGateway:"; \
@@ -417,7 +417,7 @@ close-research-access: ## Close all background localhost research endpoints
 	$(MAKE) close-flux-operator-ui
 
 test-a2a-agent: ## Fetch the sample agent card from kagent
-	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json | jq .
+	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-agent/.well-known/agent.json | jq .
 
 test-finnhub-agent-card: ## Fetch the finnhub-agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json | jq .

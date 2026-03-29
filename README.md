@@ -654,7 +654,8 @@ make open-research-access
 Main local URLs:
 
 - `http://localhost:8080` for the `kagent` UI
-- `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` for the sample A2A card
+- `http://localhost:8083/health` for kagent controller health
+- `http://localhost:8083/api/a2a/kagent/k8s-agent/.well-known/agent.json` for the sample A2A card
 - `http://localhost:8083/api/a2a/kagent/finnhub-agent/.well-known/agent.json` for the `finnhub-agent` A2A card
 - `http://localhost:8083/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json` for the `team-lead-agent-assist` A2A card
 - `http://localhost:15000/ui/` for the AgentGateway Admin UI
@@ -677,7 +678,7 @@ Local access commands:
 | Component | Open command | Close command | Check/test command | Default local URL |
 | --- | --- | --- | --- | --- |
 | `kagent` UI | `make open-kagent-ui` | `make close-kagent-ui` | `make check-kagent-ui` | `http://localhost:8080` |
-| `kagent` A2A card/API | `make open-kagent-a2a` | `make close-kagent-a2a` | `make test-a2a-agent`, `make test-finnhub-agent-card`, `make test-team-lead-agent-card`, `make test-a2a-delegation` | `http://localhost:8083/api/a2a/kagent/k8s-a2a-agent/.well-known/agent.json` |
+| `kagent` A2A card/API | `make open-kagent-a2a` | `make close-kagent-a2a` | `make test-a2a-agent`, `make test-finnhub-agent-card`, `make test-team-lead-agent-card`, `make test-a2a-delegation` | `http://localhost:8083/api/a2a/kagent/k8s-agent/.well-known/agent.json` |
 | AgentGateway | `make open-agentgateway` | `make close-agentgateway` | `make check-agentgateway`, `make check-agentgateway-openai`, `make test-agentgateway-openai` | `http://localhost:15001` |
 | AgentGateway Admin UI | `make open-agentgateway-admin-ui` | `make close-agentgateway-admin-ui` | `make check-agentgateway-admin-ui` | `http://localhost:15000/ui/` |
 | Finnhub tool browser | `make open-agentgateway` | `make close-agentgateway` | `make test-finnhub-tool-browser` | `http://localhost:15001/finnhub/app` |
