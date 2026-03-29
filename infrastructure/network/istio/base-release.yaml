@@ -76,6 +76,10 @@ spec:
     cniBinDir: /var/lib/rancher/k3s/data/cni
     ambient:
       enabled: true
+      # Reconcile stale pod/host iptables rules after local cluster restarts or CNI upgrades.
+      reconcileIptablesOnStartup: true
+      # Istio 1.26 dropped the old host-network requirement; keep the legacy mode on local k3s for compatibility.
+      shareHostNetworkNamespace: true
   install:
     remediation:
       retries: 3
