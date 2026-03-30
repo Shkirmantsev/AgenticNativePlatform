@@ -971,6 +971,34 @@ GitHub repository README rendering strips embedded `<video>` tags. Click a previ
 
 </details>
 
+## Demo Videos: Integration MCP Governance, agent-inventory
+
+<details>
+<summary><strong>Open Demo Video | Integration agent-inventory</strong></summary>
+
+GitHub repository README rendering strips embedded `<video>` tags. Click a preview image to open the matching `.webm` release asset.
+
+[![Preview: Integration inventory and MCP governance](.assets/integration-mcpg-inventory.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.4.0/MCPG_Inventory.webm)
+
+1. [Demo: Integration inventory and MCP governance](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.4.0/MCPG_Inventory.webm)
+2. [Reference: agentregistry-inventory](https://github.com/den-vasyliev/agentregistry-inventory)
+3. [Reference: mcp-security-governance](https://github.com/techwithhuz/mcp-security-governance)
+
+</details>
+
+## Demo Videos: Building multiagent-team communication
+
+<details>
+<summary><strong>Open Demo Video | Multi-agent team communication</strong></summary>
+
+GitHub repository README rendering strips embedded `<video>` tags. Click a preview image to open the matching `.webm` release asset.
+
+[![Preview: Building multiagent team](.assets/multi-agent-team-communication.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.4.0/Agent-Team.webm)
+
+1. [Demo: Multi-agent team communication](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.4.0/Agent-Team.webm)
+
+</details>
+
 ## Notes For OCI Migration
 
 - `clusters/`, `infrastructure/`, `apps/`, `values/`, and `secrets/` are separated so each tree can later be published as independent OCI artifacts
