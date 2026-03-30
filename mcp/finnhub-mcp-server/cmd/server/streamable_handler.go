@@ -3,8 +3,6 @@ package main
 import (
 	"io"
 	"net/http"
-	"strings"
-	"sync"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -22,45 +20,25 @@ func newAgentGatewayCompatibleStreamableHandler(getServer func(*http.Request) *m
 
 type agentGatewayCompatibleStreamableHandler struct {
 	inner http.Handler
-
-	// knownSessions tracks session IDs returned during initialize so we only
-	// pre-prime GET requests for sessions we issued ourselves.
-	knownSessions sync.Map
 }
 
 func (h *agentGatewayCompatibleStreamableHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	sessionID := strings.TrimSpace(r.Header.Get(mcpSessionIDHeader))
-
 	switch r.Method {
 	case http.MethodPost:
-		h.inner.ServeHTTP(&sessionTrackingResponseWriter{
-			ResponseWriter: w,
-			onSessionID:    h.rememberSessionID,
-		}, r)
+		h.inner.ServeHTTP(w, r)
 	case http.MethodDelete:
 		h.inner.ServeHTTP(w, r)
-		if sessionID != "" {
-			h.knownSessions.Delete(sessionID)
-		}
 	case http.MethodGet:
-		if sessionID != "" {
-			if _, ok := h.knownSessions.Load(sessionID); ok {
-				writeStandaloneSSEPreamble(w)
-				h.inner.ServeHTTP(newStartedSSEStreamResponseWriter(w), r)
-				return
-			}
-		}
-		h.inner.ServeHTTP(w, r)
+		// AgentGateway rewrites the public session identifier between the
+		// initialize response and the hanging GET it opens for server events.
+		// Matching GET requests against session IDs observed during initialize
+		// therefore misses valid sessions and leaves the buffering proxy waiting
+		// for the first body bytes forever. Prime every MCP GET stream instead.
+		writeStandaloneSSEPreamble(w)
+		h.inner.ServeHTTP(newStartedSSEStreamResponseWriter(w), r)
 	default:
 		h.inner.ServeHTTP(w, r)
 	}
-}
-
-func (h *agentGatewayCompatibleStreamableHandler) rememberSessionID(sessionID string) {
-	if sessionID == "" {
-		return
-	}
-	h.knownSessions.Store(sessionID, struct{}{})
 }
 
 func writeStandaloneSSEPreamble(w http.ResponseWriter) {
@@ -73,40 +51,6 @@ func writeStandaloneSSEPreamble(w http.ResponseWriter) {
 	if flusher, ok := w.(http.Flusher); ok {
 		flusher.Flush()
 	}
-}
-
-type sessionTrackingResponseWriter struct {
-	http.ResponseWriter
-	onSessionID func(string)
-	wroteHeader bool
-}
-
-func (w *sessionTrackingResponseWriter) WriteHeader(statusCode int) {
-	if !w.wroteHeader {
-		w.captureSessionID()
-		w.wroteHeader = true
-	}
-	w.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (w *sessionTrackingResponseWriter) Write(p []byte) (int, error) {
-	if !w.wroteHeader {
-		w.WriteHeader(http.StatusOK)
-	}
-	return w.ResponseWriter.Write(p)
-}
-
-func (w *sessionTrackingResponseWriter) Flush() {
-	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-		flusher.Flush()
-	}
-}
-
-func (w *sessionTrackingResponseWriter) captureSessionID() {
-	if w.onSessionID == nil {
-		return
-	}
-	w.onSessionID(strings.TrimSpace(w.ResponseWriter.Header().Get(mcpSessionIDHeader)))
 }
 
 type startedSSEStreamResponseWriter struct {

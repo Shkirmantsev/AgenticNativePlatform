@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,6 +50,29 @@ func TestAgentGatewayCompatibleStreamableHandlerAllowsBufferingProxyConnect(t *t
 	}
 	if len(tools.Tools) < 10 {
 		t.Fatalf("expected many tools, got %d", len(tools.Tools))
+	}
+}
+
+func TestAgentGatewayCompatibleStreamableHandlerPrimesUnknownSessionGET(t *testing.T) {
+	t.Parallel()
+
+	handler := newTestFinnhubHTTPHandler(t)
+	req := httptest.NewRequest(http.MethodGet, "/mcp", nil)
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set(mcpSessionIDHeader, "agentgateway-rewritten-session")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	resp := rec.Result()
+	if got := resp.StatusCode; got != http.StatusOK {
+		t.Fatalf("expected 200, got %d", got)
+	}
+	if got := resp.Header.Get("Content-Type"); got != "text/event-stream" {
+		t.Fatalf("expected text/event-stream, got %q", got)
+	}
+	if body := rec.Body.String(); !strings.HasPrefix(body, ": agentgateway-preamble\n\n") {
+		t.Fatalf("expected SSE preamble body, got %q", body)
 	}
 }
 
