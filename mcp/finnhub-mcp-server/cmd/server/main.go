@@ -18,9 +18,11 @@ import (
 	"finnhub-mcp-server/internal/config"
 	"finnhub-mcp-server/internal/finnhub"
 	"finnhub-mcp-server/internal/mcpserver"
+	"finnhub-mcp-server/internal/telemetry"
 	"finnhub-mcp-server/internal/web"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/olgasafonova/mcp-otel-go/mcpotel"
 )
 
 const (
@@ -55,6 +57,18 @@ func run(transportMode, httpAddressOverride string) error {
 	}
 
 	logger := newLogger()
+	shutdownTelemetry, err := telemetry.SetupOTel(context.Background(), "finnhub-mcp-server", mcpserver.ImplementationVersion)
+	if err != nil {
+		return fmt.Errorf("configure OpenTelemetry: %w", err)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if shutdownErr := shutdownTelemetry(shutdownCtx); shutdownErr != nil {
+			logger.Warn("OpenTelemetry shutdown failed", "error", shutdownErr)
+		}
+	}()
+
 	finnhubClient := finnhub.NewClient(cfg.BaseURL, cfg.APIKey, cfg.UserAgent, cfg.RequestTimeout)
 	publicWebBaseURL := cfg.PublicWebBaseURL
 	if publicWebBaseURL == "" {
@@ -64,6 +78,10 @@ func run(transportMode, httpAddressOverride string) error {
 		PublicWebBaseURL: publicWebBaseURL,
 	})
 	server := app.NewServer(logger)
+	server.AddReceivingMiddleware(mcpotel.Middleware(mcpotel.Config{
+		ServiceName:    "finnhub-mcp-server",
+		ServiceVersion: mcpserver.ImplementationVersion,
+	}))
 
 	switch strings.ToLower(strings.TrimSpace(transportMode)) {
 	case "", transportStdio:

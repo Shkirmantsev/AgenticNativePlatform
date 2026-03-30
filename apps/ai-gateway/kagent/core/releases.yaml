@@ -62,6 +62,13 @@ spec:
         tag: "0.7.23"
       skillsInitImage:
         tag: "0.7.23"
+    otel:
+      tracing:
+        enabled: true
+        exporter:
+          otlp:
+            endpoint: http://otel-collector-traces.observability.svc.cluster.local:4317
+            insecure: true
     ui:
       podLabels:
         istio.io/dataplane-mode: none
@@ -77,6 +84,13 @@ spec:
       image:
         tag: "0.7.23"
     kagent-tools:
+      otel:
+        tracing:
+          enabled: true
+          exporter:
+            otlp:
+              endpoint: http://otel-collector-traces.observability.svc.cluster.local:4317
+              insecure: true
       tools:
         image:
           tag: "0.1.1"

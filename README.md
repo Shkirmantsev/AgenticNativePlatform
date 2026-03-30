@@ -101,6 +101,14 @@ mcpg controller -> scans agentgateway / kagent / agentregistry resources
 mcpg dashboard  -> internal-only access via port-forward
 ```
 
+Observability path:
+
+```text
+agentgateway spans -> OpenTelemetry Collector -> Phoenix
+kagent spans       -> OpenTelemetry Collector -> Phoenix
+MCP server spans   -> OpenTelemetry Collector -> Phoenix
+```
+
 Inventory control-plane path:
 
 ```text
@@ -455,7 +463,7 @@ The main user-facing parameters are:
 | `GRAFANA_ADMIN_USERNAME`, `GRAFANA_ADMIN_PASSWORD` | Grafana admin bootstrap credentials | observability secret render | `GRAFANA_ADMIN_PASSWORD=strong-secret` | real username/password |
 | `GRAFANA_SERVICE_ACCOUNT_TOKEN`, `GRAFANA_API_KEY` | Grafana MCP API credentials for kagent | Grafana MCP secret render in `kagent` namespace | `GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_...` | service account token preferred; optional for `make run-cluster-from-scratch`, which can mint one after Grafana boots |
 | `FLUX_OPERATOR_UI_LOCAL_PORT` | Local port override for Flux Operator UI port-forward | `make open-flux-operator-ui` | `make open-flux-operator-ui FLUX_OPERATOR_UI_LOCAL_PORT=19080` | valid local TCP port |
-| `KAGENT_UI_LOCAL_PORT`, `KAGENT_A2A_LOCAL_PORT`, `AGENTGATEWAY_LOCAL_PORT`, `AGENTGATEWAY_ADMIN_UI_LOCAL_PORT`, `LITELLM_LOCAL_PORT`, `GRAFANA_LOCAL_PORT`, `PROMETHEUS_LOCAL_PORT`, `QDRANT_LOCAL_PORT`, `AGENTREGISTRY_INVENTORY_LOCAL_PORT` | Local port overrides for port-forward targets | `open-*` targets | `make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16001` or `make open-agentregistry-inventory AGENTREGISTRY_INVENTORY_LOCAL_PORT=19081` | valid local TCP ports |
+| `KAGENT_UI_LOCAL_PORT`, `KAGENT_A2A_LOCAL_PORT`, `AGENTGATEWAY_LOCAL_PORT`, `AGENTGATEWAY_ADMIN_UI_LOCAL_PORT`, `LITELLM_LOCAL_PORT`, `GRAFANA_LOCAL_PORT`, `PROMETHEUS_LOCAL_PORT`, `QDRANT_LOCAL_PORT`, `PHOENIX_LOCAL_PORT`, `AGENTREGISTRY_INVENTORY_LOCAL_PORT` | Local port overrides for port-forward targets | `open-*` targets | `make open-agentgateway AGENTGATEWAY_LOCAL_PORT=16001` or `make open-phoenix PHOENIX_LOCAL_PORT=16006` | valid local TCP ports |
 
 - `TOPOLOGY` defaults to `local`; supported values are `local`, `github-codespace`, `minipc`, `hybrid`, `hybrid-remote`
 - `RUNTIME`, `LMSTUDIO_ENABLED`, and `SECRETS_MODE` are operational selectors used by bootstrap and lifecycle targets
@@ -676,6 +684,7 @@ Main local URLs:
 - `http://localhost:3000` for Grafana
 - `http://localhost:9090` for Prometheus
 - `http://localhost:6333/dashboard` for Qdrant
+- `http://localhost:6006` for Phoenix
 - `http://localhost:18081` for Agent Registry Inventory
 - `http://localhost:18081/v0/servers` for the Inventory public catalog API
 - `http://localhost:9080` for the Flux Operator web UI
@@ -693,6 +702,7 @@ Local access commands:
 | Grafana | `make open-grafana` | `make close-grafana` | browser/login check | `http://localhost:3000` |
 | Prometheus | `make open-prometheus` | `make close-prometheus` | browser/ready check | `http://localhost:9090` |
 | Qdrant | `make open-qdrant` | `make close-qdrant` | dashboard/manual check | `http://localhost:6333/dashboard` |
+| Phoenix | `make open-phoenix` | `make close-phoenix` | `make check-phoenix` | `http://localhost:6006` |
 | Agent Registry Inventory | `make open-agentregistry-inventory` | `make close-agentregistry-inventory` | `make check-agentregistry-inventory` | `http://localhost:18081` |
 | Flux Operator UI | `make open-flux-operator-ui` | `make close-flux-operator-ui` | `make check-flux-operator-ui` | `http://localhost:9080` |
 | All core research endpoints | `make open-research-access` | `make close-research-access` | summary printed by target | multiple |

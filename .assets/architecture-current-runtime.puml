@@ -74,6 +74,8 @@ node "Kubernetes cluster" {
     component "Prometheus" as Prometheus
     component "Grafana" as Grafana
     component "Loki" as Loki
+    component "OpenTelemetry Collector" as OTelCollector
+    component "Phoenix" as Phoenix
   }
 
   package "platform" {
@@ -125,6 +127,10 @@ KagentController --> TEI : embeddings
 KagentController --> Qdrant : vectors
 KagentController --> Postgres : state
 KagentController --> Redis : cache
+KagentController --> OTelCollector : traces
+KagentTools --> OTelCollector : traces
+AgentgatewayProxy --> OTelCollector : traces
+OTelCollector --> Phoenix : OTLP gRPC
 
 note top of FluxOperator
 Flux lifecycle is managed by Flux Operator.
@@ -152,6 +158,11 @@ note bottom of Inventory
 Internal-only by default.
 UI and API are reached through port-forward.
 Discovery catalogs local kagent resources.
+end note
+
+note bottom of OTelCollector
+Phoenix complements Prometheus, Grafana, and Loki.
+It becomes the trace and AI-evaluation view.
 end note
 
 note bottom of MCPGController

@@ -56,6 +56,15 @@ agentregistry-inventory
   -> stays off the default public gateway path
 ```
 
+```text
+observability path
+  -> agentgateway spans
+  -> kagent spans
+  -> MCP server spans
+  -> OpenTelemetry Collector
+  -> Phoenix
+```
+
 ## Topologies
 
 - `local`

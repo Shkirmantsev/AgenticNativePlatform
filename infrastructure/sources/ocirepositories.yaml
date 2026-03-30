@@ -121,3 +121,15 @@ spec:
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: phoenix-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://registry-1.docker.io/arizephoenix/phoenix-helm
+  ref:
+    tag: 5.0.20

@@ -30,6 +30,13 @@ spec:
       istio.io/dataplane-mode: none
     env:
       FINNHUB_PUBLIC_WEB_BASE_URL: http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/finnhub/app
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-traces.observability.svc.cluster.local:4317
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_SERVICE_NAME: finnhub-mcp-server
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=kagent,deployment.environment=platform
     image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.7.1
     port: 3000
     secretRefs:

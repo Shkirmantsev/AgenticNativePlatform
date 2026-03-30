@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
   - kube-prometheus-stack.yaml
   - loki.yaml
+  - phoenix.yaml
+  - otel-collector-traces.yaml
