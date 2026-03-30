@@ -30,7 +30,7 @@ spec:
       istio.io/dataplane-mode: none
     env:
       FINNHUB_PUBLIC_WEB_BASE_URL: http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/finnhub/app
-    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.6.0
+    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.7.0
     port: 3000
     secretRefs:
       - name: finnhub-mcp-server
