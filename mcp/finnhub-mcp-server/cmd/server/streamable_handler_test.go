@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -76,6 +77,50 @@ func TestAgentGatewayCompatibleStreamableHandlerPrimesUnknownSessionGET(t *testi
 	}
 }
 
+func TestRequestLoggingMiddlewarePreservesFlushForInitialize(t *testing.T) {
+	t.Parallel()
+
+	handler := requestLoggingMiddleware(
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		newTestFinnhubHTTPHandler(t),
+	)
+
+	body, err := json.Marshal(map[string]any{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "initialize",
+		"params": map[string]any{
+			"protocolVersion": "2025-03-26",
+			"capabilities":    map[string]any{},
+			"clientInfo": map[string]any{
+				"name":    "test-client",
+				"version": "v0.0.1",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("json.Marshal(): %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+
+	rec := newFlushTrackingResponseRecorder()
+	handler.ServeHTTP(rec, req)
+
+	resp := rec.Result()
+	if got := resp.StatusCode; got != http.StatusOK {
+		t.Fatalf("expected 200, got %d", got)
+	}
+	if rec.flushCount == 0 {
+		t.Fatalf("expected initialize response to flush the SSE body")
+	}
+	if body := rec.Body.String(); !strings.Contains(body, "result") {
+		t.Fatalf("expected initialize response body, got %q", body)
+	}
+}
+
 func newTestFinnhubHTTPHandler(t *testing.T) http.Handler {
 	t.Helper()
 
@@ -139,6 +184,22 @@ func newFirstBodyByteProxy(t *testing.T, target *url.URL) http.Handler {
 }
 
 type fakeMarketDataClient struct{}
+
+type flushTrackingResponseRecorder struct {
+	*httptest.ResponseRecorder
+	flushCount int
+}
+
+func newFlushTrackingResponseRecorder() *flushTrackingResponseRecorder {
+	return &flushTrackingResponseRecorder{
+		ResponseRecorder: httptest.NewRecorder(),
+	}
+}
+
+func (r *flushTrackingResponseRecorder) Flush() {
+	r.flushCount++
+	r.ResponseRecorder.Flush()
+}
 
 func (fakeMarketDataClient) Get(_ context.Context, endpointPath string, query map[string]string) (*finnhub.Response, error) {
 	return &finnhub.Response{

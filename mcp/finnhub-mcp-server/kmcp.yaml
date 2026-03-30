@@ -1,6 +1,6 @@
 name: finnhub-mcp-server
 framework: mcp-go
-version: 0.7.0
+version: 0.7.1
 description: Production-ready Finnhub MCP server built with MCP Go SDK
 
 secrets:
