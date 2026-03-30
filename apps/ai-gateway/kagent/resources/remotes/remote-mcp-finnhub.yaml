@@ -8,5 +8,5 @@ spec:
   protocol: STREAMABLE_HTTP
   timeout: 30s
   sseReadTimeout: 5m0s
-  terminateOnClose: true
+  #terminateOnClose: true
   url: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/mcp/finnhub-mcp-server"
