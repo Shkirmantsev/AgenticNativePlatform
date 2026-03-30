@@ -5,3 +5,5 @@ resources:
   - loki.yaml
   - phoenix.yaml
   - otel-collector-traces.yaml
+  - tempo.yaml
+  - monitors.yaml

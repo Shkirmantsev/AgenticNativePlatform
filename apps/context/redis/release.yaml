@@ -24,3 +24,8 @@ spec:
     master:
       persistence:
         size: 800Mi
+
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true

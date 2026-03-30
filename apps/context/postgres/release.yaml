@@ -30,3 +30,8 @@ spec:
     primary:
       persistence:
         size: 600Mi
+
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true

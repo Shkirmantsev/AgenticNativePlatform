@@ -20,3 +20,9 @@ spec:
       retries: 3
   values:
     fullnameOverride: phoenix
+    server:
+      port: 6006
+      grpcPort: 4317
+    extraEnv:
+      PHOENIX_ENABLE_PROMETHEUS: "true"
+      PHOENIX_DEFAULT_RETENTION_POLICY_DAYS: "3"

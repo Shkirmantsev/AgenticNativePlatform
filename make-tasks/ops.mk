@@ -1,9 +1,9 @@
 .PHONY: diagnose-runtime-state recover-paused-workloads \
 	cluster-pause cluster-resume cluster-stop cluster-start cluster-remove remove-cluster-only environment-destroy destroy-cluster-and-infra \
 	k9s-local \
-	port-forward-agentgateway port-forward-agentgateway-admin-ui port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-mcpg port-forward-prometheus port-forward-qdrant port-forward-phoenix port-forward-flux-operator-ui port-forward-agentregistry-inventory \
-	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-agentgateway-admin-ui close-agentgateway-admin-ui open-litellm close-litellm open-grafana close-grafana open-mcpg close-mcpg open-prometheus close-prometheus open-qdrant close-qdrant open-phoenix close-phoenix open-flux-operator-ui close-flux-operator-ui open-agentregistry-inventory close-agentregistry-inventory open-research-access close-research-access \
-	check-kagent-ui check-agentgateway check-agentgateway-admin-ui check-agentgateway-openai check-litellm check-mcpg check-phoenix check-flux-operator-ui check-agentregistry-inventory check-flux-stages \
+	port-forward-agentgateway port-forward-agentgateway-admin-ui port-forward-kagent port-forward-kagent-ui port-forward-litellm port-forward-grafana port-forward-mcpg port-forward-prometheus port-forward-qdrant port-forward-phoenix port-forward-tempo port-forward-flux-operator-ui port-forward-agentregistry-inventory \
+	open-kagent-ui close-kagent-ui open-kagent-a2a close-kagent-a2a open-agentgateway close-agentgateway open-agentgateway-admin-ui close-agentgateway-admin-ui open-litellm close-litellm open-grafana close-grafana open-mcpg close-mcpg open-prometheus close-prometheus open-qdrant close-qdrant open-phoenix close-phoenix open-tempo close-tempo open-flux-operator-ui close-flux-operator-ui open-agentregistry-inventory close-agentregistry-inventory open-research-access close-research-access \
+	check-kagent-ui check-agentgateway check-agentgateway-admin-ui check-agentgateway-openai check-litellm check-mcpg check-phoenix check-tempo check-flux-operator-ui check-agentregistry-inventory check-flux-stages \
 	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-finnhub-tool-browser test-a2a-delegation test-a2a-delegation-via-agentgateway test-agentgateway-gemini test-agentgateway-openai test-litellm
 
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
@@ -164,6 +164,9 @@ port-forward-qdrant: require-kubeconfig ## Port-forward Qdrant to localhost:6333
 port-forward-phoenix: require-kubeconfig ## Port-forward Phoenix to localhost:6006
 	$(KUBECTL) -n observability port-forward svc/phoenix $(PHOENIX_LOCAL_PORT):6006
 
+port-forward-tempo: require-kubeconfig ## Port-forward Tempo to localhost:3100
+	$(KUBECTL) -n observability port-forward svc/tempo $(TEMPO_LOCAL_PORT):3100
+
 port-forward-flux-operator-ui: require-kubeconfig ## Port-forward the Flux Operator web UI to localhost:9080
 	$(KUBECTL) -n flux-system port-forward svc/flux-operator $(FLUX_OPERATOR_UI_LOCAL_PORT):9080
 
@@ -283,6 +286,12 @@ open-qdrant: require-kubeconfig ## Open Qdrant at http://localhost:6333
 open-phoenix: require-kubeconfig ## Open Phoenix at http://localhost:6006
 	$(call start_port_forward,phoenix,http://localhost:$(PHOENIX_LOCAL_PORT),observability,phoenix,$(PHOENIX_LOCAL_PORT),6006,http://localhost:$(PHOENIX_LOCAL_PORT)/,200 301 302 303 307 308,)
 
+open-tempo: require-kubeconfig ## Open Tempo API at http://localhost:3100
+	$(call start_port_forward,tempo,http://localhost:$(TEMPO_LOCAL_PORT),observability,tempo,$(TEMPO_LOCAL_PORT),3100,http://localhost:$(TEMPO_LOCAL_PORT)/ready,200,)
+
+close-tempo: ## Close the Tempo port-forward
+	$(call stop_port_forward,tempo)
+
 open-flux-operator-ui: require-kubeconfig ## Open the Flux Operator web UI at http://localhost:9080
 	$(call start_port_forward,flux-operator-ui,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT),flux-system,flux-operator,$(FLUX_OPERATOR_UI_LOCAL_PORT),9080,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT)/,200,)
 
@@ -310,6 +319,9 @@ check-mcpg: ## Verify the local MCP Governance dashboard endpoint
 
 check-phoenix: ## Verify the local Phoenix endpoint
 	$(call wait_for_http_status,http://localhost:$(PHOENIX_LOCAL_PORT)/,200 301 302 303 307 308,)
+
+check-tempo: ## Verify the local Tempo endpoint
+	$(call wait_for_http_status,http://localhost:$(TEMPO_LOCAL_PORT)/ready,200,)
 
 check-flux-operator-ui: ## Verify the local Flux Operator web UI endpoint
 	$(call wait_for_http_status,http://localhost:$(FLUX_OPERATOR_UI_LOCAL_PORT)/,200,)
@@ -373,6 +385,7 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	  "open-prometheus|observability|observability-kube-prometh-prometheus" \
 	  "open-qdrant|context|context-qdrant" \
 	  "open-phoenix|observability|phoenix" \
+	  "open-tempo|observability|tempo" \
 	  "open-agentregistry-inventory|agentregistry|$(AGENTREGISTRY_INVENTORY_SERVICE)" \
 	  "open-flux-operator-ui|flux-system|flux-operator"; do \
 	  IFS='|' read -r target namespace service <<<"$$spec"; \
@@ -427,6 +440,7 @@ close-research-access: ## Close all background localhost research endpoints
 	$(MAKE) close-prometheus
 	$(MAKE) close-qdrant
 	$(MAKE) close-phoenix
+	$(MAKE) close-tempo
 	$(MAKE) close-agentregistry-inventory
 	$(MAKE) close-flux-operator-ui
 

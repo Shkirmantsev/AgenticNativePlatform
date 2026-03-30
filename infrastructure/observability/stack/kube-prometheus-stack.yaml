@@ -29,6 +29,23 @@ spec:
       sidecar:
         dashboards:
           searchNamespace: ALL
+      additionalDataSources:
+        - name: Tempo
+          uid: tempo
+          type: tempo
+          access: proxy
+          url: http://tempo.observability.svc.cluster.local:3100
+          jsonData:
+            httpMethod: GET
+            tracesToLogsV2:
+              datasourceUid: loki
+            serviceMap:
+              datasourceUid: prometheus
+        - name: Loki
+          uid: loki
+          type: loki
+          access: proxy
+          url: http://loki-gateway.observability.svc.cluster.local
     prometheus:
       prometheusSpec:
         serviceMonitorSelectorNilUsesHelmValues: false

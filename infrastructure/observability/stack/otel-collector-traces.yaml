@@ -24,10 +24,13 @@ spec:
       retries: 3
   values:
     mode: deployment
+    replicaCount: 1
     image:
       repository: otel/opentelemetry-collector-contrib
     command:
       name: otelcol-contrib
+    serviceMonitor:
+      enabled: true
     config:
       receivers:
         otlp:
@@ -46,6 +49,10 @@ spec:
           endpoint: phoenix.observability.svc.cluster.local:4317
           tls:
             insecure: true
+        otlp/tempo:
+          endpoint: tempo.observability.svc.cluster.local:4317
+          tls:
+            insecure: true
         debug:
           verbosity: basic
       service:
@@ -59,3 +66,4 @@ spec:
             exporters:
               - debug
               - otlp/phoenix
+              - otlp/tempo

@@ -15,7 +15,7 @@ A sidecar OpenTelemetry collector per MCP server is possible with KMCP, but it w
 
 ## Decision
 
-Use a centralized OpenTelemetry collector in the `observability` namespace and export traces to a self-hosted Phoenix deployment installed from the Phoenix OCI Helm chart.
+Use a centralized OpenTelemetry collector in the `observability` namespace and export traces to both a self-hosted Phoenix deployment and Grafana Tempo.
 
 Enable tracing in three layers:
 
@@ -44,3 +44,14 @@ For the Go MCP server `finnhub-mcp-server`, use `mcp-otel-go` middleware togethe
 Use a collector sidecar on every MCP server pod.
 
 This is valid for isolated workloads, but it is not the simplest default for this repository because the platform already has a shared `observability` namespace and a GitOps-managed central control plane.
+
+
+## MCP server rollout pattern
+
+Apply observability in three levels for every KMCP-managed MCP server:
+
+1. gateway and agent spans for every MCP call through AgentGateway and kagent
+2. baseline OTEL runtime environment on every `MCPServer.spec.deployment.env` block
+3. in-process instrumentation for first-party MCP servers that we own
+
+This means every MCP server behind KMCP is visible at least at the request-boundary level, while first-party servers such as `finnhub-mcp-server` also expose internal tool spans and Prometheus metrics. Third-party opaque servers such as `echo-mcp` remain boundary-traced until they are wrapped or rebuilt with runtime instrumentation.

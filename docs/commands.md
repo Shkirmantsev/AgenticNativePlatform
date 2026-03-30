@@ -84,12 +84,14 @@ kubectl kustomize clusters/local-dev/secrets
 make open-research-access
 make open-agentgateway-admin-ui
 make open-phoenix
+make open-tempo
 make open-agentregistry-inventory
 make check-kagent-ui
 make check-agentgateway
 make check-agentgateway-openai
 make check-litellm
 make check-phoenix
+make check-tempo
 make check-agentregistry-inventory
 make open-flux-operator-ui
 make check-flux-operator-ui

@@ -63,6 +63,9 @@ observability path
   -> MCP server spans
   -> OpenTelemetry Collector
   -> Phoenix
+  -> Tempo
+  -> Prometheus
+  -> Grafana
 ```
 
 ## Topologies

@@ -23,6 +23,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/olgasafonova/mcp-otel-go/mcpotel"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -103,6 +104,8 @@ func runStdio(server *mcp.Server, enableRPCLogs bool) error {
 
 func runHTTP(server *mcp.Server, app *mcpserver.Application, cfg config.Config, logger *slog.Logger) error {
 	mux := http.NewServeMux()
+
+	mux.Handle("/metrics", promhttp.Handler())
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{

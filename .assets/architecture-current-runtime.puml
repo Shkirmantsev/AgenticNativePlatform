@@ -76,6 +76,7 @@ node "Kubernetes cluster" {
     component "Loki" as Loki
     component "OpenTelemetry Collector" as OTelCollector
     component "Phoenix" as Phoenix
+    component "Tempo" as Tempo
   }
 
   package "platform" {
@@ -131,6 +132,11 @@ KagentController --> OTelCollector : traces
 KagentTools --> OTelCollector : traces
 AgentgatewayProxy --> OTelCollector : traces
 OTelCollector --> Phoenix : OTLP gRPC
+OTelCollector --> Tempo : OTLP gRPC
+Prometheus --> Grafana : metrics dashboards
+Loki --> Grafana : logs
+Tempo --> Grafana : traces
+Phoenix --> Grafana : metrics via Prometheus
 
 note top of FluxOperator
 Flux lifecycle is managed by Flux Operator.
@@ -161,8 +167,8 @@ Discovery catalogs local kagent resources.
 end note
 
 note bottom of OTelCollector
-Phoenix complements Prometheus, Grafana, and Loki.
-It becomes the trace and AI-evaluation view.
+Phoenix remains the AI-native trace view.
+Tempo plus Prometheus plus Loki provide Grafana correlation.
 end note
 
 note bottom of MCPGController

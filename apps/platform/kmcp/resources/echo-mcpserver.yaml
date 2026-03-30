@@ -19,6 +19,14 @@ spec:
       - streamableHttp
     port: 3001
     replicas: 1
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-traces.observability.svc.cluster.local:4317
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_SERVICE_NAME: echo-mcp
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=kagent,deployment.environment=platform
     labels:
       app.kubernetes.io/name: echo-mcp
       app.kubernetes.io/component: mcp
