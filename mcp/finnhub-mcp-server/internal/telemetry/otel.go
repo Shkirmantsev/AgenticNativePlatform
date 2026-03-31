@@ -6,12 +6,12 @@ import (
 	"os"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 // SetupOTel configures a process-wide trace provider for the MCP server.
@@ -31,10 +31,11 @@ func SetupOTel(ctx context.Context, serviceName, serviceVersion string) (func(co
 
 	res, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName(serviceName),
-			semconv.ServiceVersion(serviceVersion),
+		// Keep service identity schemaless so it can merge with whatever schema
+		// version the active OTel SDK/default detectors are using at runtime.
+		resource.NewSchemaless(
+			attribute.String("service.name", serviceName),
+			attribute.String("service.version", serviceVersion),
 		),
 	)
 	if err != nil {

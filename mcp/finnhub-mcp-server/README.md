@@ -95,7 +95,7 @@ Then open:
 ## Docker build
 
 ```bash
-docker build -t finnhub-mcp-server:0.7.2 .
+docker build -t finnhub-mcp-server:0.7.4 .
 ```
 
 The Docker build stamps the MCP implementation version into the binary from
@@ -109,7 +109,7 @@ If you want the image name to match the Kubernetes manifest and GitHub Container
 ```bash
 kmcp build \
   --project-dir mcp/finnhub-mcp-server \
-  --tag ghcr.io/<github-owner>/finnhub-mcp-server:0.7.2
+  --tag ghcr.io/<github-owner>/finnhub-mcp-server:0.7.4
 ```
 
 To push it to GitHub Container Registry:
@@ -119,23 +119,23 @@ echo "$GHCR_TOKEN" | docker login ghcr.io -u <github-username> --password-stdin
 
 kmcp build \
   --project-dir mcp/finnhub-mcp-server \
-  --tag ghcr.io/<github-owner>/finnhub-mcp-server:0.7.2 \
+  --tag ghcr.io/<github-owner>/finnhub-mcp-server:0.7.4 \
   --push
 ```
 
 The current repository deployment manifest expects:
 
 ```text
-ghcr.io/shkirmantsev/finnhub-mcp-server:0.7.2
+ghcr.io/shkirmantsev/finnhub-mcp-server:0.7.4
 ```
 
-If you already built a local image such as `finnhub-mcp-server:0.7.2`, you can retag and push it manually instead of rebuilding:
+If you already built a local image such as `finnhub-mcp-server:0.7.4`, you can retag and push it manually instead of rebuilding:
 
 ```bash
-docker tag finnhub-mcp-server:0.7.2 \
-  ghcr.io/<github-owner>/finnhub-mcp-server:0.7.2
+docker tag finnhub-mcp-server:0.7.4 \
+  ghcr.io/<github-owner>/finnhub-mcp-server:0.7.4
 
-docker push ghcr.io/<github-owner>/finnhub-mcp-server:0.7.2
+docker push ghcr.io/<github-owner>/finnhub-mcp-server:0.7.4
 ```
 
 If you publish under a different registry path or tag, update the image in `apps/platform/kmcp/resources/finnhub-mcp-server.yaml` to match.

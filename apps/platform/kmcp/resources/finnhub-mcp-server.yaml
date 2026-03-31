@@ -37,7 +37,7 @@ spec:
       OTEL_LOGS_EXPORTER: none
       OTEL_SERVICE_NAME: finnhub-mcp-server
       OTEL_RESOURCE_ATTRIBUTES: service.namespace=kagent,deployment.environment=platform
-    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.7.2
+    image: ghcr.io/shkirmantsev/finnhub-mcp-server:0.7.4
     port: 3000
     secretRefs:
       - name: finnhub-mcp-server
