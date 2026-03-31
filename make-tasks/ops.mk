@@ -192,10 +192,10 @@ port-forward-qdrant: require-kubeconfig ## Port-forward Qdrant to localhost:6333
 	$(KUBECTL) -n context port-forward svc/context-qdrant $(QDRANT_LOCAL_PORT):6333
 
 port-forward-phoenix: require-kubeconfig ## Port-forward Phoenix to localhost:6006
-	$(KUBECTL) -n observability port-forward svc/phoenix $(PHOENIX_LOCAL_PORT):6006
+	$(KUBECTL) -n observability port-forward svc/phoenix-svc $(PHOENIX_LOCAL_PORT):6006
 
 port-forward-tempo: require-kubeconfig ## Port-forward Tempo to localhost:3100
-	$(KUBECTL) -n observability port-forward svc/tempo $(TEMPO_LOCAL_PORT):3100
+	$(KUBECTL) -n observability port-forward svc/tempo $(TEMPO_LOCAL_PORT):3200
 
 port-forward-flux-operator-ui: require-kubeconfig ## Port-forward the Flux Operator web UI to localhost:9080
 	$(KUBECTL) -n flux-system port-forward svc/flux-operator $(FLUX_OPERATOR_UI_LOCAL_PORT):9080
@@ -314,10 +314,10 @@ open-qdrant: require-kubeconfig ## Open Qdrant at http://localhost:6333
 	$(call start_port_forward,qdrant,http://localhost:$(QDRANT_LOCAL_PORT),context,context-qdrant,$(QDRANT_LOCAL_PORT),6333,http://localhost:$(QDRANT_LOCAL_PORT)/dashboard,200 301 302 303 307 308,)
 
 open-phoenix: require-kubeconfig ## Open Phoenix at http://localhost:6006
-	$(call start_port_forward,phoenix,http://localhost:$(PHOENIX_LOCAL_PORT),observability,phoenix,$(PHOENIX_LOCAL_PORT),6006,http://localhost:$(PHOENIX_LOCAL_PORT)/,200 301 302 303 307 308,)
+	$(call start_port_forward,phoenix,http://localhost:$(PHOENIX_LOCAL_PORT),observability,phoenix-svc,$(PHOENIX_LOCAL_PORT),6006,http://localhost:$(PHOENIX_LOCAL_PORT)/,200 301 302 303 307 308,)
 
 open-tempo: require-kubeconfig ## Open Tempo API at http://localhost:3100
-	$(call start_port_forward,tempo,http://localhost:$(TEMPO_LOCAL_PORT),observability,tempo,$(TEMPO_LOCAL_PORT),3100,http://localhost:$(TEMPO_LOCAL_PORT)/ready,200,)
+	$(call start_port_forward,tempo,http://localhost:$(TEMPO_LOCAL_PORT),observability,tempo,$(TEMPO_LOCAL_PORT),3200,http://localhost:$(TEMPO_LOCAL_PORT)/ready,200,)
 
 close-tempo: ## Close the Tempo port-forward
 	$(call stop_port_forward,tempo)

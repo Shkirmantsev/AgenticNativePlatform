@@ -668,7 +668,7 @@ Open all standard local access paths:
 make open-research-access
 ```
 
-That aggregate target opens and prints the standard operator endpoints, including Grafana, Prometheus, Qdrant, Phoenix, Tempo, Inventory, and the Flux Operator UI. `make close-research-access` closes the same background forwards.
+That aggregate target starts the standard local port-forwards and prints the resulting operator endpoints, including Grafana, Prometheus, Qdrant, Phoenix, Tempo, Inventory, and the Flux Operator UI. `make close-research-access` closes the same background forwards.
 
 Main local URLs:
 
@@ -689,10 +689,12 @@ Main local URLs:
 - `http://localhost:9090` for Prometheus
 - `http://localhost:6333/dashboard` for Qdrant
 - `http://localhost:6006` for Phoenix
-- `http://localhost:3100/ready` for Tempo
+- `http://localhost:3100/ready` for Tempo via a local port-forward to the in-cluster Tempo API port `3200`
 - `http://localhost:18081` for Agent Registry Inventory
 - `http://localhost:18081/v0/servers` for the Inventory public catalog API
 - `http://localhost:9080` for the Flux Operator web UI
+
+These `localhost` URLs only exist while the matching `make open-*` target or `make open-research-access` port-forward is running.
 
 Local access commands:
 

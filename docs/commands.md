@@ -80,6 +80,9 @@ kubectl kustomize clusters/local-dev/secrets
 
 ## Local UI and APIs
 
+These commands create local `kubectl port-forward` sessions. The `localhost` URLs are not expected to respond unless the matching `open-*` target is currently running.
+The Tempo local URL keeps `localhost:3100`, but it forwards to the in-cluster `Service/tempo` API port `3200`.
+
 ```bash
 make open-research-access
 make open-agentgateway-admin-ui
