@@ -16,7 +16,7 @@ RESEARCH_ACCESS_OPEN_SPECS := \
 	open-mcpg|mcp-governance-system|mcp-governance-dashboard \
 	open-prometheus|observability|observability-kube-prometh-prometheus \
 	open-qdrant|context|context-qdrant \
-	open-phoenix|observability|phoenix \
+	open-phoenix|observability|phoenix-svc \
 	open-tempo|observability|tempo \
 	open-agentregistry-inventory|agentregistry|$(AGENTREGISTRY_INVENTORY_SERVICE) \
 	open-flux-operator-ui|flux-system|flux-operator

@@ -27,6 +27,12 @@ spec:
     replicaCount: 1
     image:
       repository: otel/opentelemetry-collector-contrib
+    extraEnvs:
+      - name: PHOENIX_ADMIN_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: phoenix-secret
+            key: PHOENIX_ADMIN_SECRET
     command:
       name: otelcol-contrib
     serviceMonitor:
@@ -46,7 +52,9 @@ spec:
         batch: {}
       exporters:
         otlp/phoenix:
-          endpoint: phoenix.observability.svc.cluster.local:4317
+          endpoint: phoenix-svc.observability.svc.cluster.local:4317
+          headers:
+            authorization: "Bearer ${env:PHOENIX_ADMIN_SECRET}"
           tls:
             insecure: true
         otlp/tempo:

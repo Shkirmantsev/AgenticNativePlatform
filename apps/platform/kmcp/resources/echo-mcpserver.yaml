@@ -20,7 +20,7 @@ spec:
     port: 3001
     replicas: 1
     env:
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-traces.observability.svc.cluster.local:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://observability-otel-collector-traces-opentelemetry-collector.observability.svc.cluster.local:4317
       OTEL_EXPORTER_OTLP_INSECURE: "true"
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: none

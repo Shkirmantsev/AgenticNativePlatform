@@ -67,7 +67,7 @@ spec:
         enabled: true
         exporter:
           otlp:
-            endpoint: http://otel-collector-traces.observability.svc.cluster.local:4317
+            endpoint: http://observability-otel-collector-traces-opentelemetry-collector.observability.svc.cluster.local:4317
             insecure: true
     ui:
       podLabels:
@@ -89,7 +89,7 @@ spec:
           enabled: true
           exporter:
             otlp:
-              endpoint: http://otel-collector-traces.observability.svc.cluster.local:4317
+              endpoint: http://observability-otel-collector-traces-opentelemetry-collector.observability.svc.cluster.local:4317
               insecure: true
       tools:
         image:
@@ -154,7 +154,7 @@ spec:
           enabled: true
           exporter:
             otlp:
-              endpoint: http://otel-collector-traces.observability.svc.cluster.local:4317
+              endpoint: http://observability-otel-collector-traces-opentelemetry-collector.observability.svc.cluster.local:4317
               insecure: true
         serviceName: kagent-grafana-mcp
         resourceAttributes: service.namespace=kagent,service.component=mcp
@@ -164,7 +164,7 @@ spec:
           enabled: true
           exporter:
             otlp:
-              endpoint: http://otel-collector-traces.observability.svc.cluster.local:4317
+              endpoint: http://observability-otel-collector-traces-opentelemetry-collector.observability.svc.cluster.local:4317
               insecure: true
     kmcp:
       enabled: true
