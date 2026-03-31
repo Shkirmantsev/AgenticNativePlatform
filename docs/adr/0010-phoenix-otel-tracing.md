@@ -13,6 +13,20 @@ A pure gateway-only solution is insufficient because AgentGateway and KMCP can t
 
 A sidecar OpenTelemetry collector per MCP server is possible with KMCP, but it would duplicate collector configuration across every MCP server deployment.
 
+## MCP coverage note
+
+Vendor agent charts in `charts/vendor/kagent/charts/*/templates/agent.yaml` reference two distinct MCP endpoints:
+
+- the built-in `kagent` tool server (shared by k8s-agent, istio-agent, helm-agent, kgateway-agent, cilium agents, and argo-rollouts-agent)
+- the bundled `grafana-mcp` server used by `observability-agent`
+
+Tracing is therefore enabled declaratively at both layers:
+
+- `kagent-tools.otel.tracing.*` for the shared built-in tool server
+- `grafana-mcp.otel.tracing.*` for the bundled Grafana MCP server
+
+The local `grafana-mcp` subchart also enables `--metrics` and a `ServiceMonitor` so the same server is visible in Prometheus/Grafana while Phoenix receives its traces through the shared OTLP collector.
+
 ## Decision
 
 Use a centralized OpenTelemetry collector in the `observability` namespace and export traces to both a self-hosted Phoenix deployment and Grafana Tempo.

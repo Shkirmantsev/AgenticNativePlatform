@@ -38,6 +38,18 @@ node "Kubernetes cluster" {
     component "kagent-controller" as KagentController
     component "kagent-ui" as KagentUI
     component "kagent-tools" as KagentTools
+    component "k8s-agent" as K8sAgent
+    component "kgateway-agent" as KGatewayAgent
+    component "istio-agent" as IstioAgent
+    component "promql-agent" as PromqlAgent
+    component "observability-agent" as ObservabilityAgent
+    component "argo-rollouts-agent" as ArgoRolloutsAgent
+    component "helm-agent" as HelmAgent
+    component "cilium-policy-agent" as CiliumPolicyAgent
+    component "cilium-manager-agent" as CiliumManagerAgent
+    component "cilium-debug-agent" as CiliumDebugAgent
+    component "team-lead-agent-assist" as TeamLeadAgent
+    component "grafana-mcp" as GrafanaMCP
     component "k8s-a2a-agent" as A2AAgent
     component "RemoteMCPServer" as RemoteMCP
   }
@@ -100,6 +112,17 @@ PublicGateway --> AgentgatewayProxy
 
 KagentUI --> KagentController : UI
 A2AAgent --> KagentController : A2A
+K8sAgent --> KagentController : Agent runtime
+KGatewayAgent --> KagentController : Agent runtime
+IstioAgent --> KagentController : Agent runtime
+PromqlAgent --> KagentController : Agent runtime
+ObservabilityAgent --> KagentController : Agent runtime
+ArgoRolloutsAgent --> KagentController : Agent runtime
+HelmAgent --> KagentController : Agent runtime
+CiliumPolicyAgent --> KagentController : Agent runtime
+CiliumManagerAgent --> KagentController : Agent runtime
+CiliumDebugAgent --> KagentController : Agent runtime
+TeamLeadAgent --> KagentController : Agent runtime
 KagentController --> AgentgatewayProxy : /v1
 RemoteMCP --> AgentgatewayProxy : /mcp/kagent-tools
 Inventory --> InventoryDiscovery : default local discovery
@@ -130,9 +153,12 @@ KagentController --> Postgres : state
 KagentController --> Redis : cache
 KagentController --> OTelCollector : traces
 KagentTools --> OTelCollector : traces
+GrafanaMCP --> Grafana : query Grafana API
+GrafanaMCP --> OTelCollector : traces
 AgentgatewayProxy --> OTelCollector : traces
 OTelCollector --> Phoenix : OTLP gRPC
 OTelCollector --> Tempo : OTLP gRPC
+Prometheus --> GrafanaMCP : scrape /metrics via ServiceMonitor
 Prometheus --> Grafana : metrics dashboards
 Loki --> Grafana : logs
 Tempo --> Grafana : traces
@@ -163,12 +189,15 @@ end note
 note bottom of Inventory
 Internal-only by default.
 UI and API are reached through port-forward.
-Discovery catalogs local kagent resources.
+Discovery catalogs local kagent resources,
+including vendored agents and custom repo agents.
 end note
 
 note bottom of OTelCollector
 Phoenix remains the AI-native trace view.
 Tempo plus Prometheus plus Loki provide Grafana correlation.
+The bundled grafana-mcp server now emits OTLP traces
+and Prometheus metrics alongside kagent-tools.
 end note
 
 note bottom of MCPGController

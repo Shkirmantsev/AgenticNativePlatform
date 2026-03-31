@@ -7,6 +7,18 @@ metadata:
     {{- include "grafana-mcp.labels" . | nindent 4 }}
 data:
   GRAFANA_URL: {{ .Values.grafana.url }}
+  {{- if .Values.otel.tracing.enabled }}
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_SERVICE_NAME: {{ .Values.otel.serviceName | quote }}
+  {{- if .Values.otel.tracing.exporter.otlp.endpoint }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.otel.tracing.exporter.otlp.endpoint | quote }}
+  OTEL_EXPORTER_OTLP_INSECURE: {{ .Values.otel.tracing.exporter.otlp.insecure | quote }}
+  OTEL_EXPORTER_OTLP_TIMEOUT: {{ .Values.otel.tracing.exporter.otlp.timeout | quote }}
+  {{- end }}
+  {{- if .Values.otel.resourceAttributes }}
+  OTEL_RESOURCE_ATTRIBUTES: {{ .Values.otel.resourceAttributes | quote }}
+  {{- end }}
+  {{- end }}
 
   # Custom configuration
   {{- range $key, $value := .Values.config }}

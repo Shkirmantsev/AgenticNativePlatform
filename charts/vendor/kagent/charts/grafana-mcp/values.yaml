@@ -1,7 +1,7 @@
 replicas: 1
 
 grafana:
-  url: "grafana.kagent:3000/api"
+  url: "http://grafana.kagent:3000"
   serviceAccountToken: ""
   # apiKey: "" # Deprecated - use serviceAccountToken instead.
   # secretRef: ""  # Name of Secret to reference (contains GRAFANA_SERVICE_ACCOUNT_TOKEN or GRAFANA_API_KEY)
@@ -58,3 +58,23 @@ volumeMounts: []
 # Add custom configuration values here as needed.
 config:
 
+metrics:
+  enabled: false
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+
+otel:
+  tracing:
+    enabled: false
+    exporter:
+      otlp:
+        endpoint: ""
+        timeout: 15000
+        insecure: true
+  serviceName: "grafana-mcp"
+  resourceAttributes: ""

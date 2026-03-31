@@ -4,6 +4,7 @@ metadata:
   name: {{ include "grafana-mcp.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
+    kagent.dev/mcp-service: "true"
     {{- include "grafana-mcp.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}

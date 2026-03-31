@@ -51,6 +51,18 @@
 **** kagent-controller
 **** kagent-ui
 **** kagent-tools
+**** k8s-agent
+**** kgateway-agent
+**** istio-agent
+**** promql-agent
+**** observability-agent
+**** argo-rollouts-agent
+**** helm-agent
+**** cilium-policy-agent
+**** cilium-manager-agent
+**** cilium-debug-agent
+**** team-lead-agent-assist
+**** grafana-mcp
 **** Agent: k8s-a2a-agent
 **** RemoteMCPServer: kagent-tool-server
 *** ai-gateway
@@ -75,15 +87,30 @@
 **** Prometheus
 **** Grafana
 **** Loki
+**** OpenTelemetry Collector
+**** Phoenix
+**** Tempo
 
 ** 4. Request and data paths
 *** UI and agent path
 **** kagent-ui -> kagent-controller
 **** k8s-a2a-agent -> kagent-controller
+**** k8s-agent -> kagent-controller
+**** kgateway-agent -> kagent-controller
+**** istio-agent -> kagent-controller
+**** promql-agent -> kagent-controller
+**** observability-agent -> kagent-controller
+**** argo-rollouts-agent -> kagent-controller
+**** helm-agent -> kagent-controller
+**** cilium-policy-agent -> kagent-controller
+**** cilium-manager-agent -> kagent-controller
+**** cilium-debug-agent -> kagent-controller
+**** team-lead-agent-assist -> kagent-controller
 **** kagent-controller -> agentgateway /v1
 *** MCP path
 **** RemoteMCPServer -> agentgateway /mcp/kagent-tools
 **** agentgateway -> kagent-tools backend
+**** observability-agent -> grafana-mcp tool server
 *** LLM path
 **** agentgateway -> LiteLLM
 **** LiteLLM -> Gemini / OpenAI / Anthropic / Bedrock / Vertex / others
@@ -102,4 +129,12 @@
 **** mcp-governance-controller -> scans agentgateway, kagent, and agentregistry resources
 **** GovernanceEvaluation -> policyRef -> MCPGovernancePolicy
 **** operator -> port-forward -> mcpg dashboard
+*** Observability path
+**** kagent-controller -> OpenTelemetry Collector
+**** kagent-tools -> OpenTelemetry Collector
+**** grafana-mcp -> Grafana API
+**** grafana-mcp -> OpenTelemetry Collector
+**** Prometheus -> grafana-mcp /metrics via ServiceMonitor
+**** OpenTelemetry Collector -> Phoenix and Tempo
+**** Prometheus, Tempo, and Loki -> Grafana
 @endwbs

@@ -36,6 +36,9 @@ spec:
           args:
             - --transport
             - streamable-http
+            {{- if .Values.metrics.enabled }}
+            - --metrics
+            {{- end }}
             {{- with .Values.args }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -54,6 +57,20 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 10
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
