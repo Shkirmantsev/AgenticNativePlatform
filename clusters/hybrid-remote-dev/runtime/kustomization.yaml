@@ -3,5 +3,6 @@ kind: Kustomization
 resources:
   - ../infrastructure/metallb-resources
   - ../../../infrastructure/network/kgateway/resources
+  - ../../../infrastructure/observability/resources
   - ../../../apps/ai-gateway/agentgateway/resources
   - ../../../apps/platform/kmcp/resources
