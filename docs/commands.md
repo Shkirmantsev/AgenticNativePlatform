@@ -83,9 +83,19 @@ kubectl kustomize clusters/local-dev/secrets
 ```bash
 make open-research-access
 make open-agentgateway-admin-ui
+make open-grafana
+make open-prometheus
+make open-qdrant
 make open-phoenix
 make open-tempo
 make open-agentregistry-inventory
+make close-research-access
+make close-grafana
+make close-prometheus
+make close-qdrant
+make close-phoenix
+make close-tempo
+make close-agentregistry-inventory
 make check-kagent-ui
 make check-agentgateway
 make check-agentgateway-openai

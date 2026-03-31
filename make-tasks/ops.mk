@@ -6,6 +6,36 @@
 	check-kagent-ui check-agentgateway check-agentgateway-admin-ui check-agentgateway-openai check-litellm check-mcpg check-phoenix check-tempo check-flux-operator-ui check-agentregistry-inventory check-flux-stages \
 	test-a2a-agent test-finnhub-agent-card test-team-lead-agent-card test-finnhub-tool-browser test-a2a-delegation test-a2a-delegation-via-agentgateway test-agentgateway-gemini test-agentgateway-openai test-litellm
 
+RESEARCH_ACCESS_OPEN_SPECS := \
+	open-kagent-ui|kagent|kagent-kagent-ui \
+	open-kagent-a2a|kagent|kagent-kagent-controller \
+	open-agentgateway|agentgateway-system|agentgateway-proxy \
+	open-agentgateway-admin-ui|agentgateway-system|agentgateway-proxy \
+	open-litellm|ai-gateway|litellm \
+	open-grafana|observability|observability-kube-prometheus-stack-grafana \
+	open-mcpg|mcp-governance-system|mcp-governance-dashboard \
+	open-prometheus|observability|observability-kube-prometh-prometheus \
+	open-qdrant|context|context-qdrant \
+	open-phoenix|observability|phoenix \
+	open-tempo|observability|tempo \
+	open-agentregistry-inventory|agentregistry|$(AGENTREGISTRY_INVENTORY_SERVICE) \
+	open-flux-operator-ui|flux-system|flux-operator
+
+RESEARCH_ACCESS_CLOSE_TARGETS := \
+	close-kagent-ui \
+	close-kagent-a2a \
+	close-agentgateway \
+	close-agentgateway-admin-ui \
+	close-litellm \
+	close-grafana \
+	close-mcpg \
+	close-prometheus \
+	close-qdrant \
+	close-phoenix \
+	close-tempo \
+	close-agentregistry-inventory \
+	close-flux-operator-ui
+
 diagnose-runtime-state: require-kubeconfig ## Show staged Flux, paused-namespace workload state, and key service endpoints
 	@echo "== Flux Kustomizations =="; \
 	$(FLUX) get kustomizations -A || true
@@ -374,20 +404,7 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	attempted=0; \
 	inventory_present=0; \
 	printf '%-18s %s\n' "Endpoint" "Result"; \
-	for spec in \
-	  "open-kagent-ui|kagent|kagent-kagent-ui" \
-	  "open-kagent-a2a|kagent|kagent-kagent-controller" \
-	  "open-agentgateway|agentgateway-system|agentgateway-proxy" \
-	  "open-agentgateway-admin-ui|agentgateway-system|agentgateway-proxy" \
-	  "open-litellm|ai-gateway|litellm" \
-	  "open-grafana|observability|observability-kube-prometheus-stack-grafana" \
-	  "open-mcpg|mcp-governance-system|mcp-governance-dashboard" \
-	  "open-prometheus|observability|observability-kube-prometh-prometheus" \
-	  "open-qdrant|context|context-qdrant" \
-	  "open-phoenix|observability|phoenix" \
-	  "open-tempo|observability|tempo" \
-	  "open-agentregistry-inventory|agentregistry|$(AGENTREGISTRY_INVENTORY_SERVICE)" \
-	  "open-flux-operator-ui|flux-system|flux-operator"; do \
+	for spec in $(foreach spec,$(RESEARCH_ACCESS_OPEN_SPECS),"$(spec)"); do \
 	  IFS='|' read -r target namespace service <<<"$$spec"; \
 	  label="$${target#open-}"; \
 	  if [ "$$label" = "agentregistry-inventory" ]; then \
@@ -418,6 +435,12 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	echo "  http://localhost:$(AGENTGATEWAY_LOCAL_PORT)/api/a2a/kagent/team-lead-agent-assist/.well-known/agent.json"; \
 	echo "MCP Governance dashboard:"; \
 	echo "  http://localhost:$(MCPG_LOCAL_PORT)/"; \
+	echo "Observability and research data:"; \
+	echo "  Grafana: http://localhost:$(GRAFANA_LOCAL_PORT)"; \
+	echo "  Prometheus: http://localhost:$(PROMETHEUS_LOCAL_PORT)"; \
+	echo "  Qdrant: http://localhost:$(QDRANT_LOCAL_PORT)/dashboard"; \
+	echo "  Phoenix: http://localhost:$(PHOENIX_LOCAL_PORT)"; \
+	echo "  Tempo: http://localhost:$(TEMPO_LOCAL_PORT)/ready"; \
 	if [ "$$inventory_present" -eq 1 ]; then \
 	  echo "Inventory UI and API:"; \
 	  echo "  http://localhost:$(AGENTREGISTRY_INVENTORY_LOCAL_PORT)/"; \
@@ -430,19 +453,9 @@ open-research-access: require-kubeconfig ## Open the main local research endpoin
 	test $$failures -eq 0
 
 close-research-access: ## Close all background localhost research endpoints
-	$(MAKE) close-kagent-ui
-	$(MAKE) close-kagent-a2a
-	$(MAKE) close-agentgateway
-	$(MAKE) close-agentgateway-admin-ui
-	$(MAKE) close-litellm
-	$(MAKE) close-grafana
-	$(MAKE) close-mcpg
-	$(MAKE) close-prometheus
-	$(MAKE) close-qdrant
-	$(MAKE) close-phoenix
-	$(MAKE) close-tempo
-	$(MAKE) close-agentregistry-inventory
-	$(MAKE) close-flux-operator-ui
+	@for target in $(RESEARCH_ACCESS_CLOSE_TARGETS); do \
+	  $(MAKE) $$target || exit $$?; \
+	done
 
 test-a2a-agent: ## Fetch the sample agent card from kagent
 	curl -fsSL http://localhost:8083/api/a2a/kagent/k8s-agent/.well-known/agent.json | jq .

@@ -668,6 +668,8 @@ Open all standard local access paths:
 make open-research-access
 ```
 
+That aggregate target opens and prints the standard operator endpoints, including Grafana, Prometheus, Qdrant, Phoenix, Tempo, Inventory, and the Flux Operator UI. `make close-research-access` closes the same background forwards.
+
 Main local URLs:
 
 - `http://localhost:8080` for the `kagent` UI
@@ -765,6 +767,8 @@ make open-litellm
 make open-grafana
 make open-prometheus
 make open-qdrant
+make open-phoenix
+make open-tempo
 make open-agentregistry-inventory
 make open-flux-operator-ui
 ```
@@ -780,6 +784,8 @@ make close-litellm
 make close-grafana
 make close-prometheus
 make close-qdrant
+make close-phoenix
+make close-tempo
 make close-agentregistry-inventory
 make close-flux-operator-ui
 make close-research-access
@@ -796,6 +802,8 @@ make open-litellm LITELLM_LOCAL_PORT=14000
 make open-grafana GRAFANA_LOCAL_PORT=13000
 make open-prometheus PROMETHEUS_LOCAL_PORT=19090
 make open-qdrant QDRANT_LOCAL_PORT=16333
+make open-phoenix PHOENIX_LOCAL_PORT=16006
+make open-tempo TEMPO_LOCAL_PORT=13100
 make open-agentregistry-inventory AGENTREGISTRY_INVENTORY_LOCAL_PORT=19081
 make open-flux-operator-ui FLUX_OPERATOR_UI_LOCAL_PORT=19080
 ```
