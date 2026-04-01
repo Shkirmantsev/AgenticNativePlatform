@@ -1,8 +1,17 @@
 # Final attestation — revised answers for the current project
 
-Project context: **System Reliability Engineering for an AI cloud-native platform** built around **kgateway + AgentGateway + LiteLLM + kagent + KMCP + MCP + optional local runtimes such as vLLM**.
+Project context: **System Reliability Engineering for an AI cloud-native platform** built around **Flux + kgateway + AgentGateway + LiteLLM + kagent + KMCP/MCP + optional local runtimes such as vLLM**.
 
-This version is aligned with the **current repository state**.
+This version is aligned with the **current intended repository state after the edge split**:
+
+- kgateway stays on the **2.1.x line**
+- external edge traffic is split into **two kgateway Backends**
+  - `agentgateway-llm-edge` for `/v1`
+  - `agentgateway-mcp-edge` for `/mcp`
+- **circuit breakers are applied only to the LLM edge backend**
+- MCP keeps a separate resiliency profile without aggressive circuit breakers
+- internal kagent traffic continues to go through **AgentGateway proxy inside the cluster**, not directly to LiteLLM or MCP servers
+- Flux ordering is protected by `dependsOn` plus **`healthChecks`** on kgateway CRDs and Helm releases before runtime objects are applied
 
 ---
 
@@ -10,17 +19,19 @@ This version is aligned with the **current repository state**.
 
 ```text
 external clients
-  -> kgateway
-  -> agentgateway
+  -> kgateway public-gateway
+     -> /v1  -> kgateway Backend agentgateway-llm-edge -> agentgateway-proxy -> LiteLLM -> providers / local runtimes
+     -> /mcp -> kgateway Backend agentgateway-mcp-edge -> agentgateway-proxy -> MCP backends
 
-kagent agents
-  -> agentgateway /v1/...  -> LiteLLM -> remote providers and optional local runtimes
-  -> agentgateway /mcp/... -> MCP backends
+kagent agents inside cluster
+  -> agentgateway-proxy /v1/...  -> LiteLLM -> remote providers and optional local runtimes
+  -> agentgateway-proxy /mcp/... -> MCP backends via AgentGateway
 ```
 
 Main repo locations referenced below:
 
 - `infrastructure/network/kgateway/resources/*`
+- `clusters/*/infrastructure.yaml`
 - `apps/ai-gateway/agentgateway/resources/*`
 - `values/common/litellm/configmap.yaml`
 - `apps/ai-gateway/kagent/resources/modelconfigs.yaml`
@@ -53,7 +64,12 @@ It can happen in several places:
 - file: `apps/ai-gateway/agentgateway/resources/policy.yaml`
 - policy: `agentgateway-kagent-a2a-rate-limit`
 
-This gives a concrete protective boundary for recursive delegation or excessive back-and-forth traffic.
+**Edge-path protection split by protocol role**:
+- file: `infrastructure/network/kgateway/resources/agentgateway-backend-policy.yaml`
+- `/v1` is protected with `connectTimeout`, `idleTimeout`, `outlierDetection`, and `circuitBreakers`
+- `/mcp` keeps `connectTimeout`, long `idleTimeout`, and `outlierDetection`, but no aggressive circuit breakers
+
+This separation is important because MCP uses long-lived Streamable HTTP sessions and should not compete with LLM request bursts under the same breaker budget.
 
 ### What can be improved
 
@@ -70,8 +86,9 @@ The current protection is still mostly **request-centric**. A more mature produc
 Best future place:
 - kagent controller / runtime settings
 
-Already available place in the repo:
+Already available places in the repo:
 - `apps/ai-gateway/agentgateway/resources/policy.yaml`
+- `infrastructure/network/kgateway/resources/agentgateway-backend-policy.yaml`
 
 ---
 
@@ -88,26 +105,30 @@ Yes. In my project they are layered.
 
 ### Layer 2 — kgateway
 
-**BackendConfigPolicy** is now used on the kgateway 2.1.x line:
+**BackendConfigPolicy** is used on the kgateway 2.1.x line:
 - `infrastructure/network/kgateway/resources/agentgateway-backend-policy.yaml`
 
-It currently applies to `Service/agentgateway-proxy` and includes:
+It is attached to **separate kgateway Backends**, not to one shared Service policy anymore:
 
-- `connectTimeout: 2s`
-- `commonHttpProtocolOptions.idleTimeout: 60s`
-- `outlierDetection`
-- `circuitBreakers`
+- `agentgateway-llm-edge` for `/v1`
+- `agentgateway-mcp-edge` for `/mcp`
 
-So in my implementation:
+That means in my implementation:
 
-- **AgentGateway** controls the AI-aware upstream timeout,
-- **kgateway** protects the north-south service path with service-level resiliency.
+- **AgentGateway** controls the AI-aware upstream timeout and internal traffic policy,
+- **kgateway** protects the external north-south path,
+- **LLM edge traffic** can use circuit breakers,
+- **MCP edge traffic** keeps a different resiliency profile to avoid breaking stream sessions.
+
+### Why this design is important
+
+If `/v1` and `/mcp` share one breaker budget, MCP stream sessions and LLM bursts compete with each other. That is exactly the kind of coupling that can make the agent catalog, tool loading, or MCP session setup appear broken even when the cluster itself is healthy.
 
 ### What can be improved
 
-- add carefully tuned retries,
-- separate policies more aggressively for `/v1`, `/mcp`, and `/api/a2a`,
-- tune thresholds using real latency and error histograms from observability.
+- add carefully tuned retries only where they are safe,
+- tune thresholds using real latency and overflow metrics,
+- introduce dedicated edge paths for more traffic classes if needed.
 
 ---
 
@@ -122,9 +143,12 @@ Important nuance:
 **kgateway**:
 - edge entry,
 - service-level resiliency,
+- path split between `/v1` and `/mcp`,
 - protects the path to `agentgateway-proxy`.
 
 That is implemented in:
+- `infrastructure/network/kgateway/resources/agentgateway-backends.yaml`
+- `infrastructure/network/kgateway/resources/routes.yaml`
 - `infrastructure/network/kgateway/resources/agentgateway-backend-policy.yaml`
 
 **LiteLLM**:
@@ -230,8 +254,6 @@ Yes, but in this architecture an agent is primarily a **declarative CR/config ar
 
 ### Practical pattern in my project
 
-The most natural patterns are:
-
 ### Blue/green by agent name
 
 Examples:
@@ -259,125 +281,98 @@ I do **not** yet have percentage traffic split for agent versions. That would be
 
 ### Best next insertion points
 
-- kgateway routing layer,
-- AgentGateway routing layer,
-- or caller-side agent selection logic.
+- additional Agent CR versions in `apps/ai-gateway/kagent/resources/agents.yaml`
+- future edge routing rules in `kgateway` or internal policy in `AgentGateway`
 
 ---
 
 ## 8) What’s the fastmcp-python framework mentioned?
 
-For this project, the correct answer is:
+In the attestation answer for my project, I should be precise:
 
-> I did not add a separate Python FastMCP application into this repository. I use the Go-based MCP path, because KMCP supports both FastMCP Python and MCP Go out of the box. I chose Go because it matches my current implementation direction and is attractive for speed and operational simplicity.
+> I did not add an extra Python FastMCP application to this repository. In this project I use the Go-based MCP path, because KMCP supports both FastMCP Python and MCP Go out of the box, and the same operational lifecycle still applies: `kmcp init`, `kmcp run`, `kmcp build`, and deployment through KMCP resources.
 
-### Important project-aligned explanation
+### What I use in this project
 
-KMCP supports both:
-- FastMCP Python,
-- MCP Go.
+- custom Go MCP server:
+  - `mcp/finnhub-mcp-server/*`
+- KMCP/Kubernetes resources:
+  - `apps/platform/kmcp/resources/*`
 
-The same operational workflow still applies:
-- `kmcp init ...`
-- `kmcp run --project-dir ...`
-- `kmcp build --project-dir ...`
-- `kmcp deploy ...`
+So the right answer is not “I used fastmcp-python here”, but rather:
 
-So the point is not “Python only”, but:
-
-> KMCP gives a standard MCP lifecycle, and in my project I use that lifecycle with the Go-based MCP implementation.
+> fastmcp-python is one supported path to MCP, but in my implementation I chose Go for this custom MCP server.
 
 ---
 
 ## 9) Is it the easiest path to MCP?
 
-My project-specific answer is:
+For Python projects, FastMCP is often the easiest path.
 
-> It depends on the language. For Python teams, FastMCP is usually the fastest path. In my current project, I deliberately stay with the Go-based MCP route because KMCP supports MCP Go natively as well, and that keeps my operational workflow consistent.
+For **this repository**, the correct project-specific answer is:
 
-### Interview-safe distinction
+> I used the Go route instead, because my custom MCP implementation here is a Go service and KMCP already supports that path cleanly. Operationally, the lifecycle is still simple: local run, image build, and Kubernetes deployment through KMCP.
 
-- fastest path for Python teams: **FastMCP Python**
-- best path for this project: **MCP Go + KMCP workflow**
+So for my project, the easiest path was not “Python first”, but:
+- KMCP + MCP Go for the custom backend,
+- AgentGateway + RemoteMCPServer for exposure and controlled access.
 
 ---
 
 ## 10) About FinOps: how much control can I have?
 
-In this project, cost control can be applied at several layers.
+A lot, and the control exists at several layers.
 
 ### What is implemented now
 
-### 1. Gateway-level hard throttling
+### AgentGateway
 
-- file: `apps/ai-gateway/agentgateway/resources/policy.yaml`
-- request / token rate limits for `/v1`
-- request / token rate limits for A2A traffic
+Hard request/token throttling:
+- `apps/ai-gateway/agentgateway/resources/policy.yaml`
 
-### 2. LiteLLM routing and fallback control
+### LiteLLM
 
-- file: `values/common/litellm/configmap.yaml`
-- provider order and fallback chain influence cost directly
-- local vLLM is part of the fallback path
+Per-model / per-provider budget controls and routing metadata:
+- `values/common/litellm/configmap.yaml`
 
-### 3. Concrete model-level budget controls
+### Redis-backed consistency for LiteLLM accounting
 
-In `values/common/litellm/configmap.yaml` I now set **model-level budgets** for remote models via:
+Redis already exists in the project and is connected to LiteLLM so that shared counters and spend/budget state can be kept consistent across LiteLLM instances.
 
-- `max_budget`
-- `budget_duration`
+Relevant locations:
+- `apps/context/redis/release.yaml`
+- `scripts/render-plaintext-secrets.sh`
+- `values/common/litellm/configmap.yaml`
+- `charts/litellm-proxy/templates/deployment.yaml`
 
-This creates a real “rubber-meets-the-road” FinOps control point in the repository, not only a theoretical answer.
-
-### 3b. Redis-backed budget consistency
-
-- files:
-  - `apps/context/redis/release.yaml`
-  - `scripts/render-plaintext-secrets.sh`
-  - `.generated/secrets/dev/platform-redis-auth.yaml`
-  - `values/common/litellm/configmap.yaml`
-
-LiteLLM provider budgets and shared rpm/tpm state are now connected to the Redis instance that already exists in the project. This is important because LiteLLM documents Redis as the mechanism used to keep budget and routing state consistent across replicas / instances.
-
-### 4. Per-agent cost attribution foundation
-
-- file: `apps/ai-gateway/kagent/resources/modelconfigs.yaml`
-- each important agent has its own dedicated LiteLLM attribution headers, especially:
-  - `team-lead-agent-assist`
-  - `finnhub-agent`
-  - `k8s-a2a-agent`
-- each agent now injects:
-  - `x-litellm-tags`
-  - `x-litellm-spend-logs-metadata`
-
-So the attribution is not generic at gateway level only. It is already attached per agent, and in the attestation I should emphasize the custom project agents such as `team-lead-agent-assist` and `finnhub-agent`.
+So my FinOps control is not only conceptual. It has:
+- gateway hard limits,
+- LiteLLM spend metadata,
+- model/provider budget knobs,
+- Redis-backed shared state.
 
 ---
 
 ## 11) Token level / per agent level
 
-### Token-level control
+### What is implemented now
 
-Implemented at AgentGateway policy level:
-- `apps/ai-gateway/agentgateway/resources/policy.yaml`
+**Token-level control**:
+- AgentGateway local rate limits
 
-### Per-agent control
-
-Implemented structurally via separate `ModelConfig` resources:
+**Per-agent attribution**:
 - `apps/ai-gateway/kagent/resources/modelconfigs.yaml`
 
-This is important because each agent can already differ by:
-- headers,
-- tags,
-- metadata,
-- future budgets,
-- future routing strategy.
+Each important agent has its own headers and metadata, for example:
+- `team-lead-agent-assist`
+- `finnhub-agent`
+- `k8s-a2a-agent`
 
-In this repo the most relevant examples are `team-lead-agent-assist` and `finnhub-agent`, not only the sample `k8s-a2a-agent`.
+I use:
+- `x-litellm-tags`
+- `x-litellm-spend-logs-metadata`
 
-So the correct answer is:
-
-> Yes, token-level protection exists now, and per-agent control is structurally prepared through dedicated ModelConfig resources.
+This means I can identify which agent generated the spend, rather than treating all traffic as one anonymous platform bucket.
 
 ---
 
@@ -385,149 +380,117 @@ So the correct answer is:
 
 Yes.
 
-### What is already real in this repo
+### In my current implementation
 
-- gateway request/token throttling,
-- LiteLLM fallback/routing order,
-- model-level budgets on remote models,
-- per-agent spend tags and metadata,
-- local-vLLM fallback for cost reduction.
+I already have the building blocks:
 
-### Stronger next step
+- AgentGateway hard throttling,
+- LiteLLM model budgets,
+- per-agent spend metadata,
+- Redis-backed shared spend/routing state.
 
-For a more advanced production design, I would extend this with:
+### Next stronger step
 
-- provider budgets,
-- per-agent budgets,
-- team budgets,
-- alerting and reporting backed by a DB,
-- emergency downgrade rules.
+The next production step would be to make budget enforcement more explicit by agent/team/tag and connect that to reporting dashboards.
 
-That next step would most naturally extend:
+Best insertion points:
 - `values/common/litellm/configmap.yaml`
-- and an external reporting / DB layer.
+- observability / dashboards layer
 
 ---
 
 ## 13) Per-agent budgets or depth of token limits
 
-### Today
+### What is implemented now
 
-What I can already demonstrate concretely is:
+**Per-agent attribution** is already implemented.
 
-- hard request/token gates at AgentGateway,
-- separate per-agent ModelConfigs,
-- model-level LiteLLM budgets for remote models,
-- spend attribution tags and metadata per agent.
+**Budget-ready model configuration** is already present in LiteLLM.
 
-### Next proper production design
+So my honest answer is:
 
-Per-agent hard budgets would be best implemented by combining:
+> Today I already have per-agent attribution and model/provider budget controls. The next step is to promote those controls into stricter per-agent budget enforcement and richer dashboards.
 
-- per-agent `ModelConfig`,
-- LiteLLM spend tracking + DB,
-- tag/team/customer budget rules,
-- optionally provider or policy-side downgrade rules.
-
-So the honest answer is:
-
-> The repository already contains the right control points. Some are enforced today, and the next step is to connect them to full spend tracking and budget enforcement.
+That is a strong answer because it shows both current implementation and realistic next evolution.
 
 ---
 
 ## 14) vLLM is suitable for agents with many back-and-forth tool calls, or is it better for single-shot inference?
 
-For my current project, the correct answer is:
+In my project, vLLM is not just theoretical. It already exists as an optional local serving path.
 
-> vLLM is already a real component of this platform. It is useful for both single-shot inference and multi-step agent workflows, but it becomes especially valuable when requests share common prompt prefixes or when multiple users/agents hit the same local serving backend.
-
-### Why this is grounded in my repo
-
-vLLM already exists here as a local OpenAI-compatible runtime:
-
-- HelmRelease: `apps/ai-models/vllm/release.yaml`
-- chart: `charts/vllm-cpu/*`
-- values: `values/common/vllm/configmap.yaml`
-- LiteLLM alias: `values/common/litellm/configmap.yaml` → `local-vllm`
-
-### What I improved now
-
-I explicitly enabled **prefix caching** in the vLLM runtime values:
+Relevant repo locations:
+- `apps/ai-models/vllm/release.yaml`
+- `charts/vllm-cpu/*`
 - `values/common/vllm/configmap.yaml`
-- `charts/vllm-cpu/templates/all.yaml`
 
-That matters because repeated conversation history and repeated system/context prefixes are exactly the kind of workload where vLLM can reuse KV/prefix cache instead of recomputing the whole shared prefix again.
+### Correct project-specific answer
 
-### Honest nuance
+vLLM can serve both:
+- single-shot inference,
+- multi-step agent workflows.
 
-- if requests are highly repetitive or multi-round, vLLM helps a lot more,
-- if the workload is strictly sequential, low-concurrency, and every prompt is very different, the benefit is smaller,
-- so vLLM is **not only** for single-shot inference, but it shines most as a **shared inference backend**.
+In agentic systems its bigger advantage appears when there are:
+- repeated system-prompt prefixes,
+- many similar requests,
+- enough concurrency to benefit from batching and cache reuse.
+
+In this project I explicitly enable prefix-caching-related runtime arguments on the vLLM side, because that is the scenario where repeated agent/tool workflows benefit most.
+
+So my answer is:
+
+> In my platform, vLLM is suitable for agents too, especially when there are repeated prompt prefixes and enough concurrency to benefit from batching and cache reuse. It is not limited to single-shot inference.
 
 ---
 
 ## 15) llm-d’s scheduler — helps when agents make 15 LLM calls?
 
-The correct project-specific answer is:
+Yes, but with an important scope clarification.
 
-> Not directly today, because llm-d is not yet deployed in this repository. But it is highly relevant as a future extension because my platform already has a gatewayed local serving layer with vLLM.
+### What “15 LLM calls” really means
 
-### What “15 calls” means
-
-It means a **multi-call agent workload**, for example:
-
+It means a **multi-call agent workload**:
 - planning,
-- tool selection,
+- tool-selection,
+- follow-up inference,
 - retries,
-- reflection,
 - summarization,
 - delegation.
 
-So the real question is:
+### What is true in my project today
 
-> can the serving/scheduling layer stay efficient when one user request fans out into many inference calls?
+Today those repeated calls are handled by:
+- kagent
+- AgentGateway
+- LiteLLM
+- optional local vLLM
 
-### How llm-d relates to my current project
+**llm-d is not yet deployed in this repository today.**
 
-My current stack already contains:
+### Why it still matters architecturally
 
-- gateway-based entry,
-- AgentGateway,
-- LiteLLM routing,
-- local vLLM serving.
+Because llm-d becomes relevant when:
+- local inference grows beyond one backend,
+- multiple replicas or distributed serving are introduced,
+- cache-aware and latency-aware request placement becomes important.
 
-That means llm-d is most naturally associated with the **future scheduling layer around vLLM**, not with kagent logic itself.
+So my project-specific answer is:
 
-### Why it could help later
-
-If this platform evolves from:
-- one local vLLM instance
-
-to:
-- multiple replicas,
-- multiple nodes,
-- multiple local inference backends,
-
-then llm-d can become valuable because it helps decide **which inference endpoint should receive each request**, especially for cache-aware and latency-aware routing.
-
-### Honest answer for the interview
-
-> In my current implementation, multi-call agent workflows are handled by kagent + AgentGateway + LiteLLM + optional local vLLM. llm-d is not yet deployed, so it does not currently schedule those 15 calls. But because the project already has a gatewayed vLLM serving layer, llm-d is a very natural future step if I need cache-aware and latency-aware routing across multiple inference endpoints.
+> Today llm-d does not schedule requests in this repo yet. But because I already have gatewayed local model serving and an agentic multi-call architecture, llm-d is a natural future step if I want cache-aware and latency-aware scheduling across multiple inference backends or replicas.
 
 ---
 
-## Short summary for the presentation
+## GitOps / ordering nuance that matters in this project
 
-1. **kgateway protects service-level traffic and upstream health; LiteLLM handles model/provider failover.**
-2. **AgentGateway already enforces concrete timeout and throttling controls.**
-3. **LiteLLM already implements multi-provider fallback and now also contains concrete remote-model budget controls.**
-4. **Per-agent control exists structurally via separate ModelConfigs with tags and spend metadata.**
-5. **vLLM is already in the project today, and prefix caching is now explicitly enabled to better support repeated multi-turn workloads.**
-6. **llm-d is not yet deployed, but it is the natural future scheduling layer around vLLM if local inference becomes multi-endpoint or distributed.**
+One operational lesson from this repository is very important for the defense:
 
+When using `BackendConfigPolicy`, Flux must apply runtime custom resources **only after**:
+- kgateway CRDs are installed,
+- kgateway is ready,
+- the CRD `backendconfigpolicies.gateway.kgateway.dev` is visible to the API server.
 
-### FinOps clarification for agent attribution
+So in my project I rely on:
+- `dependsOn` between the staged `Kustomization` objects,
+- and `healthChecks` in `platform-infrastructure` for kgateway readiness before runtime resources are considered safe to apply.
 
-When I show `x-litellm-spend-logs-metadata`, I should not present it as only a `k8s-a2a-agent` example. The repo already contains dedicated per-agent ModelConfigs for `team-lead-agent-assist`, `finnhub-agent`, and `k8s-a2a-agent`. For the attestation, the strongest examples are the custom project agents: `team-lead-agent-assist` as the coordinator and `finnhub-agent` as the domain specialist.
-
-LiteLLM is also now connected to the project Redis instance, so shared provider budgets / routing counters are not left only in one proxy process memory.
+This is a strong SRE point because it shows that platform reliability here depends not only on the resource content, but also on correct GitOps ordering and readiness semantics.
