@@ -1,0 +1,28 @@
+# Split the external kgateway -> AgentGateway edge into two distinct kgateway Backends.
+# Both still point to the same AgentGateway proxy service, but kgateway now treats them
+# as separate upstream backends, so we can attach different BackendConfigPolicy profiles.
+
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: Backend
+metadata:
+  name: agentgateway-llm-edge
+  namespace: agentgateway-system
+spec:
+  type: Static
+  static:
+    hosts:
+      - host: agentgateway-proxy.agentgateway-system.svc.cluster.local
+        port: 8080
+
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: Backend
+metadata:
+  name: agentgateway-mcp-edge
+  namespace: agentgateway-system
+spec:
+  type: Static
+  static:
+    hosts:
+      - host: agentgateway-proxy.agentgateway-system.svc.cluster.local
+        port: 8080

@@ -1,4 +1,7 @@
-# External clients hit kgateway first. Requests are then sent to agentgateway.
+# External clients hit kgateway first. Requests are then sent to AgentGateway.
+# We intentionally split /v1 and /mcp onto different kgateway Backends so that
+# they can have different resiliency/circuit-breaker profiles.
+
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -14,14 +17,17 @@ spec:
             type: PathPrefix
             value: /v1
       backendRefs:
-        - name: agentgateway-proxy
+        - name: agentgateway-llm-edge
           namespace: agentgateway-system
-          port: 8080
+          group: gateway.kgateway.dev
+          kind: Backend
+
     - matches:
         - path:
             type: PathPrefix
             value: /mcp
       backendRefs:
-        - name: agentgateway-proxy
+        - name: agentgateway-mcp-edge
           namespace: agentgateway-system
-          port: 8080
+          group: gateway.kgateway.dev
+          kind: Backend

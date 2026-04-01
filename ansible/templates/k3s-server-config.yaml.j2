@@ -14,5 +14,20 @@ kubelet-arg:
   # Percentage-based defaults were too aggressive on this repo's laptop-sized nodes
   # and triggered DiskPressure despite tens of GiB still free on the root filesystem.
   - eviction-hard=imagefs.available<2Gi,nodefs.available<2Gi
-  - image-gc-high-threshold=70
-  - image-gc-low-threshold=60
+  # Kubelet otherwise keeps a default 10% minimum reclaim, which on a ~140Gi laptop
+  # root disk means reclaiming ~14Gi after a transient dip below the hard threshold.
+  # Keep the reclaim target small so fresh-cluster image pulls do not cascade into a
+  # minutes-long eviction storm after free space has already recovered.
+  - eviction-minimum-reclaim=imagefs.available=500Mi,nodefs.available=500Mi
+  # Let DiskPressure clear quickly once the pull/unpack spike is over.
+  - eviction-pressure-transition-period=30s
+  # imagefs lives on the workstation root filesystem in local k3s. Low percentage
+  # GC thresholds make kubelet chase unrelated host disk usage and attempt to free
+  # tens of GiB of images on every fresh bootstrap. Keep GC near-full instead and
+  # rely on the absolute eviction threshold above for real pressure.
+  - image-gc-high-threshold=95
+  - image-gc-low-threshold=90
+  # Fresh local bootstraps pull many images in a burst; disable the kubelet-side
+  # registry QPS throttle so reconcile waves do not stall on pull QPS exceeded.
+  - registry-qps=0
+  - registry-burst=20

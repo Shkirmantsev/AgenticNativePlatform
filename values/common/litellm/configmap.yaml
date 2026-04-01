@@ -6,6 +6,22 @@ metadata:
 data:
   values.yaml: |
     replicaCount: 1
+    extraEnv:
+      - name: REDIS_HOST
+        valueFrom:
+          secretKeyRef:
+            name: litellm-provider-secrets
+            key: REDIS_HOST
+      - name: REDIS_PORT
+        valueFrom:
+          secretKeyRef:
+            name: litellm-provider-secrets
+            key: REDIS_PORT
+      - name: REDIS_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: litellm-provider-secrets
+            key: REDIS_PASSWORD
     config: |
       general_settings:
         master_key: os.environ/LITELLM_MASTER_KEY
@@ -17,11 +33,19 @@ data:
         callbacks:
           - prometheus
 
+      # Redis-backed router state keeps provider budgets / rpm / tpm consistent
+      # across LiteLLM replicas and restarts. Redis already exists in this repo
+      # under apps/context/redis.
+
       # Router-level reliability. This is where multi-provider failover lives.
       # NOTE: For streaming fallbacks, validate against the LiteLLM version you ship.
       # Some versions have known edge cases for 429 streaming fallback.
       router_settings:
+        redis_host: os.environ/REDIS_HOST
+        redis_port: os.environ/REDIS_PORT
+        redis_password: os.environ/REDIS_PASSWORD
         num_retries: 2
+        max_fallbacks: 3
         request_timeout: 30
         enable_pre_call_checks: true
         fallbacks:
@@ -36,18 +60,24 @@ data:
           litellm_params:
             model: gemini/gemini-3.1-flash-lite-preview
             api_key: os.environ/GOOGLE_API_KEY
+            max_budget: 25
+            budget_duration: 1d
         - model_name: openai-default
           rpm: 500
           tpm: 50000
           litellm_params:
             model: openai/gpt-4o-mini
             api_key: os.environ/OPENAI_API_KEY
+            max_budget: 25
+            budget_duration: 1d
         - model_name: anthropic-default
           rpm: 500
           tpm: 50000
           litellm_params:
             model: anthropic/claude-3-5-haiku-20241022
             api_key: os.environ/ANTHROPIC_API_KEY
+            max_budget: 25
+            budget_duration: 1d
         - model_name: vertex-gemini
           rpm: 500
           tpm: 50000
@@ -55,12 +85,16 @@ data:
             model: vertex_ai/gemini-2.5-flash
             vertex_project: os.environ/VERTEX_PROJECT_ID
             vertex_location: os.environ/VERTEX_LOCATION
+            max_budget: 25
+            budget_duration: 1d
         - model_name: bedrock-claude
           rpm: 500
           tpm: 50000
           litellm_params:
             model: bedrock/anthropic.claude-3-5-haiku-20241022-v1:0
             aws_region_name: os.environ/AWS_REGION
+            max_budget: 25
+            budget_duration: 1d
         - model_name: local-lmstudio
           rpm: 500
           tpm: 50000

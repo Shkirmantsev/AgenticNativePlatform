@@ -34,20 +34,26 @@ The repository now uses:
 - shared top-level trees under `infrastructure/`, `apps/`, `values/`, and `secrets/`
 - Flux Operator to manage the Flux controller lifecycle
 - a committed `FluxInstance` as the GitOps sync entrypoint
-- three staged Flux `Kustomization` objects:
+- four top-level staged Flux `Kustomization` objects:
   - `platform-infrastructure`
   - `platform-secrets`
+  - `platform-runtime`
   - `platform-applications`
+- the `platform-applications` wrapper then fans out into:
+  - `platform-applications-remotes`
+  - `platform-applications-core`
 
 The runtime model in the repository is currently:
 
 - `kgateway` is the public north-south entry point
 - `agentgateway` is the protocol-aware AI gateway
+- `kgateway` now splits `/v1` and `/mcp` onto dedicated `Backend` objects before forwarding to `agentgateway`
 - `kagent` uses `agentgateway` for both `/v1` and `/mcp`
 - `mcpg` adds an internal MCP governance control plane and dashboard in `mcp-governance-system`
 - `agentregistry-inventory` is the internal control-plane registry for discovered agents, MCP servers, skills, and models
 - `/v1` flows to `LiteLLM`, then to remote providers or optional local runtimes
 - `/mcp` flows to gateway-backed MCP targets such as `kagent-tools`
+- `LiteLLM` now uses Redis-backed router state for shared routing and cost-scoring coordination
 - `mcpg` evaluates the MCP surface through cluster-scoped `MCPGovernancePolicy` and `GovernanceEvaluation` resources staged after the platform controllers are installed
 - `KServe` remains part of the serving stack, but is not forced into the default `/v1` hot path
 
@@ -80,11 +86,11 @@ Text fallback:
 
 ```text
 external clients
-  -> kgateway
-  -> agentgateway
+  -> kgateway /v1 -> agentgateway-llm-edge -> agentgateway
+  -> kgateway /mcp -> agentgateway-mcp-edge -> agentgateway
 
 kagent agents
-  -> agentgateway /v1/...  -> LiteLLM -> remote providers and optional local runtimes
+  -> agentgateway /v1/...  -> LiteLLM -> Redis-backed router state -> remote providers and optional local runtimes
   -> agentgateway /mcp/... -> gateway-backed MCP targets
 ```
 
@@ -462,6 +468,7 @@ The main user-facing parameters are:
 | `ECHO_MCP_IMAGE` | Local sample MCP server image tag | sample image build/import flow | `ECHO_MCP_IMAGE=echo-mcp:local` | local or remote tag |
 | `LITELLM_MASTER_KEY` | Auth header value for LiteLLM and AgentGateway OpenAI checks | secret render and `check-*` / `test-*` targets | `LITELLM_MASTER_KEY=my-key make test-litellm` | random/generated or explicit secret |
 | `PLATFORM_POSTGRES_PASSWORD` | Explicit PostgreSQL password override | secret render | `PLATFORM_POSTGRES_PASSWORD=strong-secret` | real secret |
+| `PLATFORM_REDIS_PASSWORD` | Explicit Redis password override used by Redis and LiteLLM router state | secret render | `PLATFORM_REDIS_PASSWORD=strong-secret` | real secret |
 | `GRAFANA_ADMIN_USERNAME`, `GRAFANA_ADMIN_PASSWORD` | Grafana admin bootstrap credentials | observability secret render | `GRAFANA_ADMIN_PASSWORD=strong-secret` | real username/password |
 | `GRAFANA_SERVICE_ACCOUNT_TOKEN`, `GRAFANA_API_KEY` | Grafana MCP API credentials for kagent | Grafana MCP secret render in `kagent` namespace | `GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_...` | service account token preferred; optional for `make run-cluster-from-scratch`, which can mint one after Grafana boots |
 | `FLUX_OPERATOR_UI_LOCAL_PORT` | Local port override for Flux Operator UI port-forward | `make open-flux-operator-ui` | `make open-flux-operator-ui FLUX_OPERATOR_UI_LOCAL_PORT=19080` | valid local TCP port |
@@ -511,7 +518,13 @@ The active staged path is:
 
 - `platform-infrastructure`
 - `platform-secrets`
+- `platform-runtime`
 - `platform-applications`
+
+The `platform-applications` wrapper currently renders child stages in this order:
+
+- `platform-applications-remotes`
+- `platform-applications-core`
 
 <details>
 <summary><strong>Open current GitOps flow</strong></summary>
@@ -528,9 +541,12 @@ The active staged path is:
 
 | Stage | Current purpose |
 | --- | --- |
-| `platform-infrastructure` | shared controllers, sources, network, observability, security, and non-secret values |
+| `platform-infrastructure` | shared controllers, CRDs, sources, network, observability, security, and non-secret values; currently health-gated on kgateway CRDs/controller readiness |
 | `platform-secrets` | topology-specific committed secret roots and decryption dependencies |
-| `platform-applications` | shared application manifests and platform workloads |
+| `platform-runtime` | runtime-facing gateway resources and controller-consumed custom resources that must wait for both infrastructure and secrets |
+| `platform-applications` | application wrapper that renders the child app stages below |
+| `platform-applications-remotes` | remote MCP and gateway-facing aliases that depend on runtime and secrets |
+| `platform-applications-core` | remaining application resources that wait on the remotes stage |
 
 ### Practical workflow
 
@@ -907,6 +923,7 @@ Static validation:
 ```bash
 kubectl kustomize clusters/local-dev
 kubectl kustomize clusters/local-dev/infrastructure
+kubectl kustomize clusters/local-dev/runtime
 kubectl kustomize clusters/local-dev/apps
 kubectl kustomize clusters/local-dev/secrets
 git diff --check

@@ -74,6 +74,7 @@ make validate-config
 make check-flux-stages
 kubectl kustomize clusters/local-dev
 kubectl kustomize clusters/local-dev/infrastructure
+kubectl kustomize clusters/local-dev/runtime
 kubectl kustomize clusters/local-dev/apps
 kubectl kustomize clusters/local-dev/secrets
 ```

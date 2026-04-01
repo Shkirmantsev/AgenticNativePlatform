@@ -28,6 +28,8 @@
 ***** cluster-scoped wrapper around shared infrastructure and values
 **** secrets/
 ***** cluster-scoped wrapper around topology secrets
+**** runtime/
+***** cluster-scoped wrapper around gateway-facing runtime resources
 **** apps/
 ***** cluster-scoped wrapper around shared application manifests
 **** flux-system/flux-instance.yaml
@@ -48,14 +50,29 @@
 **** composes infrastructure/
 **** composes repo-local and vendored charts via HelmRelease
 **** composes values/
+**** health-gates kgateway CRDs and controller readiness
 *** platform-secrets
 **** dependsOn platform-infrastructure
 **** reads clusters/<topology>-<env>/secrets
 **** composes secrets/<topology>/
+*** platform-runtime
+**** dependsOn platform-infrastructure
+**** dependsOn platform-secrets
+**** reads clusters/<topology>-<env>/runtime
+**** composes gateway-facing runtime resources
 *** platform-applications
+**** dependsOn platform-runtime
 **** dependsOn platform-secrets
 **** reads clusters/<topology>-<env>/apps
-**** composes apps/
+**** renders child app stages
+***** platform-applications-remotes
+***** platform-applications-core
+*** platform-applications-remotes
+**** dependsOn platform-runtime and platform-secrets
+**** applies remote MCP aliases and gateway-facing application resources
+*** platform-applications-core
+**** dependsOn platform-applications-remotes
+**** applies the remaining application resources
 **** applies mcp-governance policy and evaluation resources
 
 ** 5. OCI-ready split

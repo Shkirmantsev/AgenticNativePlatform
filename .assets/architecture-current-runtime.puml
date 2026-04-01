@@ -20,7 +20,10 @@ node "flux-system" {
   component "GitRepository/platform" as GitRepository
   component "platform-infrastructure" as PlatformInfrastructure
   component "platform-secrets" as PlatformSecrets
+  component "platform-runtime" as PlatformRuntime
   component "platform-applications" as PlatformApplications
+  component "platform-applications-remotes" as PlatformApplicationsRemotes
+  component "platform-applications-core" as PlatformApplicationsCore
 }
 
 node "Kubernetes cluster" {
@@ -29,6 +32,9 @@ node "Kubernetes cluster" {
   }
 
   package "agentgateway-system" {
+    component "agentgateway-llm-edge\nkgateway Backend" as AgentgatewayLlmEdge
+    component "agentgateway-mcp-edge\nkgateway Backend" as AgentgatewayMcpEdge
+    component "agentgateway-proxy-resiliency\nBackendConfigPolicy" as AgentgatewayProxyPolicy
     component "agentgateway-proxy" as AgentgatewayProxy
     component "litellm backend" as LitellmBackend
     component "tools MCP backend" as ToolsBackend
@@ -99,16 +105,28 @@ node "Kubernetes cluster" {
 FluxOperator --> FluxInstance : lifecycle
 FluxInstance --> GitRepository : sync
 GitRepository --> PlatformInfrastructure
-PlatformInfrastructure --> PlatformSecrets : dependsOn
+GitRepository --> PlatformSecrets
+GitRepository --> PlatformRuntime
+GitRepository --> PlatformApplications
+PlatformInfrastructure --> PlatformRuntime : dependsOn
+PlatformSecrets --> PlatformRuntime : dependsOn
+PlatformRuntime --> PlatformApplications : dependsOn
 PlatformSecrets --> PlatformApplications : dependsOn
+PlatformApplications --> PlatformApplicationsRemotes : renders
+PlatformApplications --> PlatformApplicationsCore : renders
+PlatformApplicationsRemotes --> PlatformApplicationsCore : dependsOn
 PlatformInfrastructure --> ClusterWrappers
 PlatformInfrastructure --> Inventory : reconciles HelmRelease
 PlatformInfrastructure --> MCPGController : reconciles HelmRelease
-PlatformApplications --> MCPGPolicy : applies policy CR
-PlatformApplications --> MCPGEvaluation : applies evaluation CR
+PlatformApplicationsCore --> MCPGPolicy : applies policy CR
+PlatformApplicationsCore --> MCPGEvaluation : applies evaluation CR
 
 Client --> PublicGateway : HTTP /v1 and /mcp
-PublicGateway --> AgentgatewayProxy
+PublicGateway --> AgentgatewayLlmEdge : /v1
+PublicGateway --> AgentgatewayMcpEdge : /mcp
+AgentgatewayLlmEdge --> AgentgatewayProxy
+AgentgatewayMcpEdge --> AgentgatewayProxy
+AgentgatewayProxyPolicy --> AgentgatewayProxy : shared north-south resiliency
 
 KagentUI --> KagentController : UI
 A2AAgent --> KagentController : A2A
@@ -142,6 +160,7 @@ AgentgatewayProxy --> ToolsBackend : /mcp
 LitellmBackend --> LiteLLM
 ToolsBackend --> KagentTools
 
+LiteLLM --> Redis : router state / cost scoring
 LiteLLM --> Providers : default path
 LiteLLM --> LMStudio : when enabled
 LiteLLM --> RuntimeOverlay : optional local path
@@ -172,18 +191,22 @@ end note
 note top of PlatformInfrastructure
 The static cluster root under clusters/<topology>-<env>
 fans out into staged Flux Kustomizations.
+kgateway CRDs and controller readiness are checked here
+before later runtime objects are allowed to apply.
 end note
 
 note top of AgentgatewayProxy
 AgentGateway stays on the hot path.
-/v1 goes to LiteLLM.
-/mcp goes to MCP backends.
+/v1 enters through agentgateway-llm-edge and goes to LiteLLM.
+/mcp enters through agentgateway-mcp-edge and goes to MCP backends.
 end note
 
 note bottom of LiteLLM
 Default hot path:
 kagent -> agentgateway -> LiteLLM -> provider
 or optional local runtime
+LiteLLM also uses Redis-backed router state
+for shared routing and cost-scoring coordination.
 end note
 
 note bottom of Inventory

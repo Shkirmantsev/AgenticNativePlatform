@@ -37,6 +37,7 @@ spec:
   timeout: 30m
   dependsOn:
     - name: kagent-crds
+    - name: kube-prometheus-stack
   targetNamespace: kagent
   chart:
     spec:
