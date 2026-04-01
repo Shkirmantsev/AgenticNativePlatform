@@ -23,13 +23,24 @@ spec:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
+  name: kgateway-crds-chart
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://cr.kgateway.dev/kgateway-dev/charts/kgateway-crds
+  ref:
+    tag: v2.1.1
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
   name: kgateway-chart
   namespace: flux-system
 spec:
   interval: 1h
   url: oci://cr.kgateway.dev/kgateway-dev/charts/kgateway
   ref:
-    tag: v2.0.2
+    tag: v2.1.1
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
