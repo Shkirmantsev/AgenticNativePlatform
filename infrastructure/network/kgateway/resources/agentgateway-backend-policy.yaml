@@ -25,10 +25,3 @@ spec:
     consecutive5xx: 5
     baseEjectionTime: 30s
     maxEjectionPercent: 50
-
-  # Cap concurrency and queued work to avoid cascading overload on the gateway tier.
-  circuitBreakers:
-    maxConnections: 200
-    maxPendingRequests: 200
-    maxRequests: 500
-    maxRetries: 20
