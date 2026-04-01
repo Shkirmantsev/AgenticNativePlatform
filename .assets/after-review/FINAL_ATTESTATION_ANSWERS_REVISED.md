@@ -56,6 +56,7 @@ Yes, and in this project they are layered.
 
 **kgateway** now gets upstream resiliency for the AgentGateway service itself:
 - `infrastructure/network/kgateway/resources/agentgateway-backend-policy.yaml`
+- backed by `kgateway-crds` + `kgateway` on the `v2.1.1` line, because `BackendConfigPolicy` is a kgateway CRD and is not available from the previous repo pin
 - enabled with:
   - `connectTimeout: 2s`
   - `outlierDetection`
@@ -85,6 +86,9 @@ That distinction is important in the interview.
 - edge entry,
 - service-level resiliency,
 - upstream endpoint protection.
+- specifically, `BackendConfigPolicy` on the kgateway 2.1.x line protects the `agentgateway-proxy` upstream with passive health checks and circuit breakers.
+
+In practical terms, this means kgateway is not doing model selection or model fallback itself. Instead, it is protecting the service path to `agentgateway-proxy`. The passive health checks (`outlierDetection`) watch real upstream traffic and temporarily eject unhealthy endpoints that start returning repeated `5xx` responses. The circuit breakers cap concurrency and queued load so the upstream service is less likely to get overwhelmed during spikes or cascading failures.
 
 **LiteLLM**:
 - model/provider routing,
@@ -231,7 +235,7 @@ KMCP can scaffold Go projects, and the same operational pattern still applies:
 - `kmcp build --project-dir ...`
 - `kmcp deploy ...`
 
-So the customer answer should be:
+So the answer is:
 > FastMCP Python is one of the supported ways to build MCP servers, but in my implementation I use the Go path because KMCP supports MCP Go as well, and the same KMCP run/build/deploy workflow remains available.
 
 ---
@@ -338,20 +342,20 @@ That work would most naturally connect to:
 
 ## 14) vLLM is suitable for agents with many back-and-forth tool calls, or is it better for single-shot inference?
 
-For **your existing project**, the correct nuanced answer is:
+For **my existing project**, the correct nuanced answer is:
 
 > vLLM is already a good fit in this platform, but it is most beneficial when there is enough request volume or enough repeated prompt structure to benefit from efficient serving and KV/prefix-cache reuse. It is not limited to single-shot inference.
 
-### Why this matters in your project
+### Why this matters in my project
 
-You already have vLLM in the repo as a local OpenAI-compatible backend:
+I already have vLLM in the repo as a local OpenAI-compatible backend:
 
 - HelmRelease: `apps/ai-models/vllm/release.yaml`
 - values: `values/common/vllm/configmap.yaml`
 - chart: `charts/vllm-cpu/*`
 - LiteLLM route alias: `values/common/litellm/configmap.yaml` → `local-vllm`
 
-So in your architecture, vLLM is not theoretical — it is already part of the designed runtime path.
+So in my architecture, vLLM is not theoretical — it is already part of the designed runtime path.
 
 ### How to explain its role correctly
 
@@ -387,7 +391,7 @@ If the workflow is **strictly sequential** and every turn is very different, wit
 - vLLM is **not only** for single-shot inference,
 - but it shines more as a **shared inference engine** than as a magic accelerator for one isolated agent loop.
 
-### Concrete places in your repo to evolve vLLM
+### Concrete places in my repo to evolve vLLM
 
 1. `charts/vllm-cpu/templates/all.yaml`
    - today it runs:
@@ -410,14 +414,14 @@ If the workflow is **strictly sequential** and every turn is very different, wit
 
 ## 15) llm-d’s scheduler — helps when agents make 15 LLM calls?
 
-The short answer for your project is:
+The short answer for my project is:
 
-> Not directly today, because llm-d is not yet deployed in this repository. But it is highly relevant as a future extension specifically because your platform already includes vLLM and gateway-based routing.
+> Not directly today, because llm-d is not yet deployed in this repository. But it is highly relevant as a future 
+> extension specifically because my platform already includes vLLM and gateway-based routing.
 
 ### What “15 calls” really means
 
-The interviewer is not asking about the literal number 15. 
-They are testing whether you understand a **multi-call agent workload**:
+Understanding  **multi-call agent workload**:
 
 - one user request,
 - then many LLM turns for planning, tool selection, reflection, retries, summarization, and delegation.
@@ -427,7 +431,7 @@ So “15 calls” means:
 
 ### How llm-d relates to your project
 
-Your project already has the foundations that make llm-d relevant later:
+My project already has the foundations that make llm-d relevant later:
 
 - gateway-based entry,
 - agent execution layer,
@@ -438,9 +442,10 @@ llm-d is most naturally associated with the **serving/scheduling layer around vL
 
 ### Why llm-d could help in the future
 
-llm-d’s scheduler is designed to route inference requests using scheduler plugins and cache-aware / latency-aware logic. That matters when many LLM requests are sent across one or more backends, especially if you want better utilization and lower latency variance.
+llm-d’s scheduler is designed to route inference requests using scheduler plugins and cache-aware / latency-aware logic.
+That matters when many LLM requests are sent across one or more backends, especially if you want better utilization and lower latency variance.
 
-So if in the future your platform evolves from:
+So if in the future my platform evolves from:
 - one local vLLM instance
 
 to:
@@ -452,17 +457,17 @@ then llm-d can become valuable because it helps decide **which serving endpoint 
 
 ### Honest project-specific answer
 
-For your current repo:
+For my current repo:
 - **No, llm-d is not yet an active capability in the current deployment**.
-- **Yes, it is a realistic future enhancement because you already have vLLM in the stack**.
+- **Yes, it is a realistic future enhancement because I already have vLLM in the stack**.
 
-### Best way to phrase it in the attestation
 
 > In my current implementation, multi-call agent workflows are handled by kagent + AgentGateway + LiteLLM + optional local vLLM. llm-d is not yet deployed, so it does not currently schedule those 15 calls. But because my platform already has a gatewayed local serving layer with vLLM, llm-d is a very natural next step if I need cache-aware, latency-aware routing across multiple inference backends or replicas.
 
 ### Exact future insertion points
 
-If you decide to explore llm-d later, the best architectural place is between the AI routing layer and the local distributed inference backends.
+If I decide to explore llm-d later, the best architectural place is between the AI routing layer and the local 
+distributed inference backends.
 
 In practice, that means reviewing and evolving:
 - `apps/ai-models/vllm/*`
@@ -472,9 +477,7 @@ In practice, that means reviewing and evolving:
 
 ---
 
-## Summary for your presentation
-
-### Keep these 3 messages very clear
+## Summary for my presentation
 
 1. **kgateway is for service/path resiliency, not model semantics.**
 2. **LiteLLM is where provider failover and response normalization live.**

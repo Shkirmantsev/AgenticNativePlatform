@@ -1007,6 +1007,7 @@ GitHub repository README rendering strips embedded `<video>` tags. Click a previ
 1. [Demo: Integration inventory and MCP governance](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.4.0/MCPG_Inventory.webm)
 2. [Reference: agentregistry-inventory](https://github.com/den-vasyliev/agentregistry-inventory)
 3. [Reference: mcp-security-governance](https://github.com/techwithhuz/mcp-security-governance)
+4. [REFERENCE: FINAL ATTESTATION ANSWERS REVISED](.assets/after-review/FINAL_ATTESTATION_ANSWERS_REVISED.md)
 
 </details>
 
