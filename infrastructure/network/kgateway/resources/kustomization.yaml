@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - gateway.yaml
   - routes.yaml
+  - agentgateway-backend-policy.yaml

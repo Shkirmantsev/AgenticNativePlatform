@@ -16,6 +16,19 @@ data:
         use_chat_completions_url_for_anthropic_messages: true
         callbacks:
           - prometheus
+
+      # Router-level reliability. This is where multi-provider failover lives.
+      # NOTE: For streaming fallbacks, validate against the LiteLLM version you ship.
+      # Some versions have known edge cases for 429 streaming fallback.
+      router_settings:
+        num_retries: 2
+        request_timeout: 30
+        enable_pre_call_checks: true
+        fallbacks:
+          - default-gemini:
+              - openai-default
+              - anthropic-default
+              - local-vllm
       model_list:
         - model_name: default-gemini
           rpm: 500

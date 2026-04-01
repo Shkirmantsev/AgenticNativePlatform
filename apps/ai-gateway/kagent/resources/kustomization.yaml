@@ -4,4 +4,5 @@ resources:
   - remote-mcp.yaml
   - remote-mcp-echo.yaml
   - remote-mcp-finnhub.yaml
+  - modelconfigs.yaml
   - agents.yaml

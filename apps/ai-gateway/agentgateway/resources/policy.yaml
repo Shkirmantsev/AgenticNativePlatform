@@ -29,6 +29,27 @@ spec:
           unit: Minutes
         - tokens: 50000
           unit: Minutes
+
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: agentgateway-kagent-a2a-rate-limit
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: kagent-a2a-route
+  traffic:
+    rateLimit:
+      local:
+        # Protect the controller from runaway / stuck workflows (e.g. tool-call loops).
+        # This is intentionally generous for demos; tighten per environment.
+        - requests: 300
+          unit: Minutes
+        - tokens: 30000
+          unit: Minutes
 ---
 apiVersion: agentgateway.dev/v1alpha1
 kind: AgentgatewayPolicy

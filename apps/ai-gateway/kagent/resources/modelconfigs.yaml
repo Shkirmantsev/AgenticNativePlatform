@@ -1,0 +1,56 @@
+# Per-agent ModelConfig variants.
+#
+# Why: kagent Agents reference a ModelConfig by name. By creating per-agent
+# ModelConfigs, we can:
+#  - tag traffic for downstream FinOps (LiteLLM request tags)
+#  - later split budgets / routing per agent without changing Agent code
+#
+# Tag transport: LiteLLM supports request tags via the `x-litellm-tags` header.
+# (See docs: https://docs.litellm.ai/docs/proxy/request_headers)
+
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: k8s-a2a-model-config
+  namespace: kagent
+spec:
+  provider: "OpenAI"
+  model: "default-gemini"
+  apiKeySecret: kagent-agentgateway
+  apiKeySecretKey: OPENAI_API_KEY
+  defaultHeaders:
+    x-litellm-tags: "agent:k8s-a2a-agent,workload:a2a,team:platform"
+  openAI:
+    baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"
+
+---
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: finnhub-model-config
+  namespace: kagent
+spec:
+  provider: "OpenAI"
+  model: "default-gemini"
+  apiKeySecret: kagent-agentgateway
+  apiKeySecretKey: OPENAI_API_KEY
+  defaultHeaders:
+    x-litellm-tags: "agent:finnhub-agent,workload:a2a,team:platform"
+  openAI:
+    baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"
+
+---
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: team-lead-model-config
+  namespace: kagent
+spec:
+  provider: "OpenAI"
+  model: "default-gemini"
+  apiKeySecret: kagent-agentgateway
+  apiKeySecretKey: OPENAI_API_KEY
+  defaultHeaders:
+    x-litellm-tags: "agent:team-lead-agent-assist,workload:a2a,team:platform"
+  openAI:
+    baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"

@@ -7,7 +7,7 @@ spec:
   description: An example A2A agent that knows how to use Kubernetes tools.
   type: Declarative
   declarative:
-    modelConfig: default-model-config
+    modelConfig: k8s-a2a-model-config
     systemMessage: |-
       You are an expert Kubernetes agent that uses tools to help users.
     tools:
@@ -43,7 +43,7 @@ spec:
   description: A dedicated Finnhub market-data agent for natural-language finance questions, tool planning, and retrieval of free Finnhub-backed market data.
   type: Declarative
   declarative:
-    modelConfig: default-model-config
+    modelConfig: finnhub-model-config
     systemMessage: |-
       You are finnhub-agent, a focused Finnhub market-data specialist.
 
@@ -166,7 +166,7 @@ spec:
   description: A coordinating team-lead agent that triages natural-language requests, chooses the right project-defined specialist agent, and delegates work without direct MCP access of its own.
   type: Declarative
   declarative:
-    modelConfig: default-model-config
+    modelConfig: team-lead-model-config
     systemMessage: |-
       You are team-lead-agent-assist, the coordinating lead agent for this Kubernetes platform.
 
