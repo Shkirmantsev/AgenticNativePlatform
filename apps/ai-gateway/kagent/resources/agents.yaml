@@ -3,6 +3,12 @@ kind: Agent
 metadata:
   name: k8s-a2a-agent
   namespace: kagent
+  labels:
+    app.kubernetes.io/version: "1.0.0"
+    platform.agenticnative.io/release-channel: stable
+  annotations:
+    platform.agenticnative.io/agent-version: "1.0.0"
+    platform.agenticnative.io/prompt-version: "2026-04-01"
 spec:
   description: An example A2A agent that knows how to use Kubernetes tools.
   type: Declarative
@@ -39,6 +45,12 @@ kind: Agent
 metadata:
   name: finnhub-agent
   namespace: kagent
+  labels:
+    app.kubernetes.io/version: "1.0.0"
+    platform.agenticnative.io/release-channel: stable
+  annotations:
+    platform.agenticnative.io/agent-version: "1.0.0"
+    platform.agenticnative.io/prompt-version: "2026-04-01"
 spec:
   description: A dedicated Finnhub market-data agent for natural-language finance questions, tool planning, and retrieval of free Finnhub-backed market data.
   type: Declarative
@@ -162,6 +174,12 @@ kind: Agent
 metadata:
   name: team-lead-agent-assist
   namespace: kagent
+  labels:
+    app.kubernetes.io/version: "1.0.0"
+    platform.agenticnative.io/release-channel: stable
+  annotations:
+    platform.agenticnative.io/agent-version: "1.0.0"
+    platform.agenticnative.io/prompt-version: "2026-04-01"
 spec:
   description: A coordinating team-lead agent that triages natural-language requests, chooses the right project-defined specialist agent, and delegates work without direct MCP access of its own.
   type: Declarative

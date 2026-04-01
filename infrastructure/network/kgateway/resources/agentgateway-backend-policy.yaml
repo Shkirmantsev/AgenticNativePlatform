@@ -1,6 +1,6 @@
-# Resiliency policies for the AgentGateway data plane as an upstream of kgateway.
-# This is *not* model-level failover (that happens downstream in LiteLLM / runtimes),
-# but it protects the north-south edge from unhealthy AgentGateway pods.
+# Resiliency policy for AgentGateway as the north-south upstream of kgateway.
+# This protects the service path to agentgateway-proxy. Model/provider failover
+# remains in LiteLLM behind AgentGateway.
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: BackendConfigPolicy
 metadata:
@@ -15,9 +15,20 @@ spec:
   # Fast fail on broken upstream connections.
   connectTimeout: 2s
 
+  # Close stale upstream HTTP connections instead of letting them linger forever.
+  commonHttpProtocolOptions:
+    idleTimeout: 60s
+
   # Passive health checks: eject bad upstream endpoints so traffic shifts to healthy ones.
   outlierDetection:
     interval: 5s
     consecutive5xx: 5
     baseEjectionTime: 30s
     maxEjectionPercent: 50
+
+  # Cap concurrency and queued work to avoid cascading overload on the gateway tier.
+  circuitBreakers:
+    maxConnections: 200
+    maxPendingRequests: 200
+    maxRequests: 500
+    maxRetries: 20

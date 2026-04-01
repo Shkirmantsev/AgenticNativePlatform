@@ -6,3 +6,6 @@ env:
   VLLM_CPU_KVCACHE_SPACE: "2"
   VLLM_CPU_NUM_OF_RESERVED_CPU: "1"
   VLLM_LD_PRELOAD: ""
+
+extraArgs:
+  - --enable-prefix-caching

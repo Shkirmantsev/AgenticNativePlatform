@@ -20,6 +20,7 @@ spec:
   apiKeySecretKey: OPENAI_API_KEY
   defaultHeaders:
     x-litellm-tags: "agent:k8s-a2a-agent,workload:a2a,team:platform"
+    x-litellm-spend-logs-metadata: '{"agent":"k8s-a2a-agent","team":"platform","workload":"a2a"}'
   openAI:
     baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"
 
@@ -36,6 +37,7 @@ spec:
   apiKeySecretKey: OPENAI_API_KEY
   defaultHeaders:
     x-litellm-tags: "agent:finnhub-agent,workload:a2a,team:platform"
+    x-litellm-spend-logs-metadata: '{"agent":"finnhub-agent","team":"platform","workload":"a2a"}'
   openAI:
     baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"
 
@@ -52,5 +54,6 @@ spec:
   apiKeySecretKey: OPENAI_API_KEY
   defaultHeaders:
     x-litellm-tags: "agent:team-lead-agent-assist,workload:a2a,team:platform"
+    x-litellm-spend-logs-metadata: '{"agent":"team-lead-agent-assist","team":"platform","workload":"a2a"}'
   openAI:
     baseUrl: "http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8080/v1"
