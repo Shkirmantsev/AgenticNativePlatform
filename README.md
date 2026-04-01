@@ -1023,6 +1023,20 @@ GitHub repository README rendering strips embedded `<video>` tags. Click a previ
 
 </details>
 
+
+## Demo Videos: Observability - MCP calls, Prompt enrichment on gateway
+
+<details>
+<summary><strong>Open Demo Video | Observability - MCP calls, Prompt enrichment on gateway</strong></summary>
+
+GitHub repository README rendering strips embedded `<video>` tags. Click a preview image to open the matching `.webm` release asset.
+
+[![Preview: Observability and prompt enrichment](.assets/ObservabilityAndEnrichment.png)](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.6.0/PromptEnrichmentAndTracingAndQuadrant_10mb.webm)
+
+1. [Demo: Observability and prompt enrichment](https://github.com/Shkirmantsev/AgenticNativePlatform/releases/download/0.6.0/PromptEnrichmentAndTracingAndQuadrant_10mb.webm)
+
+</details>
+
 ## Notes For OCI Migration
 
 - `clusters/`, `infrastructure/`, `apps/`, `values/`, and `secrets/` are separated so each tree can later be published as independent OCI artifacts
