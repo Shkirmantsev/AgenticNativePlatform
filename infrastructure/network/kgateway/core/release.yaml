@@ -50,3 +50,25 @@ spec:
     gateway:
       service:
         type: LoadBalancer
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              group: apps
+              version: v1
+              kind: Deployment
+              name: kgateway-system-kgateway
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: kgateway-system-kgateway
+                namespace: kgateway-system
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: kgateway
+                        env:
+                          - name: KGW_DEFAULT_IMAGE_TAG
+                            value: v2.1.1

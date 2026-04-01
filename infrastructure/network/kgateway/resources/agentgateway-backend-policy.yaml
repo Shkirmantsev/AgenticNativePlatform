@@ -21,10 +21,3 @@ spec:
     consecutive5xx: 5
     baseEjectionTime: 30s
     maxEjectionPercent: 50
-
-  # Basic circuit-breaker thresholds for the upstream cluster.
-  circuitBreakers:
-    maxConnections: 2000
-    maxPendingRequests: 2000
-    maxRequests: 5000
-    maxRetries: 20
