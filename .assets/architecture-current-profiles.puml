@@ -46,6 +46,7 @@ package "One cluster root" {
   component "flux-system/flux-instance.yaml" as ClusterFluxInstance
   component "infrastructure/\ncluster wrapper" as ClusterInfrastructure
   component "secrets/\ncluster wrapper" as ClusterSecrets
+  component "runtime/\ncluster wrapper" as ClusterRuntime
   component "apps/\ncluster wrapper" as ClusterApps
 }
 
@@ -55,7 +56,10 @@ node "flux-system" {
   component "GitRepository/platform" as GitRepository
   component "platform-infrastructure" as PlatformInfrastructure
   component "platform-secrets" as PlatformSecrets
+  component "platform-runtime" as PlatformRuntime
   component "platform-applications" as PlatformApplications
+  component "platform-applications-remotes" as PlatformApplicationsRemotes
+  component "platform-applications-core" as PlatformApplicationsCore
 }
 
 Operator --> RepoClusters : edit
@@ -76,6 +80,7 @@ RepoClusters --> ClusterHybridRemote
 ClusterLocal --> ClusterFluxInstance
 ClusterLocal --> ClusterInfrastructure
 ClusterLocal --> ClusterSecrets
+ClusterLocal --> ClusterRuntime
 ClusterLocal --> ClusterApps
 
 FluxOperator --> FluxInstance : manages lifecycle
@@ -88,17 +93,28 @@ BootstrapHosts --> K3sRegistries : renders mirror config
 K3sRegistries --> LocalOciCache : localhost mirror endpoints
 
 GitRepository --> PlatformInfrastructure
-PlatformInfrastructure --> PlatformApplications : apps need controllers and CRDs
+GitRepository --> PlatformSecrets
+GitRepository --> PlatformRuntime
+GitRepository --> PlatformApplications
+PlatformInfrastructure --> PlatformRuntime : runtime needs controllers and CRDs
+PlatformSecrets --> PlatformRuntime : runtime needs secrets
+PlatformRuntime --> PlatformApplications : apps need runtime resources
 PlatformSecrets --> PlatformApplications : apps need secrets
 
 PlatformInfrastructure --> ClusterInfrastructure
 PlatformSecrets --> ClusterSecrets
+PlatformRuntime --> ClusterRuntime
 PlatformApplications --> ClusterApps
+PlatformApplications --> PlatformApplicationsRemotes : renders child stage
+PlatformApplications --> PlatformApplicationsCore : renders child stage
+PlatformApplicationsRemotes --> PlatformApplicationsCore : dependsOn
 
 ClusterInfrastructure --> RepoInfrastructure
 ClusterInfrastructure --> RepoCharts
 ClusterInfrastructure --> RepoValues
 ClusterSecrets --> RepoSecrets
+ClusterRuntime --> RepoInfrastructure
+ClusterRuntime --> RepoApps
 ClusterApps --> RepoApps
 RepoValues --> MCPGValues
 RepoApps --> MCPGCore
@@ -119,7 +135,8 @@ end note
 
 note bottom of PlatformApplications
 Staging keeps controllers and CRDs ahead of
-dependent secrets and application objects.
+secrets, runtime resources, and dependent app objects.
+The app wrapper now serializes remotes before core app resources.
 end note
 
 note bottom of RepoCharts

@@ -25,6 +25,7 @@ Do not commit:
 ```bash
 kubectl kustomize clusters/local-dev
 kubectl kustomize clusters/local-dev/infrastructure
+kubectl kustomize clusters/local-dev/runtime
 kubectl kustomize clusters/local-dev/apps
 kubectl kustomize clusters/local-dev/secrets
 git diff --check
@@ -50,7 +51,10 @@ The pause/resume flow now works against:
 
 - `platform-infrastructure`
 - `platform-secrets`
+- `platform-runtime`
 - `platform-applications`
+- `platform-applications-remotes`
+- `platform-applications-core`
 
 ## Secrets
 

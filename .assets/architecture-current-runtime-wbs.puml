@@ -11,22 +11,31 @@
 *** Staged Kustomizations
 **** platform-infrastructure
 **** platform-secrets
+**** platform-runtime
 **** platform-applications
+***** renders platform-applications-remotes
+***** renders platform-applications-core
 
 ** 2. North-south traffic path
 *** External client
 **** sends HTTP /v1 and /mcp
 *** kgateway public-gateway
 **** north-south entry point
-**** routes traffic to agentgateway-proxy
+**** routes /v1 to agentgateway-llm-edge
+**** routes /mcp to agentgateway-mcp-edge
 *** agentgateway-proxy
 **** protocol-aware AI gateway
 **** /v1 -> litellm-upstream backend
 **** /mcp -> kagent-tools-mcp-backend
+*** kgateway edge backends
+**** agentgateway-llm-edge -> agentgateway-proxy
+**** agentgateway-mcp-edge -> agentgateway-proxy
+**** shared BackendConfigPolicy on agentgateway-proxy
 *** LiteLLM
 **** remote provider default path
 **** optional external LM Studio path
 **** optional in-cluster runtime path
+**** Redis-backed router state and cost-scoring coordination
 *** agentregistry-inventory
 **** internal control-plane catalog
 **** default access via port-forward
@@ -44,6 +53,9 @@
 **** public-gateway
 *** agentgateway-system
 **** agentgateway controller
+**** agentgateway-llm-edge
+**** agentgateway-mcp-edge
+**** agentgateway-proxy-resiliency
 **** agentgateway-proxy
 **** AgentgatewayBackend resources
 **** AgentgatewayPolicy
@@ -113,6 +125,7 @@
 **** observability-agent -> grafana-mcp tool server
 *** LLM path
 **** agentgateway -> LiteLLM
+**** LiteLLM -> Redis router state
 **** LiteLLM -> Gemini / OpenAI / Anthropic / Bedrock / Vertex / others
 **** LiteLLM -> optional LM Studio endpoint
 **** LiteLLM -> optional Ollama or vLLM path
