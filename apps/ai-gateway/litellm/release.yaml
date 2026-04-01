@@ -6,6 +6,8 @@ metadata:
 spec:
   interval: 30m
   timeout: 8m
+  dependsOn:
+    - name: kube-prometheus-stack
   targetNamespace: ai-gateway
   chart:
     spec:
