@@ -1,3 +1,19 @@
+extraEnv:
+  - name: REDIS_HOST
+    valueFrom:
+      secretKeyRef:
+        name: litellm-provider-secrets
+        key: REDIS_HOST
+  - name: REDIS_PORT
+    valueFrom:
+      secretKeyRef:
+        name: litellm-provider-secrets
+        key: REDIS_PORT
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: litellm-provider-secrets
+        key: REDIS_PASSWORD
 config: |
   general_settings:
     master_key: os.environ/LITELLM_MASTER_KEY
@@ -6,6 +22,10 @@ config: |
   litellm_settings:
     set_verbose: false
     use_chat_completions_url_for_anthropic_messages: true
+  router_settings:
+    redis_host: os.environ/REDIS_HOST
+    redis_port: os.environ/REDIS_PORT
+    redis_password: os.environ/REDIS_PASSWORD
   model_list:
     - model_name: default-gemini
       rpm: 500

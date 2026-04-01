@@ -23,6 +23,9 @@ spec:
     image:
       digest: "sha256:7e8f031b2b95551e983f7ab4396d677fe6a8b8c25e89080a5a00b7b8de8cfbd7"
     architecture: standalone
+    auth:
+      existingSecret: platform-redis-auth
+      existingSecretPasswordKey: redis-password
     master:
       persistence:
         size: 800Mi

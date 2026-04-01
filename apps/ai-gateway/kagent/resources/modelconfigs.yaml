@@ -1,7 +1,8 @@
 # Per-agent ModelConfig variants.
 #
-# Why: kagent Agents reference a ModelConfig by name. By creating per-agent
-# ModelConfigs, we can:
+# Why: kagent Agents reference a ModelConfig by name. By creating dedicated
+# ModelConfigs for each real agent in this repo (team-lead-agent-assist,
+# finnhub-agent, k8s-a2a-agent), we can:
 #  - tag traffic for downstream FinOps (LiteLLM request tags)
 #  - later split budgets / routing per agent without changing Agent code
 #

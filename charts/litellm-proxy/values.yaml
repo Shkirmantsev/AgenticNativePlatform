@@ -44,6 +44,7 @@ readinessProbe:
     path: /health/readiness
     port: 4000
 existingSecretName: litellm-provider-secrets
+extraEnv: []
 config: |
   general_settings:
     master_key: os.environ/LITELLM_MASTER_KEY

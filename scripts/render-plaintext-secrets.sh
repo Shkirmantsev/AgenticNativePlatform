@@ -29,6 +29,7 @@ fi
 : "${FINNHUB_API_TOKEN:=}"
 : "${LITELLM_MASTER_KEY:=$(generate_secret)}"
 : "${PLATFORM_POSTGRES_PASSWORD:=$(generate_secret)}"
+: "${PLATFORM_REDIS_PASSWORD:=$(generate_secret)}"
 : "${GRAFANA_ADMIN_USERNAME:=admin}"
 : "${GRAFANA_ADMIN_PASSWORD:=$(generate_secret)}"
 : "${GRAFANA_SERVICE_ACCOUNT_TOKEN:=}"
@@ -55,6 +56,9 @@ stringData:
   VERTEX_LOCATION: ${VERTEX_LOCATION}
   VERTEX_AI_API_KEY: ${VERTEX_AI_API_KEY}
   VERTEX_SERVICE_ACCOUNT_JSON_B64: ${VERTEX_SERVICE_ACCOUNT_JSON_B64}
+  REDIS_HOST: redis-master.context.svc.cluster.local
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ${PLATFORM_REDIS_PASSWORD}
 EOF
 cat > "${OUT_DIR}/kagent-agentgateway.yaml" <<EOF
 apiVersion: v1
@@ -99,6 +103,16 @@ stringData:
   postgres-password: ${PLATFORM_POSTGRES_PASSWORD}
   password: ${PLATFORM_POSTGRES_PASSWORD}
 EOF
+cat > "${OUT_DIR}/platform-redis-auth.yaml" <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: platform-redis-auth
+  namespace: context
+type: Opaque
+stringData:
+  redis-password: ${PLATFORM_REDIS_PASSWORD}
+EOF
 cat > "${OUT_DIR}/observability-grafana-admin.yaml" <<EOF
 apiVersion: v1
 kind: Secret
@@ -141,6 +155,7 @@ resources:
   - finnhub-mcp-server.yaml
   - mcp-governance-ai-secrets.yaml
   - platform-postgres-auth.yaml
+  - platform-redis-auth.yaml
   - observability-grafana-admin.yaml
   - kagent-grafana-mcp.yaml
 EOF
