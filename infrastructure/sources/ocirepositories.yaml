@@ -29,7 +29,7 @@ spec:
   interval: 1h
   url: oci://cr.kgateway.dev/kgateway-dev/charts/kgateway-crds
   ref:
-    tag: v2.1.1
+    tag: v2.0.2
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
@@ -40,7 +40,7 @@ spec:
   interval: 1h
   url: oci://cr.kgateway.dev/kgateway-dev/charts/kgateway
   ref:
-    tag: v2.1.1
+    tag: v2.0.2
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository

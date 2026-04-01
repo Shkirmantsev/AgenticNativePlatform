@@ -9,8 +9,17 @@ spec:
       kind: AgentgatewayBackend
       name: litellm-upstream
   backend:
+    tcp:
+      connectTimeout: 2s
     http:
       requestTimeout: 300s
+    health:
+      unhealthyCondition: "response.code >= 500"
+      eviction:
+        consecutiveFailures: 5
+        healthThreshold: 50
+        duration: 30s
+        restoreHealth: 100
 ---
 apiVersion: agentgateway.dev/v1alpha1
 kind: AgentgatewayPolicy

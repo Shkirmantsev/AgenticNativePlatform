@@ -46,7 +46,7 @@ spec:
       image:
         registry: cr.kgateway.dev/kgateway-dev
         repository: kgateway
-        tag: v2.1.1
+        tag: v2.0.2
     gateway:
       service:
         type: LoadBalancer

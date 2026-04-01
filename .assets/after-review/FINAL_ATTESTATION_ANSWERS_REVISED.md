@@ -47,22 +47,31 @@ Already available place in your repo:
 
 ## 2) Any automatic timeout/circuit breaker patterns coming out of this framework?
 
-Yes, and in this project they are layered.
+Yes, but in the **current cluster-compatible version** the answer must be precise.
 
 ### What is implemented now
 
-**AgentGateway** already gives you request timeout behavior for LiteLLM upstreams:
+**AgentGateway** already gives me supported backend timeout and health/eviction controls for the LiteLLM upstream:
 - `apps/ai-gateway/agentgateway/resources/policy.yaml`
+- policy: `litellm-upstream-policy`
+- implemented with:
+  - `backend.tcp.connectTimeout: 2s`
+  - `backend.http.requestTimeout: 300s`
+  - `backend.health.unhealthyCondition: "response.code >= 500"`
+  - eviction controls: `consecutiveFailures`, `healthThreshold`, `duration`, `restoreHealth`
 
-**kgateway** now gets upstream resiliency for the AgentGateway service itself:
-- `infrastructure/network/kgateway/resources/agentgateway-backend-policy.yaml`
-- backed by `kgateway-crds` + `kgateway` on the `v2.1.1` line, because `BackendConfigPolicy` is a kgateway CRD and is not available from the previous repo pin
-- enabled with:
-  - `connectTimeout: 2s`
-  - `outlierDetection`
-  - `circuitBreakers`
+So today the project already has:
+- hard timeout behavior,
+- passive unhealthy-backend detection,
+- temporary eviction/recovery behavior for a bad LiteLLM upstream.
 
-That means kgateway is not choosing models, but it *is* protecting the north-south path from unhealthy `agentgateway-proxy` endpoints.
+### Important truthful limitation
+
+The **exact kgateway `BackendConfigPolicy` feature set** with:
+- `circuitBreakers`,
+- `outlierDetection`,
+
+is **not active in the current repo version anymore**, because that requires a kgateway line that supports `BackendConfigPolicy` in-cluster. I removed that patch so the cluster stays consistent with the current runtime.
 
 ### What can be improved
 
@@ -71,6 +80,14 @@ Next production step:
 - add retry budgets carefully,
 - separate `/api`, `/v1`, and `/mcp` traffic classes more aggressively,
 - tune thresholds using observed latency/error histograms rather than static demo numbers.
+
+### Exact future path if I need the native kgateway feature set
+
+If I later want the **exact** kgateway `circuitBreakers` + `outlierDetection` behavior, the correct place to upgrade is:
+- `infrastructure/sources/ocirepositories.yaml`
+- `infrastructure/network/kgateway/core/release.yaml`
+
+Until then, the safe and truthful answer is: **timeouts and backend health/eviction are implemented now through AgentGatewayPolicy; full BackendConfigPolicy-style circuit breakers are a future upgrade path.**
 
 ---
 
@@ -84,27 +101,26 @@ That distinction is important in the interview.
 
 **kgateway**:
 - edge entry,
-- service-level resiliency,
-- upstream endpoint protection.
-- specifically, `BackendConfigPolicy` on the kgateway 2.1.x line protects the `agentgateway-proxy` upstream with passive health checks and circuit breakers.
+- routing into the platform,
+- north-south traffic management.
 
-In practical terms, this means kgateway is not doing model selection or model fallback itself. Instead, it is protecting the service path to `agentgateway-proxy`. The passive health checks (`outlierDetection`) watch real upstream traffic and temporarily eject unhealthy endpoints that start returning repeated `5xx` responses. The circuit breakers cap concurrency and queued load so the upstream service is less likely to get overwhelmed during spikes or cascading failures.
+**AgentGateway**:
+- backend timeout control for LiteLLM,
+- passive unhealthy-backend detection and eviction for the LiteLLM upstream.
+- exact file: `apps/ai-gateway/agentgateway/resources/policy.yaml`
 
 **LiteLLM**:
 - model/provider routing,
 - fallback chain,
 - response normalization.
+- exact file: `values/common/litellm/configmap.yaml`
 
-### Exact files
+So the truthful explanation is:
+> In my implementation, kgateway is the entry/routing layer, AgentGateway protects the immediate AI upstream connection, and model failover itself is intentionally implemented in LiteLLM, because that layer understands providers, aliases, and fallback policy.
 
-Service-level resiliency:
-- `infrastructure/network/kgateway/resources/agentgateway-backend-policy.yaml`
+### Important architectural note
 
-Model failover:
-- `values/common/litellm/configmap.yaml`
-
-So the nuance/knowhow is:
-> In my implementation, kgateway protects the gateway path and service health, while model failover is intentionally placed in LiteLLM, because that layer understands providers, model aliases, and fallback policy.
+If later I want **kgateway-native backend circuit breakers and outlier detection**, that is a separate future upgrade path. But in the current cluster-compatible version, I do **not** claim that kgateway itself is already doing model failover or native BackendConfigPolicy-based backend protection.
 
 ---
 
@@ -479,6 +495,7 @@ In practice, that means reviewing and evolving:
 
 ## Summary for my presentation
 
-1. **kgateway is for service/path resiliency, not model semantics.**
-2. **LiteLLM is where provider failover and response normalization live.**
-3. **vLLM already exists in the project today; llm-d is the logical future scaling/scheduling layer around it, not a replacement for kagent.**
+1. **kgateway is the entry/routing layer; model semantics stay elsewhere.**
+2. **AgentGateway currently provides the implemented backend timeout and health/eviction controls for LiteLLM.**
+3. **LiteLLM is where provider failover and response normalization live.**
+4. **vLLM already exists in the project today; llm-d is the logical future scaling/scheduling layer around it, not a replacement for kagent.**
